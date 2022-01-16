@@ -9,3 +9,4 @@ dependencyResolutionManagement {
 rootProject.name = "AhmerPdfium"
 include ':app'
 include ':Pdfium'
+include ':PdfViewer'

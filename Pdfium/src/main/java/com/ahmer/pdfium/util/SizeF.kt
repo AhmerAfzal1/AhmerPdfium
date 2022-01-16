@@ -1,17 +1,18 @@
 package com.ahmer.pdfium.util
 
+import java.lang.Float.floatToIntBits
 
 class SizeF(val width: Float, val height: Float) {
 
-    override fun equals(obj: Any?): Boolean {
-        if (obj == null) {
+    override fun equals(other: Any?): Boolean {
+        if (other == null) {
             return false
         }
-        if (this === obj) {
+        if (this === other) {
             return true
         }
-        if (obj is SizeF) {
-            return width == obj.width && height == obj.height
+        if (other is SizeF) {
+            return width == other.width && height == other.height
         }
         return false
     }
@@ -21,7 +22,7 @@ class SizeF(val width: Float, val height: Float) {
     }
 
     override fun hashCode(): Int {
-        return java.lang.Float.floatToIntBits(width) xor java.lang.Float.floatToIntBits(height)
+        return floatToIntBits(width) xor floatToIntBits(height)
     }
 
     fun toSize(): Size {
