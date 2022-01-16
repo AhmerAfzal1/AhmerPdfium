@@ -1,0 +1,161 @@
+plugins {
+    id 'com.android.library'
+    id 'maven-publish'
+    id 'signing'
+    id 'kotlin-android'
+    id 'kotlin-kapt' // Kotlin annotation processing tool
+    id 'kotlin-parcelize'
+}
+
+ext.'signing.keyId' = System.getenv('SIGNING_KEY_ID')
+ext.'signing.password' = System.getenv('SIGNING_PASSWORD')
+ext.'signing.secretKeyRingFile' = "D:\\Keys\\secring.gpg"
+
+ext.'ossrhUsername' = System.getenv('OSSRH_USERNAME')
+ext.'ossrhPassword' = System.getenv('OSSRH_PASSWORD')
+
+android {
+    compileSdk 31
+    compileSdkVersion 31
+    buildToolsVersion '32.0.0'
+    ndkVersion '23.1.7779620'
+
+    buildFeatures {
+        viewBinding true
+    }
+
+    defaultConfig {
+        minSdk 19
+        targetSdk 31
+
+        externalNativeBuild {
+            cmake {
+                arguments '-DANDROID_STL=c++_static', '-DANDROID_PLATFORM=android-19',
+                        '-DANDROID_ARM_NEON=TRUE'
+                cppFlags '-std=c++17 -frtti -fexceptions'
+            }
+        }
+
+        ndk {
+            abiFilters 'arm64-v8a', 'armeabi-v7a', 'x86', 'x86_64'
+        }
+    }
+
+    externalNativeBuild {
+        cmake {
+            path file('src/main/cpp/CMakeLists.txt')
+            version '3.18.1'
+        }
+    }
+
+    lintOptions {
+        abortOnError false
+        disable 'TypographyFractions','TypographyQuotes'
+    }
+
+    buildTypes {
+        release {
+            minifyEnabled false
+            proguardFiles getDefaultProguardFile('proguard-android-optimize.txt'), 'proguard-rules.pro'
+        }
+    }
+
+    compileOptions {
+        sourceCompatibility JavaVersion.VERSION_11
+        targetCompatibility JavaVersion.VERSION_11
+    }
+}
+
+dependencies {
+    implementation "org.jetbrains.kotlin:kotlin-stdlib:$kotlin_version"
+    implementation 'androidx.collection:collection:1.2.0'
+    implementation 'org.jetbrains:annotations:23.0.0'
+    implementation 'androidx.core:core-ktx:1.7.0'
+}
+
+tasks.withType(Javadoc).all {
+    enabled false
+}
+
+task sourcesJar(type: Jar) {
+    archiveClassifier.set('sources')
+    from android.sourceSets.main.java.srcDirs
+}
+
+task javadoc(type: Javadoc) {
+    source = android.sourceSets.main.java.srcDirs
+    classpath += project.files(android.getBootClasspath().join(File.pathSeparator))
+    failOnError = false
+}
+
+task javadocJar(type: Jar, dependsOn: javadoc) {
+    archiveClassifier.set('javadoc')
+    from javadoc.destinationDir
+}
+
+artifacts {
+    archives javadocJar
+    archives sourcesJar
+}
+
+publishing {
+    publications {
+        mavenJava(MavenPublication) {
+            // The coordinates of the library, being set from variables that we'll set up in a moment
+            artifact sourcesJar
+            artifact javadocJar
+            artifact "$buildDir/outputs/aar/AhmerPdfium-release.aar"
+            groupId 'io.github.ahmerafzal1'
+            artifactId 'ahmer-pdfium'
+            version android.defaultConfig.versionName
+
+            // Self-explanatory metadata for the most part
+            pom {
+                name = 'AhmerPdfium'
+                description = 'Ahmer Pdfium Library for Android (API 19 binding)'
+                url = 'https://github.com/AhmerAfzal1/AhmerPDF'
+                packaging = 'aar'
+                licenses {
+                    license {
+                        name = 'The Apache License, Version 2.0'
+                        url = 'http://www.apache.org/licenses/LICENSE-2.0.txt'
+                    }
+                }
+                developers {
+                    developer {
+                        id = 'ahmerafzal1'
+                        name = 'Ahmer Afzal'
+                        email = 'ahmerafzal@yahoo.com'
+                    }
+                }
+                // Version control info, if you're using GitHub, follow the format as seen here
+                scm {
+                    connection = 'scm:git:git://github.com:AhmerAfzal1/AhmerPDF.git'
+                    developerConnection = 'scm:git:ssh://github.com/AhmerAfzal1/AhmerPDF.git'
+                    url = 'https://github.com/AhmerAfzal1/AhmerPDF/tree/master'
+                }
+            }
+        }
+    }
+    repositories {
+        maven {
+            name = 'maven'
+
+            def releasesRepoUrl = 'https://s01.oss.sonatype.org/service/local/staging/deploy/maven2/'
+            def snapshotsRepoUrl = 'https://s01.oss.sonatype.org/content/repositories/snapshots/'
+            // You only need this if you want to publish snapshots, otherwise just set the URL
+            // to the release repo directly
+            url = version.endsWith('SNAPSHOT') ? snapshotsRepoUrl : releasesRepoUrl
+
+            credentials {
+                username ossrhUsername
+                password ossrhPassword
+            }
+        }
+    }
+}
+
+signing {
+    sign publishing.publications.mavenJava
+    //sign configurations.archives
+}
