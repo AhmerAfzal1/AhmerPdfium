@@ -39,7 +39,7 @@ extern "C" {
 #define PDFDEST_VIEW_FITBV 8
 
 // The file identifier entry type. See section 14.4 "File Identifiers" of the
-// ISO 32000-1 standard.
+// ISO 32000-1:2008 spec.
 typedef enum {
     FILEIDTYPE_PERMANENT = 0,
     FILEIDTYPE_CHANGING = 1
@@ -74,6 +74,9 @@ FPDFBookmark_GetFirstChild(FPDF_DOCUMENT document, FPDF_BOOKMARK bookmark);
 //
 // Returns a handle to the next sibling of |bookmark|, or NULL if this is the
 // last bookmark at this level.
+//
+// Note that the caller is responsible for handling circular bookmark
+// references, as may arise from malformed documents.
 FPDF_EXPORT FPDF_BOOKMARK FPDF_CALLCONV
 FPDFBookmark_GetNextSibling(FPDF_DOCUMENT document, FPDF_BOOKMARK bookmark);
 

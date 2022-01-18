@@ -13,6 +13,7 @@
 #include <Mutex.h>
 #include <string>
 #include <vector>
+#include <fpdf_progressive.h>
 
 #pragma clang diagnostic ignored "-Wconversion"
 #pragma clang diagnostic ignored "-Wsign-conversion"
@@ -36,14 +37,7 @@ static void initLibraryIfNeed() {
     Mutex::Autolock lock(sLibraryLock);
     if (sLibraryReferenceCount == 0) {
         LOGD("Init FPDF library");
-        //FPDF_InitLibrary();
-        FPDF_LIBRARY_CONFIG config;
-        config.version = 2;
-        config.m_pUserFontPaths = nullptr;
-        config.m_pIsolate = nullptr;
-        config.m_v8EmbedderSlot = 0;
-
-        FPDF_InitLibraryWithConfig(&config);
+        FPDF_InitLibrary();
     }
     sLibraryReferenceCount++;
 }
@@ -62,6 +56,12 @@ struct rgb {
     uint8_t green;
     uint8_t blue;
 };
+
+constexpr FPDF_DWORD kBlack = 0xFF000000;
+constexpr FPDF_DWORD kBlue = 0xFF0000FF;
+constexpr FPDF_DWORD kGreen = 0xFF00FF00;
+constexpr FPDF_DWORD kRed = 0xFFFF0000;
+constexpr FPDF_DWORD kWhite = 0xFFFFFFFF;
 
 class DocumentFile {
 public:
@@ -166,6 +166,13 @@ uint16_t rgbTo565(rgb *color) {
     return ((color->red >> 3) << 11) | ((color->green >> 2) << 5) | (color->blue >> 3);
 }
 
+uint16_t rgbTo565(unsigned char R8, unsigned char G8, unsigned char B8) {
+    unsigned char R5 = (R8 * 249 + 1014) >> 11;
+    unsigned char G6 = (G8 * 253 + 505) >> 10;
+    unsigned char B5 = (B8 * 249 + 1014) >> 11;
+    return (R5 << 11) | (G6 << 5) | (B5);
+}
+
 void rgbBitmapTo565(void *source, int sourceStride, void *dest, AndroidBitmapInfo *info) {
     rgb *srcLine;
     uint16_t *dstLine;
@@ -179,43 +186,6 @@ void rgbBitmapTo565(void *source, int sourceStride, void *dest, AndroidBitmapInf
         source = (char *) source + sourceStride;
         dest = (char *) dest + info->stride;
     }
-}
-
-// Add method for writer pdf
-jobject j_writer;
-#define SIG_BYTE_BUFFER "Ljava/nio/ByteBuffer;"
-
-
-struct PdfToFdWriter : FPDF_FILEWRITE {
-    int dstFd;
-};
-
-static bool writeAllBytes(const int fd, const void *buffer, const size_t byteCount) {
-    char *writeBuffer = static_cast<char *>(const_cast<void *>(buffer));
-    size_t remainingBytes = byteCount;
-    while (remainingBytes > 0) {
-        ssize_t writtenByteCount = write(fd, writeBuffer, remainingBytes);
-        if (writtenByteCount == -1) {
-            if (errno == EINTR) {
-                continue;
-            }
-            LOGE("Error writing to buffer: %d", errno);
-            return false;
-        }
-        remainingBytes -= writtenByteCount;
-        writeBuffer += writtenByteCount;
-    }
-    return true;
-}
-
-static int writeBlock(FPDF_FILEWRITE *owner, const void *buffer, unsigned long size) {
-    const PdfToFdWriter *writer = reinterpret_cast<PdfToFdWriter *>(owner);
-    const bool success = writeAllBytes(writer->dstFd, buffer, size);
-    if (!success) {
-        LOGE("Cannot write to file descriptor. Error:%d", errno);
-        return 0;
-    }
-    return 1;
 }
 
 extern "C" { //For JNI support
@@ -259,7 +229,7 @@ JNI_FUNC(jlong, PdfiumCore, nativeOpenDocument)(JNI_ARGS, jint fd, jstring passw
         delete docFile;
         const unsigned long errorNum = FPDF_GetLastError();
         if (errorNum == FPDF_ERR_PASSWORD) {
-            jniThrowException(env, "com/ahmer/afzal/pdfium/PdfPasswordException",
+            jniThrowException(env, "com/ahmer/pdfium/PdfPasswordException",
                               "Password required or incorrect password.");
         } else {
             char *error = getErrorDescription((long) errorNum);
@@ -295,7 +265,7 @@ JNI_FUNC(jlong, PdfiumCore, nativeOpenMemDocument)(JNI_ARGS, jbyteArray data, js
         delete docFile;
         const unsigned long errorNum = FPDF_GetLastError();
         if (errorNum == FPDF_ERR_PASSWORD) {
-            jniThrowException(env, "com/ahmer/afzal/pdfium/PdfPasswordException",
+            jniThrowException(env, "com/ahmer/pdfium/PdfPasswordException",
                               "Password required or incorrect password.");
         } else {
             char *error = getErrorDescription((long) errorNum);
@@ -402,7 +372,6 @@ JNI_FUNC(jobject, PdfiumCore, nativeGetPageSizeByIndex)(JNI_ARGS, jlong docPtr, 
     auto *doc = reinterpret_cast<DocumentFile *>(docPtr);
     if (doc == nullptr) {
         LOGE("Document is null");
-
         jniThrowException(env, "java/lang/IllegalStateException", "Document is null");
         return nullptr;
     }
@@ -414,7 +383,7 @@ JNI_FUNC(jobject, PdfiumCore, nativeGetPageSizeByIndex)(JNI_ARGS, jlong docPtr, 
     }
     jint widthInt = (jint) (width * dpi / 72);
     jint heightInt = (jint) (height * dpi / 72);
-    jclass clazz = env->FindClass("com/ahmer/afzal/pdfium/util/Size");
+    jclass clazz = env->FindClass("com/ahmer/pdfium/util/Size");
     jmethodID constructorID = env->GetMethodID(clazz, "<init>", "(II)V");
     return env->NewObject(clazz, constructorID, widthInt, heightInt);
 }
@@ -423,11 +392,9 @@ static void
 renderPageInternal(FPDF_PAGE page, ANativeWindow_Buffer *windowBuffer, int startX, int startY,
                    int canvasHorSize, int canvasVerSize, int drawSizeHor, int drawSizeVer,
                    bool renderAnnot) {
-
     FPDF_BITMAP pdfBitmap = FPDFBitmap_CreateEx(canvasHorSize, canvasVerSize, FPDFBitmap_BGRA,
                                                 windowBuffer->bits,
                                                 (int) (windowBuffer->stride) * 4);
-
     /*
     LOGD("Start X: %d", startX);
     LOGD("Start Y: %d", startY);
@@ -436,7 +403,6 @@ renderPageInternal(FPDF_PAGE page, ANativeWindow_Buffer *windowBuffer, int start
     LOGD("Draw Hor: %d", drawSizeHor);
     LOGD("Draw Ver: %d", drawSizeVer);
     */
-
     if (drawSizeHor < canvasHorSize || drawSizeVer < canvasVerSize) {
         FPDFBitmap_FillRect(pdfBitmap, 0, 0, canvasHorSize, canvasVerSize, 0x848484FF); //Gray
     }
@@ -452,7 +418,7 @@ renderPageInternal(FPDF_PAGE page, ANativeWindow_Buffer *windowBuffer, int start
     FPDF_RenderPageBitmap(pdfBitmap, page, startX, startY, drawSizeHor, drawSizeVer, 0, flags);
 }
 
-JNI_FUNC(void, PdfiumCore, nativeRenderPage)(JNI_ARGS, jlong pagePtr, jobject objSurface, jint dpi,
+JNI_FUNC(void, PdfiumCore, nativeRenderPage)(JNI_ARGS, jlong pagePtr, jobject objSurface,
                                              jint startX, jint startY, jint drawSizeHor,
                                              jint drawSizeVer, jboolean renderAnnot) {
     ANativeWindow *nativeWindow = ANativeWindow_fromSurface(env, objSurface);
@@ -477,7 +443,6 @@ JNI_FUNC(void, PdfiumCore, nativeRenderPage)(JNI_ARGS, jlong pagePtr, jobject ob
         LOGE("Locking native window failed: %s", strerror(ret * -1));
         return;
     }
-
     renderPageInternal(page, &buffer, (int) startX, (int) startY, buffer.width, buffer.height,
                        (int) drawSizeHor, (int) drawSizeVer, (bool) renderAnnot);
     ANativeWindow_unlockAndPost(nativeWindow);
@@ -485,9 +450,8 @@ JNI_FUNC(void, PdfiumCore, nativeRenderPage)(JNI_ARGS, jlong pagePtr, jobject ob
 }
 
 JNI_FUNC(void, PdfiumCore, nativeRenderPageBitmap)(JNI_ARGS, jlong pagePtr, jobject bitmap,
-                                                   jint dpi, jint startX, jint startY,
-                                                   jint drawSizeHor, jint drawSizeVer,
-                                                   jboolean renderAnnot) {
+                                                   jint startX, jint startY, jint drawSizeHor,
+                                                   jint drawSizeVer, jboolean renderAnnot) {
     auto page = reinterpret_cast<FPDF_PAGE>(pagePtr);
     if (page == nullptr || bitmap == nullptr) {
         LOGE("Render page pointers invalid");
@@ -548,9 +512,12 @@ JNI_FUNC(void, PdfiumCore, nativeRenderPageBitmap)(JNI_ARGS, jlong pagePtr, jobj
         flags |= FPDF_ANNOT;
     }
     FPDFBitmap_FillRect(pdfBitmap, baseX, baseY, baseHorSize, baseVerSize, 0xFFFFFFFF); //White
-
     FPDF_RenderPageBitmap(pdfBitmap, page, startX, startY, (int) drawSizeHor, (int) drawSizeVer, 0,
                           flags);
+    if (info.format == ANDROID_BITMAP_FORMAT_RGB_565) {
+        FPDFBitmap_FillRect(pdfBitmap, baseX, baseY, baseHorSize, baseVerSize,
+                            rgbTo565(0xff, 0xff, 0xff)); //White
+    }
     if (info.format == ANDROID_BITMAP_FORMAT_RGB_565) {
         rgbBitmapTo565(tmp, sourceStride, addr, &info);
         free(tmp);
@@ -700,6 +667,10 @@ JNI_FUNC(jobject, PdfiumCore, nativeDeviceCoordinateToPage)(JNI_ARGS, jlong page
     jmethodID constructorID = env->GetMethodID(clazz, "<init>", "(FF)V");
     return env->NewObject(clazz, constructorID, (float) pageX, (float) pageY);
 }
+
+//////////////////////////////////////////
+// Begin PDF TextPage api
+//////////////////////////////////////////
 
 static jlong loadTextPageInternal(JNIEnv *env, DocumentFile *doc, int textPageIndex) {
     try {
@@ -871,7 +842,7 @@ unsigned short *convertWideString(JNIEnv *env, jstring query) {
 
 JNI_FUNC(jlong, PdfiumCore, nativeSearchStart)(JNI_ARGS, jlong textPagePtr, jstring query,
                                                jboolean matchCase, jboolean matchWholeWord) {
-    // convert jstring to UTF-16LE encoded wide strings
+    // Convert jstring to UTF-16LE encoded wide strings
     unsigned short *pQuery = convertWideString(env, query);
     auto textPage = reinterpret_cast<FPDF_TEXTPAGE>(textPagePtr);
     FPDF_SCHHANDLE search;
@@ -962,7 +933,7 @@ JNI_FUNC(jlong, PdfiumCore, nativeAddTextAnnotation)(JNI_ARGS, jlong docPtr, int
     // Add a text annotation to the page.
     FPDF_ANNOTATION annot = FPDFPage_CreateAnnot(page, FPDF_ANNOT_TEXT);
 
-    // set the rectangle of the annotation
+    // Set the rectangle of the annotation
     FPDFAnnot_SetRect(annot, &rect);
     env->ReleaseIntArrayElements(bound_, bounds, 0);
 
@@ -974,101 +945,23 @@ JNI_FUNC(jlong, PdfiumCore, nativeAddTextAnnotation)(JNI_ARGS, jlong docPtr, int
     unsigned short *kContents = convertWideString(env, text_);
     FPDFAnnot_SetStringValue(annot, kContentsKey, kContents);
 
-    // save page
+    // Save page
     FPDF_DOCUMENT pdfDoc = doc->pdfDocument;
     if (!FPDF_SaveAsCopy(pdfDoc, nullptr, FPDF_INCREMENTAL)) {
         return -1;
     }
 
-    // close page
+    // Close page
     closePageInternal(pagePtr);
 
-    // reload page
+    // Reload page
     pagePtr = loadPageInternal(env, doc, page_index);
 
-    jclass clazz = env->FindClass("com/ahmer/afzal/pdfium/PdfiumCore");
+    jclass clazz = env->FindClass("com/ahmer/pdfium/PdfiumCore");
     jmethodID callback = env->GetMethodID(clazz, "onAnnotationAdded",
                                           "(Ljava/lang/Integer;)Ljava/lang/Long;");
     env->CallObjectMethod(thiz, callback, page_index, pagePtr);
-
     return reinterpret_cast<jlong>(annot);
-}
-
-// Add method for insert image
-JNI_FUNC(void, PdfiumCore, nativeInsertImage)(JNI_ARGS, jlong docPtr, jint pageIndex,
-                                              jobject bitmap, jfloat a, jfloat b, jfloat c,
-                                              jfloat d, jfloat e, jfloat f) {
-    auto *doc = reinterpret_cast<DocumentFile *>(docPtr);
-    FPDF_PAGE page = FPDF_LoadPage(doc->pdfDocument, pageIndex);
-    if (page == nullptr) {
-        LOGE("nativeInsertImage: Loaded page is null");
-        return;
-    }
-
-    AndroidBitmapInfo info;
-    int ret;
-    if ((ret = AndroidBitmap_getInfo(env, bitmap, &info)) < 0) {
-        LOGE("Fetching bitmap info failed: %s", strerror(ret * -1));
-        return;
-    }
-
-    int w = info.width;
-    int h = info.height;
-
-    if (info.format != ANDROID_BITMAP_FORMAT_RGBA_8888) {
-        LOGE("Bitmap format must be RGBA_8888");
-        return;
-    }
-
-    void *addr;
-    if ((ret = AndroidBitmap_lockPixels(env, bitmap, &addr)) != 0) {
-        LOGE("Locking bitmap failed: %s", strerror(ret * -1));
-        return;
-    }
-    auto *oldAddr = static_cast<unsigned char *>(addr);
-
-    unsigned char *tmp;
-    tmp = static_cast<unsigned char *>(malloc(h * w * sizeof(uint8_t) * 4));
-
-    //convert data
-    for (int ih = 0; ih < h; ++ih) {
-        for (int iw = 0; iw < w; ++iw) {
-            int i = ih * w + iw;
-            int idx = i * 4;
-            //argb -> bgra
-            tmp[idx] = oldAddr[idx + 3];
-            tmp[idx + 1] = oldAddr[idx + 2];
-            tmp[idx + 2] = oldAddr[idx + 1];
-            tmp[idx + 3] = oldAddr[idx];
-        }
-    }
-
-    FPDF_BITMAP pdfBitmap = FPDFBitmap_CreateEx(w, h, FPDFBitmap_BGRA, tmp, info.stride);
-
-    auto imgObj = FPDFPageObj_NewImageObj(doc->pdfDocument);
-    FPDFImageObj_SetBitmap(&page, 1, imgObj, pdfBitmap);
-    FPDFPageObj_Transform(imgObj, a, b, c, d, e, f);
-    FPDFPage_InsertObject(page, imgObj);
-}
-
-// Add method for save pdf
-JNI_FUNC(void, PdfiumCore, nativeSavePdf)(JNI_ARGS, jlong docPtr, jstring path,
-                                          jboolean incremental) {
-    auto str = env->GetStringUTFChars(path, nullptr);
-    //clear and allow write
-    auto pFile = fopen(str, "wb+");
-    auto *doc = reinterpret_cast<DocumentFile *>(docPtr);
-
-    PdfToFdWriter writer{};
-    writer.dstFd = fileno(pFile);
-    writer.WriteBlock = &writeBlock;
-    FPDF_BOOL success = FPDF_SaveAsCopy(doc->pdfDocument, &writer,
-                                        incremental ? FPDF_INCREMENTAL : FPDF_NO_INCREMENTAL);
-    fclose(pFile);
-    if (!success) {
-        jniThrowExceptionFmt(env, "java/io/IOException",
-                             "Cannot write to fd. Error: %d", errno);
-    }
 }
 }//extern C
 

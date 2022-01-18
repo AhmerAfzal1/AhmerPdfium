@@ -10,6 +10,7 @@ object PdfUtils {
 
     private const val DEFAULT_BUFFER_SIZE = 1024 * 4
 
+    @JvmStatic
     fun getDP(context: Context, dp: Int): Int {
         return TypedValue.applyDimension(
             TypedValue.COMPLEX_UNIT_DIP, dp.toFloat(),
@@ -18,6 +19,7 @@ object PdfUtils {
     }
 
     @Throws(IOException::class)
+    @JvmStatic
     fun toByteArray(inputStream: InputStream): ByteArray {
         val os = ByteArrayOutputStream()
         val buffer = ByteArray(DEFAULT_BUFFER_SIZE)

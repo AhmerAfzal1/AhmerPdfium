@@ -1,12 +1,16 @@
 package com.ahmer.pdfium
 
-import java.util.ArrayList
+import java.util.*
 
-class Bookmark {
-    val children: List<Bookmark> = ArrayList()
-    var title: String? = null
-    var pageIdx: Long = 0
-    var mNativePtr: Long = 0
+data class Bookmark(
+    val nativePtr: Long,
+    var title: String? = null,
+    var pageIdx: Long = 0,
+    var children: MutableList<Bookmark> = ArrayList(),
+    var level: Int = 0
+) {
+    private constructor() : this(-1) {}
+
     fun hasChildren(): Boolean {
         return children.isNotEmpty()
     }

@@ -1,39 +1,39 @@
 package com.ahmer.pdfviewer.link
 
-import android.content.Context
+import android.content.ActivityNotFoundException
 import android.content.Intent
 import android.net.Uri
-import android.os.Build
 import android.util.Log
 import com.ahmer.pdfviewer.PDFView
 import com.ahmer.pdfviewer.model.LinkTapEvent
+import io.ahmer.utils.utilcode.ToastUtils
 
-class DefaultLinkHandler(private val pdfView: PDFView) : LinkHandler {
-
-    private val TAG = DefaultLinkHandler::class.java.simpleName
-
+class DefaultLinkHandler(
+    private val pdfView: PDFView,
+    private val chooserTitle: String = "Select app for open link"
+) : LinkHandler {
     override fun handleLinkEvent(event: LinkTapEvent?) {
-        val uri: String = event?.getLink()!!.uri
-        val page: Int = event.getLink().destPageIdx
-        if (uri.isNotEmpty()) {
+        val uri = event?.link?.uri
+        val page = event?.link?.destPageIdx
+        if (!uri.isNullOrBlank()) {
             handleUri(uri)
-        } else {
-            handlePage(page)
-        }
+        } else page?.let { handlePage(it) }
     }
 
     private fun handleUri(uri: String) {
         val parsedUri = Uri.parse(uri)
         val intent = Intent(Intent.ACTION_VIEW, parsedUri)
-        intent.flags = Intent.FLAG_ACTIVITY_CLEAR_TOP or Intent.FLAG_ACTIVITY_SINGLE_TOP
-        if (Build.VERSION.SDK_INT < Build.VERSION_CODES.N || Build.VERSION.SDK_INT >= Build.VERSION_CODES.P) {
-            intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
-        }
-        val context: Context = pdfView.context
-        if (intent.resolveActivity(context.packageManager) != null) {
-            context.startActivity(intent)
-        } else {
-            Log.w(TAG, "No activity found for URI: $uri")
+        val context = pdfView.context
+        // Create intent to show chooser
+        val chooser = Intent.createChooser(intent, chooserTitle)
+
+        // Try to invoke the intent.
+        try {
+            context.startActivity(chooser)
+        } catch (e: ActivityNotFoundException) {
+            // Define what your app should do if no activity can handle the intent.
+            Log.e(TAG, e.message ?: "NULL")
+            ToastUtils.showLong("No apps can open this link")
         }
     }
 
@@ -41,4 +41,7 @@ class DefaultLinkHandler(private val pdfView: PDFView) : LinkHandler {
         pdfView.jumpTo(page)
     }
 
+    companion object {
+        private val TAG = DefaultLinkHandler::class.java.simpleName
+    }
 }

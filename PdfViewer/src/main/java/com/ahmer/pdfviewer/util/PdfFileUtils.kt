@@ -4,17 +4,21 @@ import android.content.Context
 import java.io.*
 
 object PdfFileUtils {
+
     @Throws(IOException::class)
+    @JvmStatic
     fun fileFromAsset(context: Context, assetName: String): File {
         val outFile = File(context.cacheDir, "$assetName.pdf")
-        if (assetName.contains("/")) {
-            outFile.parentFile.mkdirs()
+        return outFile.also {
+            if (assetName.contains("/")) {
+                it.parentFile?.mkdirs()
+            }
+            copy(context.assets.open(assetName), it)
         }
-        copy(context.assets.open(assetName), outFile)
-        return outFile
     }
 
     @Throws(IOException::class)
+    @JvmStatic
     fun copy(inputStream: InputStream, output: File?) {
         var outputStream: OutputStream? = null
         try {

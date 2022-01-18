@@ -9,10 +9,5 @@ class LinkTapEvent(
     val documentX: Float,
     val documentY: Float,
     val mappedLinkRect: RectF,
-    private val link: Link
-) {
-
-    fun getLink(): Link {
-        return link
-    }
-}
+    val link: Link
+)

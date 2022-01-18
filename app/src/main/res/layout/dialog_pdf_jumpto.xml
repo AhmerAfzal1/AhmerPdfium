@@ -1,0 +1,136 @@
+<?xml version="1.0" encoding="utf-8"?>
+<RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:card_view="http://schemas.android.com/apk/res-auto"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:layout_gravity="center"
+    android:layout_margin="@dimen/margins_or_padding_05"
+    android:gravity="center"
+    android:orientation="vertical"
+    android:padding="@dimen/margins_or_padding_05">
+
+    <androidx.cardview.widget.CardView
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginStart="@dimen/margins_or_padding_10"
+        android:layout_marginLeft="@dimen/margins_or_padding_10"
+        android:layout_marginTop="@dimen/margins_or_padding_10"
+        android:layout_marginEnd="@dimen/margins_or_padding_10"
+        android:layout_marginRight="@dimen/margins_or_padding_10"
+        android:layout_marginBottom="@dimen/margins_or_padding_10"
+        app:cardBackgroundColor="@android:color/white"
+        app:cardPreventCornerOverlap="true"
+        app:cardUseCompatPadding="true"
+        card_view:cardCornerRadius="@dimen/about_app_card_view_elevation"
+        card_view:cardElevation="@dimen/about_app_card_view_elevation"
+        card_view:cardMaxElevation="@dimen/about_app_card_view_elevation">
+
+        <RelativeLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:gravity="center"
+            android:orientation="horizontal"
+            android:paddingStart="@dimen/margins_or_padding_05"
+            android:paddingTop="@dimen/margins_or_padding_05"
+            android:paddingEnd="@dimen/margins_or_padding_05"
+            android:paddingBottom="@dimen/margins_or_padding_05">
+
+            <ImageView
+                android:id="@+id/ivLogo"
+                android:layout_width="@dimen/dialog_image_width_height"
+                android:layout_height="@dimen/dialog_image_width_height"
+                android:layout_centerHorizontal="true"
+                android:contentDescription="@string/empty_description"
+                app:srcCompat="@drawable/ic_menu_pdf_goto"
+                app:tint="@android:color/black" />
+
+            <TextView
+                android:id="@+id/tvHeading"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_below="@+id/ivLogo"
+                android:fontFamily="casual"
+                android:gravity="center"
+                android:text="@string/heading_jump_to_page"
+                android:textAppearance="@style/Rose.TextAppearance.Heading"
+                android:textColor="@android:color/black"
+                android:textStyle="bold" />
+
+            <TextView
+                android:id="@+id/tvDescription"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_below="@id/tvHeading"
+                android:layout_marginTop="@dimen/margins_or_padding_05"
+                android:layout_marginBottom="@dimen/margins_or_padding_05"
+                android:fontFamily="@font/roboto"
+                android:gravity="center"
+                android:text="@string/desc_jump_to_page"
+                android:textAlignment="center"
+                android:textAppearance="@style/Rose.TextAppearance.Normal"
+                android:textColor="@android:color/background_dark" />
+
+            <com.google.android.material.textfield.TextInputLayout
+                android:id="@+id/inputLayout"
+                style="@style/Widget.MaterialComponents.TextInputLayout.OutlinedBox"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_below="@id/tvDescription"
+                android:fontFamily="@font/roboto"
+                android:padding="@dimen/margins_or_padding_05">
+
+                <com.google.android.material.textfield.TextInputEditText
+                    android:id="@+id/inputPageNumber"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:focusable="true"
+                    android:focusableInTouchMode="true"
+                    android:fontFamily="@font/roboto"
+                    android:hint="@string/enter_number"
+                    android:inputType="number"
+                    android:maxLines="1"
+                    android:textColor="@android:color/black" />
+            </com.google.android.material.textfield.TextInputLayout>
+
+            <RelativeLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_below="@id/inputLayout"
+                android:layout_marginStart="@dimen/margins_or_padding_05"
+                android:layout_marginTop="@dimen/margins_or_padding_10"
+                android:layout_marginEnd="@dimen/margins_or_padding_05"
+                android:layout_marginBottom="@dimen/margins_or_padding_05"
+                android:gravity="end"
+                android:orientation="horizontal">
+
+                <Button
+                    android:id="@+id/tvGoTo"
+                    style="@style/Widget.MaterialComponents.Button"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_alignParentEnd="true"
+                    android:layout_marginStart="@dimen/margins_or_padding_10"
+                    android:backgroundTint="@color/colorAccent"
+                    android:text="@string/button_go_to"
+                    android:textAllCaps="true"
+                    android:textAppearance="@style/Rose.TextAppearance.Normal"
+                    android:textColor="@color/colorWhite"
+                    android:textStyle="bold" />
+
+                <Button
+                    android:id="@+id/tvCancel"
+                    style="@style/Widget.MaterialComponents.Button"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_toStartOf="@id/tvGoTo"
+                    android:backgroundTint="@color/colorAccent"
+                    android:text="@android:string/cancel"
+                    android:textAllCaps="true"
+                    android:textAppearance="@style/Rose.TextAppearance.Normal"
+                    android:textColor="@color/colorWhite"
+                    android:textStyle="bold" />
+            </RelativeLayout>
+        </RelativeLayout>
+    </androidx.cardview.widget.CardView>
+</RelativeLayout>

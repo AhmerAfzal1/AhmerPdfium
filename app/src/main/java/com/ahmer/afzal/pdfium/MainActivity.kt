@@ -1,34 +1,42 @@
 package com.ahmer.afzal.pdfium
 
-import androidx.appcompat.app.AppCompatActivity
+import android.content.Intent
+import android.os.Build
 import android.os.Bundle
-import android.widget.TextView
+import androidx.appcompat.app.AppCompatActivity
 import com.ahmer.afzal.pdfium.databinding.ActivityMainBinding
 
 class MainActivity : AppCompatActivity() {
 
-    private lateinit var binding: ActivityMainBinding
+    val TAG = "AhmerPDF"
+    private val SAMPLE_FILE = "grammar.pdf"
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-
-        binding = ActivityMainBinding.inflate(layoutInflater)
+        val binding = ActivityMainBinding.inflate(layoutInflater)
         setContentView(binding.root)
-
-        // Example of a call to a native method
-        binding.sampleText.text = stringFromJNI()
-    }
-
-    /**
-     * A native method that is implemented by the 'pdfium' native library,
-     * which is packaged with this application.
-     */
-    external fun stringFromJNI(): String
-
-    companion object {
-        // Used to load the 'pdfium' library on application startup.
-        init {
-            System.loadLibrary("pdfium")
+        binding.toolbar.title = getString(R.string.app_name)
+        binding.toolbar.setOnClickListener { v ->
+            finish()
+            overridePendingTransition(R.anim.left_to_right, R.anim.right_to_left)
+        }
+        binding.pdfNormal.setOnClickListener { v ->
+            val intent = Intent(v.context, PdfActivity::class.java)
+            intent.putExtra("pdfNormal", SAMPLE_FILE)
+            intent.flags = Intent.FLAG_ACTIVITY_CLEAR_TOP or Intent.FLAG_ACTIVITY_SINGLE_TOP
+            if (Build.VERSION.SDK_INT < Build.VERSION_CODES.N || Build.VERSION.SDK_INT >= Build.VERSION_CODES.P) {
+                intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+            }
+            startActivity(intent)
+        }
+        binding.pdfProtected.setOnClickListener { v ->
+            val intent = Intent(v.context, PdfActivity::class.java)
+            intent.putExtra("pdfProtected", SAMPLE_FILE)
+            intent.flags = Intent.FLAG_ACTIVITY_CLEAR_TOP or Intent.FLAG_ACTIVITY_SINGLE_TOP
+            if (Build.VERSION.SDK_INT < Build.VERSION_CODES.N || Build.VERSION.SDK_INT >= Build.VERSION_CODES.P) {
+                intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+            }
+            startActivity(intent)
         }
     }
 }

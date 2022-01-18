@@ -13,7 +13,7 @@ class Callbacks {
     /**
      * Call back object to call when document loading error occurs
      */
-    private var onErrorListener: OnErrorListener? = null
+    var onError: OnErrorListener? = null
 
     /**
      * Call back object to call when the page load error occurs
@@ -60,14 +60,10 @@ class Callbacks {
     }
 
     fun callOnLoadComplete(pagesCount: Int) {
-        onLoadCompleteListener?.loadComplete(pagesCount)
-    }
-
-    var onError: OnErrorListener?
-        get() = onErrorListener
-        set(onErrorListener) {
-            this.onErrorListener = onErrorListener
+        if (onLoadCompleteListener != null) {
+            onLoadCompleteListener?.loadComplete(pagesCount)
         }
+    }
 
     fun setOnPageError(onPageErrorListener: OnPageErrorListener?) {
         this.onPageErrorListener = onPageErrorListener
@@ -75,7 +71,7 @@ class Callbacks {
 
     fun callOnPageError(page: Int, error: Throwable?): Boolean {
         if (onPageErrorListener != null) {
-            onPageErrorListener!!.onPageError(page, error)
+            onPageErrorListener?.onPageError(page, error)
             return true
         }
         return false
@@ -86,7 +82,9 @@ class Callbacks {
     }
 
     fun callOnRender(pagesCount: Int) {
-        onRenderListener?.onInitiallyRendered(pagesCount)
+        if (onRenderListener != null) {
+            onRenderListener?.onInitiallyRendered(pagesCount)
+        }
     }
 
     fun setOnPageChange(onPageChangeListener: OnPageChangeListener?) {
@@ -94,7 +92,9 @@ class Callbacks {
     }
 
     fun callOnPageChange(page: Int, pagesCount: Int) {
-        onPageChangeListener?.onPageChanged(page, pagesCount)
+        if (onPageChangeListener != null) {
+            onPageChangeListener?.onPageChanged(page, pagesCount)
+        }
     }
 
     fun setOnPageScroll(onPageScrollListener: OnPageScrollListener?) {
@@ -102,7 +102,9 @@ class Callbacks {
     }
 
     fun callOnPageScroll(currentPage: Int, offset: Float) {
-        onPageScrollListener?.onPageScrolled(currentPage, offset)
+        if (onPageScrollListener != null) {
+            onPageScrollListener?.onPageScrolled(currentPage, offset)
+        }
     }
 
     fun setOnTap(onTapListener: OnTapListener?) {
@@ -110,7 +112,7 @@ class Callbacks {
     }
 
     fun callOnTap(event: MotionEvent?): Boolean {
-        return onTapListener != null && onTapListener!!.onTap(event)
+        return onTapListener?.onTap(event) == true
     }
 
     fun setOnLongPress(onLongPressListener: OnLongPressListener?) {
@@ -118,7 +120,9 @@ class Callbacks {
     }
 
     fun callOnLongPress(event: MotionEvent?) {
-        onLongPressListener?.onLongPress(event)
+        if (onLongPressListener != null) {
+            onLongPressListener?.onLongPress(event)
+        }
     }
 
     fun setLinkHandler(linkHandler: LinkHandler?) {
@@ -127,7 +131,7 @@ class Callbacks {
 
     fun callLinkHandler(event: LinkTapEvent?) {
         if (linkHandler != null) {
-            linkHandler!!.handleLinkEvent(event)
+            linkHandler?.handleLinkEvent(event)
         }
     }
 }

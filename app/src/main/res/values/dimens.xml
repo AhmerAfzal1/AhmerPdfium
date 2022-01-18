@@ -1,0 +1,10 @@
+<resources>
+    <!-- Whole app values -->
+    <dimen name="margins_or_padding_10">10dp</dimen>
+    <dimen name="margins_or_padding_05">5dp</dimen>
+    <dimen name="progressbar_width_height">80dp</dimen>
+    <dimen name="about_app_card_view_elevation">5dp</dimen>
+    <dimen name="pdf_image_view_cancel_size">24dp</dimen>
+    <dimen name="pdf_image_view_cancel_padding_size">4dp</dimen>
+    <dimen name="dialog_image_width_height">80dp</dimen>
+</resources>

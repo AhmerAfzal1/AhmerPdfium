@@ -1,6 +1,5 @@
 package com.ahmer.pdfium.util
 
-
 class Size(val width: Int, val height: Int) {
 
     override fun equals(other: Any?): Boolean {

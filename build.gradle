@@ -1,5 +1,4 @@
 buildscript {
-    ext.kotlin_version = '1.6.10'
     ext.kotlin_version = "1.6.10"
     repositories {
         google()
@@ -8,9 +7,12 @@ buildscript {
     dependencies {
         classpath "com.android.tools.build:gradle:7.0.4"
         classpath "org.jetbrains.kotlin:kotlin-gradle-plugin:$kotlin_version"
+        classpath "io.codearte.gradle.nexus:gradle-nexus-staging-plugin:0.30.0"
     }
 }
 
 task clean(type: Delete) {
     delete rootProject.buildDir
 }
+
+apply plugin: 'io.codearte.nexus-staging'

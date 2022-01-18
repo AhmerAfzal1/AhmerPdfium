@@ -1,7 +1,6 @@
 package com.ahmer.pdfviewer.util
 
-import java.lang.StringBuilder
-import java.util.ArrayList
+import java.util.*
 
 object ArrayUtils {
     /**

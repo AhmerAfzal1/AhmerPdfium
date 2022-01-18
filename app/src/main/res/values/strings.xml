@@ -1,3 +1,53 @@
 <resources>
-    <string name="app_name">AhmerPdfium</string>
+    <string name="app_name">PDF Viewer</string>
+
+    <!-- Miscellaneous strings -->
+    <string name="error_loading_pdf">Error loading PDF document</string>
+
+    <!-- AhmerActivity strings -->
+
+    <!-- Log strings -->
+
+    <!-- Headings -->
+
+    <string name="menu_pdf_night_mode">Night Mode</string>
+    <string name="menu_pdf_scroll_handle">Scroll Handle Switch</string>
+    <string name="menu_pdf_goto_page">Goto Page Number</string>
+    <string name="menu_pdf_more_info">More Info</string>
+    <string name="menu_pdf_search">Search</string>
+    <string name="under_progress">This feature is under progress</string>
+    <string name="empty_description">Empty Description</string>
+    <string name="searching">Search…</string>
+    <string name="normal_pdf">Normal Pdf</string>
+    <string name="protected_pdf">Protected Pdf</string>
+
+    <!-- DialogPDFInfo strings -->
+    <string name="heading_document_info">Document Info</string>
+    <string name="title_author">Author:</string>
+    <string name="title_creation_date">Creation Date:</string>
+    <string name="title_creator_of">Creator Of:</string>
+    <string name="title_keywords">Keywords:</string>
+    <string name="title_modify_date">Modify Date:</string>
+    <string name="title_pdf_file_path">PDF File Path:</string>
+    <string name="title_pdf_file_size">PDF File Size:</string>
+    <string name="title_producer_of">Producer Of:</string>
+    <string name="title_subject">Subject:</string>
+    <string name="title_title">Title:</string>
+    <string name="title_total_pages">Total Pages:</string>
+
+    <!-- DialogPDFJumpTo strings -->
+    <string name="button_go_to">Go To</string>
+    <string name="enter_number">Enter a page number</string>
+    <string name="heading_jump_to_page">Jump to a specific page</string>
+    <string name="desc_jump_to_page">Enter the page number to which you want to move</string>
+    <string name="no_page">No page found in this document</string>
+    <string name="please_enter_number">Please enter a number page</string>
+
+    <!-- DialogPDFPassword strings -->
+    <string name="button_open_pdf">Open</string>
+    <string name="enter_password">Enter password here</string>
+    <string name="heading_pdf_protected">This file is password protected</string>
+    <string name="password_not_empty">Password should not be empty</string>
+    <string name="password_not_space">Password should not be only space(s)</string>
+    <string name="desc_pdf_protected">Please enter the password to open PDF file</string>
 </resources>

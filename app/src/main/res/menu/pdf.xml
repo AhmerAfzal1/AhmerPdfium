@@ -1,0 +1,43 @@
+<?xml version="1.0" encoding="utf-8"?>
+<menu xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto">
+    <item
+        android:id="@+id/menuPdfNightMode"
+        android:fontFamily="@font/roboto"
+        android:icon="@drawable/ic_menu_pdf_moon"
+        android:orderInCategory="100"
+        android:title="@string/menu_pdf_night_mode"
+        app:showAsAction="always" />
+
+    <item
+        android:id="@+id/menuPdfJumpTo"
+        android:fontFamily="@font/roboto"
+        android:icon="@drawable/ic_menu_pdf_goto"
+        android:orderInCategory="100"
+        android:title="@string/menu_pdf_goto_page"
+        app:showAsAction="always" />
+
+    <item
+        android:id="@+id/menuPdfSearch"
+        android:fontFamily="@font/roboto"
+        android:icon="@drawable/ic_menu_pdf_search"
+        android:orderInCategory="100"
+        android:title="@string/menu_pdf_search"
+        app:showAsAction="ifRoom" />
+
+    <item
+        android:id="@+id/menuPdfSwitchView"
+        android:fontFamily="@font/roboto"
+        android:icon="@drawable/ic_menu_pdf_horizontal"
+        android:orderInCategory="100"
+        android:title="@string/menu_pdf_scroll_handle"
+        app:showAsAction="ifRoom" />
+
+    <item
+        android:id="@+id/menuPdfInfo"
+        android:fontFamily="@font/roboto"
+        android:icon="@drawable/ic_menu_pdf_info"
+        android:orderInCategory="100"
+        android:title="@string/menu_pdf_more_info"
+        app:showAsAction="ifRoom" />
+</menu>

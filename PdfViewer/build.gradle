@@ -34,7 +34,7 @@ android {
 
     lintOptions {
         abortOnError false
-        disable 'TypographyFractions','TypographyQuotes'
+        disable 'TypographyFractions', 'TypographyQuotes'
     }
 
     buildTypes {
@@ -52,8 +52,11 @@ android {
 
 dependencies {
     implementation project(path: ':Pdfium')
-    implementation 'androidx.appcompat:appcompat:1.4.0'
+    implementation 'androidx.appcompat:appcompat:1.4.1'
     implementation 'io.github.ahmerafzal1:ahmer-utils:1.0.6'
+    implementation 'org.jetbrains.kotlinx:kotlinx-coroutines-android:1.6.0'
+    implementation 'org.jetbrains.kotlinx:kotlinx-coroutines-core:1.6.0'
+    implementation 'org.jetbrains.kotlinx:kotlinx-coroutines-play-services:1.6.0'
 }
 
 tasks.withType(Javadoc).all {

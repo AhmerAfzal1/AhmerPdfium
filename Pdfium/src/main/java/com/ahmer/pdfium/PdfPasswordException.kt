@@ -1,10 +1,6 @@
 package com.ahmer.pdfium
 
-import java.io.IOException
-
-
-class PdfPasswordException () {
-
-    @Throws(IOException::class)
-    fun passwordException() {}
+class PdfPasswordException : RuntimeException {
+    constructor() {}
+    constructor(message: String?) : super(message) {}
 }

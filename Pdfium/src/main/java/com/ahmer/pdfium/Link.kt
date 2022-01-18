@@ -2,4 +2,13 @@ package com.ahmer.pdfium
 
 import android.graphics.RectF
 
-class Link(val bounds: RectF, val destPageIdx: Int, val uri: String)
+class Link(bounds: RectF, destPageIdx: Int, uri: String?) {
+    var bounds: RectF = bounds
+        private set
+
+    var destPageIdx: Int = destPageIdx
+        private set
+
+    var uri: String? = uri
+        private set
+}

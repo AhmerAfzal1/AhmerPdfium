@@ -17,7 +17,7 @@ interface ScrollHandle {
      *
      * @param pdfView PDFView instance
      */
-    fun setupLayout(pdfView: PDFView?)
+    fun setupLayout(pdfView: PDFView)
 
     /**
      * Method called by PDFView when handle should be removed from layout

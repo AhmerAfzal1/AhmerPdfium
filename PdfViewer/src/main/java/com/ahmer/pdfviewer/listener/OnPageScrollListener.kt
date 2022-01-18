@@ -8,7 +8,7 @@ interface OnPageScrollListener {
     /**
      * Called on every move while scrolling
      *
-     * @param page           current page index
+     * @param page current page index
      * @param positionOffset see [com.ahmer.pdfviewer.PDFView.getPositionOffset]
      */
     fun onPageScrolled(page: Int, positionOffset: Float)

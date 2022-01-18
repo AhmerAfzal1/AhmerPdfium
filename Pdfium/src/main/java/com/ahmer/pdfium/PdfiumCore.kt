@@ -1,42 +1,32 @@
 package com.ahmer.pdfium
 
 import android.content.Context
-import android.graphics.Bitmap
-import android.graphics.Point
-import android.graphics.PointF
-import android.graphics.RectF
+import android.graphics.*
 import android.os.ParcelFileDescriptor
+import android.text.Spannable
+import android.text.SpannableString
+import android.text.style.StyleSpan
+import android.util.ArrayMap
 import android.util.Log
 import android.view.Surface
 import com.ahmer.pdfium.search.FPDFTextSearchContext
+import com.ahmer.pdfium.search.SearchData
 import com.ahmer.pdfium.search.TextSearchContext
 import com.ahmer.pdfium.util.Size
-import java.io.FileDescriptor
+import java.io.File
 import java.io.IOException
 import java.nio.ByteBuffer
 import java.nio.ByteOrder
-import java.nio.charset.StandardCharsets
 
-class PdfiumCore(context: Context) {
+class PdfiumCore(context: Context, file: File, pdfPassword: String? = null) {
     companion object {
         private var mCurrentDpi = 0
-        private val mNativePagesPtr = HashMap<Int, Long>()
-        private val mNativeTextPagesPtr = HashMap<Int, Long>()
-        private val mNativeSearchHandlePtr = HashMap<Int, Long>()
+        private val mNativePagesPtr: MutableMap<Int, Long> = ArrayMap()
+        private val mNativeTextPagesPtr: MutableMap<Int, Long> = ArrayMap()
+        private val mNativeSearchHandlePtr: MutableMap<Int, Long> = ArrayMap()
         private var mNativeDocPtr: Long = 0
         private var mFileDescriptor: ParcelFileDescriptor? = null
         private val TAG = PdfiumCore::class.java.name
-
-        private fun getNumFd(fdObj: ParcelFileDescriptor): Int {
-            return try {
-                val fdField = FileDescriptor::class.java.getDeclaredField("descriptor")
-                fdField.isAccessible = true
-                fdField.getInt(fdObj.fileDescriptor)
-            } catch (e: ReflectiveOperationException) {
-                e.printStackTrace()
-                -1
-            }
-        }
 
         private fun validPtr(ptr: Long?): Boolean {
             return ptr != null && ptr != -1L
@@ -53,16 +43,25 @@ class PdfiumCore(context: Context) {
      */
     init {
         mCurrentDpi = context.resources.displayMetrics.densityDpi
+        val fileDescriptor = ParcelFileDescriptor.open(file, ParcelFileDescriptor.MODE_READ_ONLY)
+        newDocument(fd = fileDescriptor, password = pdfPassword)
         Log.d(TAG, "Starting AhmerPdfium...")
     }
 
-    private external fun nativeAddTextAnnotation(docPtr: Long, pageIndex: Int, text: String, color: IntArray, bound: IntArray): Long
     private external fun nativeCloseDocument(docPtr: Long)
     private external fun nativeClosePage(pagePtr: Long)
     private external fun nativeClosePages(pagesPtr: LongArray)
-    private external fun nativeCloseTextPage(pagePtr: Long)
-    private external fun nativeCloseTextPages(pagesPtr: LongArray)
-    private external fun nativeDeviceCoordinateToPage(pagePtr: Long, startX: Int, startY: Int, sizeX: Int, sizeY: Int, rotate: Int, deviceX: Int, deviceY: Int): PointF
+    private external fun nativeDeviceCoordinateToPage(
+        pagePtr: Long,
+        startX: Int,
+        startY: Int,
+        sizeX: Int,
+        sizeY: Int,
+        rotate: Int,
+        deviceX: Int,
+        deviceY: Int
+    ): PointF
+
     private external fun nativeGetBookmarkDestIndex(docPtr: Long, bookmarkPtr: Long): Long
     private external fun nativeGetBookmarkTitle(bookmarkPtr: Long): String?
     private external fun nativeGetDestPageIndex(docPtr: Long, linkPtr: Long): Int?
@@ -81,95 +80,160 @@ class PdfiumCore(context: Context) {
     private external fun nativeGetSiblingBookmark(docPtr: Long, bookmarkPtr: Long): Long?
     private external fun nativeLoadPage(docPtr: Long, pageIndex: Int): Long
     private external fun nativeLoadPages(docPtr: Long, fromIndex: Int, toIndex: Int): LongArray
+    private external fun nativeOpenDocument(fd: Int, password: String?): Long
+    private external fun nativeOpenMemDocument(data: ByteArray, password: String): Long
+    private external fun nativePageCoordinateToDevice(
+        pagePtr: Long,
+        startX: Int,
+        startY: Int,
+        sizeX: Int,
+        sizeY: Int,
+        rotate: Int,
+        pageX: Double,
+        pageY: Double
+    ): Point
+
+    private external fun nativeRenderPage(
+        pagePtr: Long,
+        surface: Surface,
+        startX: Int,
+        startY: Int,
+        drawSizeHor: Int,
+        drawSizeVer: Int,
+        renderAnnot: Boolean
+    )
+
+    private external fun nativeRenderPageBitmap(
+        pagePtr: Long,
+        bitmap: Bitmap,
+        startX: Int,
+        startY: Int,
+        drawSizeHor: Int,
+        drawSizeVer: Int,
+        renderAnnot: Boolean
+    )
+
+    ///////////////////////////////////////
+    // PDF TextPage api
+    ///////////////////////////////////////
+    private external fun nativeCloseTextPage(pagePtr: Long)
+    private external fun nativeCloseTextPages(pagesPtr: LongArray)
     private external fun nativeLoadTextPage(docPtr: Long, pageIndex: Int): Long
     private external fun nativeLoadTextPages(docPtr: Long, fromIndex: Int, toIndex: Int): LongArray
-    private external fun nativeOpenDocument(fd: Int, password: String?): Long
-    private external fun nativeOpenMemDocument(data: ByteArray, password: String?): Long
-    private external fun nativePageCoordinateToDevice(pagePtr: Long, startX: Int, startY: Int, sizeX: Int, sizeY: Int, rotate: Int, pageX: Double, pageY: Double): Point
-    private external fun nativeRenderPage(pagePtr: Long, surface: Surface, dpi: Int, startX: Int, startY: Int, drawSizeHor: Int, drawSizeVer: Int, renderAnnot: Boolean)
-    private external fun nativeRenderPageBitmap(pagePtr: Long, bitmap: Bitmap, dpi: Int, startX: Int, startY: Int, drawSizeHor: Int, drawSizeVer: Int, renderAnnot: Boolean)
     private external fun nativeTextCountChars(textPagePtr: Long): Int
-    private external fun nativeTextCountRects(textPagePtr: Long, start_index: Int, count: Int): Int
-    private external fun nativeTextGetBoundedText(textPagePtr: Long, left: Double, top: Double, right: Double, bottom: Double, arr: ShortArray): Int
-    private external fun nativeTextGetBoundedTextLength(textPagePtr: Long, left: Double, top: Double, right: Double, bottom: Double): Int
+    private external fun nativeTextCountRects(textPagePtr: Long, start: Int, count: Int): Int
+    private external fun nativeTextGetBoundedText(
+        textPagePtr: Long,
+        left: Double,
+        top: Double,
+        right: Double,
+        bottom: Double,
+        arr: ShortArray
+    ): Int
+
+    private external fun nativeTextGetBoundedTextLength(
+        textPagePtr: Long,
+        left: Double,
+        top: Double,
+        right: Double,
+        bottom: Double
+    ): Int
+
     private external fun nativeTextGetCharBox(textPagePtr: Long, index: Int): DoubleArray
-    private external fun nativeTextGetCharIndexAtPos(textPagePtr: Long, x: Double, y: Double, xTolerance: Double, yTolerance: Double): Int
+    private external fun nativeTextGetCharIndexAtPos(
+        textPagePtr: Long,
+        x: Double,
+        y: Double,
+        xTolerance: Double,
+        yTolerance: Double
+    ): Int
+
     private external fun nativeTextGetRect(textPagePtr: Long, rect_index: Int): DoubleArray
-    private external fun nativeTextGetText(textPagePtr: Long, start_index: Int, count: Int, result: ShortArray): Int
+    private external fun nativeTextGetText(
+        textPagePtr: Long,
+        start: Int,
+        count: Int,
+        result: ShortArray
+    ): Int
+
     private external fun nativeTextGetUnicode(textPagePtr: Long, index: Int): Int
 
-    /**
-     * API PDF Search
-     */
+    ///////////////////////////////////////
+    // PDF Search API
+    ///////////////////////////////////////
     private external fun nativeCountSearchResult(searchHandlePtr: Long): Int
     private external fun nativeGetCharIndexOfSearchResult(searchHandlePtr: Long): Int
     private external fun nativeSearchNext(searchHandlePtr: Long): Boolean
     private external fun nativeSearchPrev(searchHandlePtr: Long): Boolean
-    private external fun nativeSearchStart(textPagePtr: Long, query: String, matchCase: Boolean, matchWholeWord: Boolean): Long
+    private external fun nativeSearchStart(
+        textPagePtr: Long,
+        query: String,
+        matchCase: Boolean,
+        matchWholeWord: Boolean
+    ): Long
+
     private external fun nativeSearchStop(searchHandlePtr: Long)
 
-    /**
-     * PDF Native Callbacks
-     */
-    private fun onAnnotationAdded(pageIndex: Int, pageNewPtr: Long) {}
-    private fun onAnnotationRemoved(pageIndex: Int, pageNewPtr: Long) {}
-    private fun onAnnotationUpdated(pageIndex: Int, pageNewPtr: Long) {}
+    ///////////////////////////////////////
+    // PDF Annotation API
+    ///////////////////////////////////////
+    private external fun nativeAddTextAnnotation(
+        docPtr: Long,
+        pageIndex: Int,
+        text: String,
+        color: IntArray,
+        bound: IntArray
+    ): Long
+
+    ///////////////////////////////////////
+    // PDF Native Callbacks
+    ///////////////////////////////////////
+    fun onAnnotationAdded(pageIndex: Int, pageNewPtr: Long) {}
+    fun onAnnotationRemoved(pageIndex: Int, pageNewPtr: Long) {}
+    fun onAnnotationUpdated(pageIndex: Int, pageNewPtr: Long) {}
 
     /**
      * Create new document from file with password
      * Create new document from file
      */
-    @JvmOverloads
+    @Synchronized
     @Throws(IOException::class)
-    fun newDocument(parcelFileDescriptor: ParcelFileDescriptor, password: String? = null) {
-        mFileDescriptor = parcelFileDescriptor
-        mNativeDocPtr = nativeOpenDocument(getNumFd(parcelFileDescriptor), password)
-
-    }
-
-    /**
-     * Create new document from byteArray with password
-     * Create new document from byteArray
-     */
-    @JvmOverloads
-    @Throws(IOException::class)
-    fun newDocument(data: ByteArray, password: String? = null) {
-        mNativeDocPtr = nativeOpenMemDocument(data, password)
+    private fun newDocument(fd: ParcelFileDescriptor, password: String? = null) {
+        mFileDescriptor = fd
+        mNativeDocPtr = nativeOpenDocument(fd.fd, password)
     }
 
     /**
      * Get total number of pages in document
      */
-    fun pageCount(): Int {
-        return nativeGetPageCount(mNativeDocPtr)
-    }
+    val totalPagesCount: Int
+        get() {
+            return nativeGetPageCount(mNativeDocPtr)
+        }
 
     /**
-     * Open page
+     * Open page and store native pointer
      */
     fun openPage(pageIndex: Int): Long {
         val pagePtr: Long = nativeLoadPage(mNativeDocPtr, pageIndex)
         mNativePagesPtr[pageIndex] = pagePtr
         prepareTextInfo(pageIndex)
         return pagePtr
-
     }
 
     /**
-     * Open range of pages
+     * Open range of pages and store native pointers
      */
     fun openPage(fromIndex: Int, toIndex: Int): LongArray {
         val pagesPtr: LongArray = nativeLoadPages(mNativeDocPtr, fromIndex, toIndex)
         var pageIndex = fromIndex
         for (page in pagesPtr) {
-            if (pageIndex > toIndex) {
-                break
-            }
+            if (pageIndex > toIndex) break
             mNativePagesPtr[pageIndex] = page
             pageIndex++
+            prepareTextInfo(pageIndex)
         }
         return pagesPtr
-
     }
 
     /**
@@ -187,106 +251,92 @@ class PdfiumCore(context: Context) {
      * Get page width in pixels.
      * This method requires page to be opened.
      */
-    fun getPageWidth(pageIndex: Int): Int {
-        val pagePtr = mNativePagesPtr[pageIndex]
-        return if (pagePtr != null) {
-            nativeGetPageWidthPixel(pagePtr, mCurrentDpi);
-        } else {
-            0
-        }
+    fun getPageWidth(index: Int): Int {
+        var pagePtr: Long = -1L
+        return if (mNativePagesPtr[index]?.also { pagePtr = it } != null) {
+            nativeGetPageWidthPixel(pagePtr, mCurrentDpi)
+        } else 0
     }
 
     /**
      * Get page height in pixels.
      * This method requires page to be opened.
      */
-    fun getPageHeight(pageIndex: Int): Int {
-        val pagePtr = mNativePagesPtr[pageIndex]
-        return if (pagePtr != null) {
-            nativeGetPageHeightPixel(pagePtr, mCurrentDpi);
-        } else {
-            0
-        }
-
+    fun getPageHeight(index: Int): Int {
+        var pagePtr: Long = -1L
+        return if (mNativePagesPtr[index]?.also { pagePtr = it } != null) {
+            nativeGetPageHeightPixel(pagePtr, mCurrentDpi)
+        } else 0
     }
 
     /**
      * Get page width in PostScript points (1/72th of an inch).
      * This method requires page to be opened.
      */
-    fun getPageWidthPoint(pageIndex: Int): Int {
-        val pagePtr = mNativePagesPtr[pageIndex]
-        return if (pagePtr != null) {
-            nativeGetPageWidthPoint(pagePtr);
-        } else {
-            0
-        }
+    fun getPageWidthPoint(index: Int): Int {
+        var pagePtr: Long = -1L
+        return if (mNativePagesPtr[index]?.also { pagePtr = it } != null) {
+            nativeGetPageWidthPoint(pagePtr)
+        } else 0
     }
 
     /**
      * Get page height in PostScript points (1/72th of an inch).
      * This method requires page to be opened.
      */
-    fun getPageHeightPoint(pageIndex: Int): Int {
-        val pagePtr = mNativePagesPtr[pageIndex]
-        return if (pagePtr != null) {
-            nativeGetPageHeightPoint(pagePtr);
-        } else {
-            0
-        }
+    fun getPageHeightPoint(index: Int): Int {
+        var pagePtr: Long = -1L
+        return if (mNativePagesPtr[index]?.also { pagePtr = it } != null) {
+            nativeGetPageHeightPoint(pagePtr)
+        } else 0
     }
 
     /**
      * Get size of page in pixels.
      * This method does not require given page to be opened.
      */
-    fun getPageSize(pageIndex: Int): Size {
-        return nativeGetPageSizeByIndex(mNativeDocPtr, pageIndex, mCurrentDpi)
+    fun getPageSize(index: Int): Size {
+        return nativeGetPageSizeByIndex(mNativeDocPtr, index, mCurrentDpi)
+    }
+
+    /**
+     * Get the rotation of page.
+     */
+    fun getPageRotation(index: Int): Int {
+        var pagePtr: Long = -1L
+        return if (mNativePagesPtr[index]?.also { pagePtr = it } != null) {
+            nativeGetPageRotation(pagePtr)
+        } else 0
     }
 
     /**
      * Render page fragment on [Surface]. This method allows to render annotations.
      * Page must be opened before rendering.
-     */
-    /**
      * Render page fragment on [Surface].
      * Page must be opened before rendering.
      */
     @JvmOverloads
     fun renderPage(
-        surface: Surface,
-        pageIndex: Int,
-        startX: Int,
-        startY: Int,
-        drawSizeX: Int,
-        drawSizeY: Int,
-        renderAnnot: Boolean = false
+        surface: Surface, pageIndex: Int, startX: Int, startY: Int,
+        drawSizeX: Int, drawSizeY: Int, renderAnnot: Boolean = false
     ) {
         try {
-            nativeRenderPage(
-                mNativePagesPtr[pageIndex]!!,
-                surface,
-                mCurrentDpi,
-                startX,
-                startY,
-                drawSizeX,
-                drawSizeY,
-                renderAnnot
-            )
+            mNativePagesPtr[pageIndex]?.let {
+                nativeRenderPage(it, surface, startX, startY, drawSizeX, drawSizeY, renderAnnot)
+            }
         } catch (e: NullPointerException) {
-            Log.e(TAG, "Context may be null")
+            Log.e(TAG, "mContext may be null")
             e.printStackTrace()
         } catch (e: Exception) {
             Log.e(TAG, "Exception throw from native")
             e.printStackTrace()
         }
-
     }
 
     /**
      * Render page fragment on [Bitmap]. This method allows to render annotations.
      * Page must be opened before rendering.
-     * For more info see {PdfiumCore#renderPageBitmap(Bitmap, int, int, int, int, int, boolean)}
+     * For more info see [PdfiumSDK.renderPageBitmap]
      * Render page fragment on [Bitmap].
      * Page must be opened before rendering.
      * Supported bitmap configurations:
@@ -295,25 +345,14 @@ class PdfiumCore(context: Context) {
      */
     @JvmOverloads
     fun renderPageBitmap(
-        bitmap: Bitmap,
-        pageIndex: Int,
-        startX: Int,
-        startY: Int,
-        drawSizeX: Int,
-        drawSizeY: Int,
-        renderAnnot: Boolean = false
+        bitmap: Bitmap, pageIndex: Int, startX: Int, startY: Int, drawSizeX: Int, drawSizeY: Int,
+        renderAnnot: Boolean = true
     ) {
         try {
-            nativeRenderPageBitmap(
-                mNativePagesPtr[pageIndex]!!,
-                bitmap,
-                mCurrentDpi,
-                startX,
-                startY,
-                drawSizeX,
-                drawSizeY,
-                renderAnnot
-            )
+            prepareTextInfo(pageIndex = pageIndex)
+            mNativePagesPtr[pageIndex]?.let { i ->
+                nativeRenderPageBitmap(i, bitmap, startX, startY, drawSizeX, drawSizeY, renderAnnot)
+            }
         } catch (e: NullPointerException) {
             Log.e(TAG, "Context may be null")
             e.printStackTrace()
@@ -331,22 +370,26 @@ class PdfiumCore(context: Context) {
             mNativePagesPtr[index]?.let { nativeClosePage(it) }
         }
         mNativePagesPtr.clear()
-        nativeCloseDocument(mNativeDocPtr)
-        if (mFileDescriptor != null) { //if document was loaded from file
-            try {
-                mFileDescriptor!!.close()
-            } catch (e: IOException) {
-                e.printStackTrace()
-            }
-            mFileDescriptor = null
+        for (ptr in mNativeTextPagesPtr.keys) {
+            mNativeTextPagesPtr[ptr]?.let { nativeCloseTextPage(it) }
         }
-
+        mNativeTextPagesPtr.clear()
+        nativeCloseDocument(mNativeDocPtr)
+        if (mFileDescriptor != null) {
+            try {
+                mFileDescriptor?.close()
+                mFileDescriptor = null
+            } catch (ignored: IOException) {
+            } finally {
+                mFileDescriptor = null
+            }
+        }
     }
 
     /**
      * Get metadata for given document
      */
-    val documentMeta: Meta
+    val metaData: Meta
         get() {
             val meta = Meta()
             meta.title = nativeGetDocumentMetaText(mNativeDocPtr, "Title")
@@ -357,48 +400,51 @@ class PdfiumCore(context: Context) {
             meta.producer = nativeGetDocumentMetaText(mNativeDocPtr, "Producer")
             meta.creationDate = nativeGetDocumentMetaText(mNativeDocPtr, "CreationDate")
             meta.modDate = nativeGetDocumentMetaText(mNativeDocPtr, "ModDate")
-            meta.totalPages = pageCount()
+            meta.totalPages = totalPagesCount
             return meta
         }
 
     /**
      * Get table of contents (bookmarks) for given document
      */
-    fun tableOfContents(): List<Bookmark> {
-        val topLevel: List<Bookmark> = ArrayList()
-        val first = nativeGetFirstChildBookmark(mNativeDocPtr, null)
-        first?.let { recursiveGetBookmark(topLevel as ArrayList<Bookmark>, it) }
-        return topLevel
-    }
+    val bookmarks: List<Bookmark>
+        get() {
+            val topLevel: MutableList<Bookmark> = ArrayList()
+            val first = nativeGetFirstChildBookmark(mNativeDocPtr, null)
+            first?.let {
+                recursiveGetBookmark(topLevel, it)
+            }
+            return topLevel
+        }
 
-    private fun recursiveGetBookmark(tree: ArrayList<Bookmark>, bookmarkPtr: Long) {
-        val bookmark = Bookmark()
-        bookmark.mNativePtr = bookmarkPtr
+    private fun recursiveGetBookmark(tree: MutableList<Bookmark>, bookmarkPtr: Long) {
+        val bookmark = Bookmark(bookmarkPtr)
         bookmark.title = nativeGetBookmarkTitle(bookmarkPtr)
         bookmark.pageIdx = nativeGetBookmarkDestIndex(mNativeDocPtr, bookmarkPtr)
         tree.add(bookmark)
         val child = nativeGetFirstChildBookmark(mNativeDocPtr, bookmarkPtr)
         if (child != null) {
-            recursiveGetBookmark(bookmark.children as ArrayList<Bookmark>, child)
+            recursiveGetBookmark(bookmark.children, child)
         }
         val sibling = nativeGetSiblingBookmark(mNativeDocPtr, bookmarkPtr)
-        sibling?.let { recursiveGetBookmark(tree, it) }
+        sibling?.let {
+            recursiveGetBookmark(tree, it)
+        }
     }
 
     /**
      * Get all links from given page
      */
     fun getPageLinks(pageIndex: Int): List<Link> {
-        val links: MutableList<Link> =
-            ArrayList()
+        val links: MutableList<Link> = ArrayList()
         val nativePagePtr = mNativePagesPtr[pageIndex] ?: return links
         val linkPtrs = nativeGetPageLinks(nativePagePtr)
         for (linkPtr in linkPtrs) {
-            val index = nativeGetDestPageIndex(mNativeDocPtr, linkPtr)
             val uri = nativeGetLinkURI(mNativeDocPtr, linkPtr)
-            val rect = nativeGetLinkRect(linkPtr)
-            if (rect != null && (index != null || uri != null)) {
-                links.add(Link(rect, index!!, uri!!))
+            nativeGetLinkRect(linkPtr)?.let { rect ->
+                nativeGetDestPageIndex(mNativeDocPtr, linkPtr)?.let { index ->
+                    links.add(Link(rect, index, uri))
+                }
             }
         }
         return links
@@ -420,26 +466,13 @@ class PdfiumCore(context: Context) {
      * @return mapped coordinates
      */
     fun mapPageCoordsToDevice(
-        pageIndex: Int,
-        startX: Int,
-        startY: Int,
-        sizeX: Int,
-        sizeY: Int,
-        rotate: Int,
-        pageX: Double,
-        pageY: Double
-    ): Point {
-        val pagePtr: Long? = mNativePagesPtr[pageIndex]
-        return nativePageCoordinateToDevice(
-            pagePtr!!,
-            startX,
-            startY,
-            sizeX,
-            sizeY,
-            rotate,
-            pageX,
-            pageY
-        )
+        pageIndex: Int, startX: Int, startY: Int, sizeX: Int,
+        sizeY: Int, rotate: Int, pageX: Double, pageY: Double
+    ): Point? {
+        val pagePtr = mNativePagesPtr[pageIndex]
+        return pagePtr?.let {
+            nativePageCoordinateToDevice(it, startX, startY, sizeX, sizeY, rotate, pageX, pageY)
+        }
     }
 
     /**
@@ -480,37 +513,23 @@ class PdfiumCore(context: Context) {
      * @param deviceY   Y value in device coordinates to be converted.
      * @return mapped coordinates
      */
-    fun mapDeviceCoordsToPage(
-        pageIndex: Int,
-        startX: Int,
-        startY: Int,
-        sizeX: Int,
-        sizeY: Int,
-        rotate: Int,
-        deviceX: Int,
-        deviceY: Int
-    ): PointF {
+    fun mapDeviceCoordinateToPage(
+        pageIndex: Int, startX: Int, startY: Int, sizeX: Int,
+        sizeY: Int, rotate: Int, deviceX: Int, deviceY: Int
+    ): PointF? {
         val pagePtr = mNativePagesPtr[pageIndex]
-        return nativeDeviceCoordinateToPage(
-            pagePtr!!,
-            startX,
-            startY,
-            sizeX,
-            sizeY,
-            rotate,
-            deviceX,
-            deviceY
-        )
+        return pagePtr?.let {
+            nativeDeviceCoordinateToPage(it, startX, startY, sizeX, sizeY, rotate, deviceX, deviceY)
+        }
     }
 
     /**
      * @return mapped coordinates
-     * @see PdfiumCore.mapPageCoordsToDevice
      */
-    fun mapRectToDevice(
+    fun mapPageCoordinateToDevice(
         pageIndex: Int, startX: Int, startY: Int, sizeX: Int, sizeY: Int,
         rotate: Int, coords: RectF
-    ): RectF {
+    ): RectF? {
         val leftTop = mapPageCoordsToDevice(
             pageIndex, startX, startY, sizeX, sizeY, rotate,
             coords.left.toDouble(), coords.top.toDouble()
@@ -519,209 +538,17 @@ class PdfiumCore(context: Context) {
             pageIndex, startX, startY, sizeX, sizeY,
             rotate, coords.right.toDouble(), coords.bottom.toDouble()
         )
-        return RectF(
-            leftTop.x.toFloat(), leftTop.y.toFloat(), rightBottom.x.toFloat(),
-            rightBottom.y.toFloat()
-        )
-    }
 
-    /**
-     * @return mapped coordinates
-     * @see PdfiumCore.mapDeviceCoordsToPage
-     */
-    fun mapRectToPage(
-        pageIndex: Int, startX: Int, startY: Int, sizeX: Int,
-        sizeY: Int, rotate: Int, coords: RectF
-    ): RectF {
-        val leftTop = mapDeviceCoordsToPage(
-            pageIndex, startX, startY, sizeX, sizeY, rotate,
-            coords.left.toInt(), coords.top.toInt()
-        )
-        val rightBottom = mapDeviceCoordsToPage(
-            pageIndex, startX, startY, sizeX, sizeY, rotate,
-            coords.right.toInt(), coords.bottom.toInt()
-        )
-        return RectF(leftTop.x, leftTop.y, rightBottom.x, rightBottom.y)
-    }
-
-    fun openTextPage(pageIndex: Int): Long {
-        val page = openPage(pageIndex)
-        var textPagePtr = mNativeTextPagesPtr[pageIndex]
-        if (textPagePtr == null) {
-            textPagePtr = nativeLoadTextPage(mNativeDocPtr, page.toInt())
-            mNativeTextPagesPtr[pageIndex] = textPagePtr
-        }
-        return textPagePtr
-    }
-
-    fun closeTextPage(pageIndex: Int) {
-        val nativeLoadTextPage = mNativeTextPagesPtr[pageIndex]
-        if (nativeLoadTextPage != null) {
-            nativeCloseTextPage(nativeLoadTextPage)
-            mNativeTextPagesPtr.remove(pageIndex)
-        }
-
-    }
-
-    fun openTextPage(fromIndex: Int, toIndex: Int): LongArray {
-        val textPagesPtr: LongArray = nativeLoadPages(mNativeDocPtr, fromIndex, toIndex)
-        var pageIndex = fromIndex
-        for (page in textPagesPtr) {
-            if (pageIndex > toIndex) {
-                break
+        return leftTop?.let { lt ->
+            rightBottom?.let { rb ->
+                RectF(lt.x.toFloat(), lt.y.toFloat(), rb.x.toFloat(), rb.y.toFloat())
             }
-            mNativeTextPagesPtr[pageIndex] = page
-            pageIndex++
         }
-        return textPagesPtr
     }
 
-    fun textPageCountChars(textPageIndex: Int): Int {
-        try {
-            return nativeTextCountChars(mNativeTextPagesPtr[textPageIndex]!!)
-        } catch (e: NullPointerException) {
-            Log.e(TAG, "Context may be null")
-            e.printStackTrace()
-        } catch (e: Exception) {
-            Log.e(TAG, "Exception throw from native")
-            e.printStackTrace()
-        }
-        return -1
-    }
-
-    fun textPageGetText(textPageIndex: Int, startIndex: Int, length: Int): String? {
-        try {
-            val buf = ShortArray(length + 1)
-            val r = nativeTextGetText(mNativeTextPagesPtr[textPageIndex]!!, startIndex, length, buf)
-            val bytes = ByteArray((r - 1) * 2)
-            val bb = ByteBuffer.wrap(bytes)
-            bb.order(ByteOrder.LITTLE_ENDIAN)
-            for (i in 0 until r - 1) {
-                val s = buf[i]
-                bb.putShort(s)
-            }
-            return String(bytes, StandardCharsets.UTF_16LE)
-        } catch (e: NullPointerException) {
-            Log.e(TAG, "Context may be null")
-            e.printStackTrace()
-        } catch (e: Exception) {
-            Log.e(TAG, "Exception throw from native")
-            e.printStackTrace()
-        }
-        return null
-
-    }
-
-    fun textPageGetUnicode(textPageIndex: Int, index: Int): Char {
-        try {
-            return nativeTextGetUnicode(mNativeTextPagesPtr[textPageIndex]!!, index).toChar()
-        } catch (e: NullPointerException) {
-            Log.e(TAG, "Context may be null")
-            e.printStackTrace()
-        } catch (e: Exception) {
-            Log.e(TAG, "Exception throw from native")
-            e.printStackTrace()
-        }
-        return 0.toChar()
-    }
-
-    fun textPageGetCharBox(textPageIndex: Int, index: Int): RectF? {
-        try {
-            val o = nativeTextGetCharBox(mNativeTextPagesPtr[textPageIndex]!!, index)
-            val r = RectF()
-            r.left = o[0].toFloat()
-            r.right = o[1].toFloat()
-            r.bottom = o[2].toFloat()
-            r.top = o[3].toFloat()
-            return r
-        } catch (e: NullPointerException) {
-            Log.e(TAG, "Context may be null")
-            e.printStackTrace()
-        } catch (e: Exception) {
-            Log.e(TAG, "Exception throw from native")
-            e.printStackTrace()
-        }
-        return null
-    }
-
-    fun textPageGetCharIndexAtPos(
-        textPageIndex: Int, x: Double, y: Double,
-        xTolerance: Double, yTolerance: Double
-    ): Int {
-        try {
-            return nativeTextGetCharIndexAtPos(
-                mNativeTextPagesPtr[textPageIndex]!!, x, y, xTolerance, yTolerance
-            )
-        } catch (e: NullPointerException) {
-            Log.e(TAG, "Context may be null")
-            e.printStackTrace()
-        } catch (e: Exception) {
-            Log.e(TAG, "Exception throw from native")
-            e.printStackTrace()
-        }
-        return -1
-    }
-
-    fun textPageCountRects(textPageIndex: Int, start_index: Int, count: Int): Int {
-        try {
-            return nativeTextCountRects(mNativeTextPagesPtr[textPageIndex]!!, start_index, count)
-        } catch (e: NullPointerException) {
-            Log.e(TAG, "Context may be null")
-            e.printStackTrace()
-        } catch (e: Exception) {
-            Log.e(TAG, "Exception throw from native")
-            e.printStackTrace()
-        }
-        return -1
-    }
-
-    fun textPageGetRect(textPageIndex: Int, rect_index: Int): RectF? {
-        try {
-            val o = nativeTextGetRect(mNativeTextPagesPtr[textPageIndex]!!, rect_index)
-            val r = RectF()
-            r.left = o[0].toFloat()
-            r.top = o[1].toFloat()
-            r.right = o[2].toFloat()
-            r.bottom = o[3].toFloat()
-            return r
-        } catch (e: NullPointerException) {
-            Log.e(TAG, "Context may be null")
-            e.printStackTrace()
-        } catch (e: Exception) {
-            Log.e(TAG, "Exception throw from native")
-            e.printStackTrace()
-        }
-        return null
-    }
-
-    fun textPageGetBoundedText(textPageIndex: Int, rect: RectF, length: Int): String? {
-        try {
-            val buf = ShortArray(length + 1)
-            val r = nativeTextGetBoundedText(
-                mNativeTextPagesPtr[textPageIndex]!!,
-                rect.left.toDouble(),
-                rect.top.toDouble(),
-                rect.right.toDouble(),
-                rect.bottom.toDouble(),
-                buf
-            )
-            val bytes = ByteArray((r - 1) * 2)
-            val bb = ByteBuffer.wrap(bytes)
-            bb.order(ByteOrder.LITTLE_ENDIAN)
-            for (i in 0 until r - 1) {
-                val s = buf[i]
-                bb.putShort(s)
-            }
-            return String(bytes, StandardCharsets.UTF_16LE)
-        } catch (e: NullPointerException) {
-            Log.e(TAG, "Context may be null")
-            e.printStackTrace()
-        } catch (e: Exception) {
-            Log.e(TAG, "Exception throw from native")
-            e.printStackTrace()
-        }
-        return null
-    }
+    ///////////////////////////////////////
+    // FPDF_TEXTPAGE api
+    ///////////////////////////////////////
 
     /**
      * Prepare information about all characters in a page.
@@ -731,7 +558,10 @@ class PdfiumCore(context: Context) {
      * @return A handle to the text page information structure. NULL if something goes wrong.
      */
     fun prepareTextInfo(pageIndex: Int): Long {
-        val textPagePtr: Long = nativeLoadTextPage(mNativeDocPtr, pageIndex)
+        val textPagePtr: Long = nativeLoadTextPage(
+            mNativeDocPtr,
+            pageIndex
+        )
         if (validPtr(textPagePtr)) {
             mNativeTextPagesPtr[pageIndex] = textPagePtr
         }
@@ -744,7 +574,7 @@ class PdfiumCore(context: Context) {
      * @param pageIndex index of page.
      */
     fun releaseTextInfo(pageIndex: Int) {
-        val textPagePtr: Long = mNativeTextPagesPtr[pageIndex]!!
+        val textPagePtr: Long = mNativeTextPagesPtr[pageIndex] ?: -1L
         if (validPtr(textPagePtr)) {
             nativeCloseTextPage(textPagePtr)
         }
@@ -762,9 +592,7 @@ class PdfiumCore(context: Context) {
         val textPagesPtr: LongArray = nativeLoadTextPages(mNativeDocPtr, fromIndex, toIndex)
         var pageIndex = fromIndex
         for (page in textPagesPtr) {
-            if (pageIndex > toIndex) {
-                break
-            }
+            if (pageIndex > toIndex) break
             if (validPtr(page)) {
                 mNativeTextPagesPtr[pageIndex] = page
             }
@@ -782,14 +610,14 @@ class PdfiumCore(context: Context) {
     fun releaseTextInfo(fromIndex: Int, toIndex: Int) {
         var textPagesPtr: Long
         for (i in fromIndex until toIndex + 1) {
-            textPagesPtr = mNativeTextPagesPtr[i]!!
+            textPagesPtr = mNativeTextPagesPtr[i] ?: -1L
             if (validPtr(textPagesPtr)) {
                 nativeCloseTextPage(textPagesPtr)
             }
         }
     }
 
-    private fun ensureTextPage(pageIndex: Int): Long? {
+    fun ensureTextPage(pageIndex: Int): Long? {
         val ptr = mNativeTextPagesPtr[pageIndex]
         return if (!validPtr(ptr)) {
             prepareTextInfo(pageIndex)
@@ -799,14 +627,8 @@ class PdfiumCore(context: Context) {
     fun countCharactersOnPage(pageIndex: Int): Int {
         return try {
             val ptr = ensureTextPage(pageIndex)
-            if (validPtr(ptr)) {
-                nativeTextCountChars(ptr!!)
-            } else {
-                0
-            }
+            if (ptr != null && validPtr(ptr)) nativeTextCountChars(ptr) else 0
         } catch (e: Exception) {
-            Log.e(TAG, "Exception throw from native")
-            e.printStackTrace()
             0
         }
     }
@@ -826,30 +648,23 @@ class PdfiumCore(context: Context) {
                 return null
             }
             val buf = ShortArray(length + 1)
-            val r = nativeTextGetText(ptr!!, startIndex, length, buf)
-            val bytes = ByteArray((r - 1) * 2)
-            val bb = ByteBuffer.wrap(bytes)
-            bb.order(ByteOrder.LITTLE_ENDIAN)
-            for (i in 0 until r - 1) {
-                val s = buf[i]
-                bb.putShort(s)
-            }
-            String(bytes, StandardCharsets.UTF_16LE)
+            val r = ptr?.let {
+                nativeTextGetText(it, startIndex, length, buf)
+            } ?: 0
+            if (r > 1) {
+                val bytes = ByteArray((r - 1) * 2)
+                val bb = ByteBuffer.wrap(bytes)
+                bb.order(ByteOrder.LITTLE_ENDIAN)
+                for (i in 0 until r - 1) {
+                    val s = buf[i]
+                    bb.putShort(s)
+                }
+                String(bytes, Charsets.UTF_16LE)
+            } else null
         } catch (e: Exception) {
-            Log.e(TAG, "Exception throw from native")
-            e.printStackTrace()
+            e.printStackTrace(System.err)
             null
         }
-    }
-
-    /**
-     * Get page rotation in degrees
-     *
-     * @param pageIndex the page index
-     * @return page rotation
-     */
-    fun getPageRotation(pageIndex: Int): Int {
-        return nativeGetPageRotation(pageIndex.toLong())
     }
 
     /**
@@ -862,10 +677,11 @@ class PdfiumCore(context: Context) {
     fun extractCharacter(pageIndex: Int, index: Int): Char {
         return try {
             val ptr = ensureTextPage(pageIndex)
-            if (validPtr(ptr)) nativeTextGetUnicode(ptr!!, index).toChar() else 0.toChar()
+            if (ptr != null && validPtr(ptr)) nativeTextGetUnicode(
+                ptr,
+                index
+            ).toChar() else 0.toChar()
         } catch (e: Exception) {
-            Log.e(TAG, "Exception throw from native")
-            e.printStackTrace()
             0.toChar()
         }
     }
@@ -880,10 +696,10 @@ class PdfiumCore(context: Context) {
     fun measureCharacterBox(pageIndex: Int, index: Int): RectF? {
         return try {
             val ptr = ensureTextPage(pageIndex)
-            if (!validPtr(ptr)) {
+            if (ptr == null || !validPtr(ptr)) {
                 return null
             }
-            val o = nativeTextGetCharBox(ptr!!, index)
+            val o = nativeTextGetCharBox(ptr, index)
             val r = RectF()
             r.left = o[0].toFloat()
             r.right = o[1].toFloat()
@@ -891,8 +707,6 @@ class PdfiumCore(context: Context) {
             r.top = o[3].toFloat()
             r
         } catch (e: Exception) {
-            Log.e(TAG, "Exception throw from native")
-            e.printStackTrace()
             null
         }
     }
@@ -908,19 +722,14 @@ class PdfiumCore(context: Context) {
      * @return The zero-based index of the character at, or nearby the point (x,y). If there is no character at or nearby the point, return value will be -1. If an error occurs, -3 will be returned.
      */
     fun getCharacterIndex(
-        pageIndex: Int, x: Double, y: Double,
-        xTolerance: Double, yTolerance: Double
+        pageIndex: Int, x: Double, y: Double, xTolerance: Double, yTolerance: Double
     ): Int {
         return try {
             val ptr = ensureTextPage(pageIndex)
-            if (validPtr(ptr)) {
-                nativeTextGetCharIndexAtPos(ptr!!, x, y, xTolerance, yTolerance)
-            } else {
-                -1
-            }
+            if (validPtr(ptr)) ptr?.let {
+                nativeTextGetCharIndexAtPos(it, x, y, xTolerance, yTolerance)
+            } ?: -1 else -1
         } catch (e: Exception) {
-            Log.e(TAG, "Exception throw from native")
-            e.printStackTrace()
             -1
         }
     }
@@ -942,13 +751,8 @@ class PdfiumCore(context: Context) {
     fun countTextRect(pageIndex: Int, charIndex: Int, count: Int): Int {
         return try {
             val ptr = ensureTextPage(pageIndex)
-            if (validPtr(ptr)) {
-                nativeTextCountRects(ptr!!, charIndex, count)
-            } else {
-                -1
-            }
+            if (ptr != null && validPtr(ptr)) nativeTextCountRects(ptr, charIndex, count) else -1
         } catch (e: Exception) {
-            Log.e(TAG, "Exception throw from native")
             e.printStackTrace()
             -1
         }
@@ -967,16 +771,18 @@ class PdfiumCore(context: Context) {
             if (!validPtr(ptr)) {
                 return null
             }
-            val o = nativeTextGetRect(ptr!!, rectIndex)
+            val o = ptr?.let {
+                nativeTextGetRect(it, rectIndex)
+            }
             val r = RectF()
-            r.left = o[0].toFloat()
-            r.top = o[1].toFloat()
-            r.right = o[2].toFloat()
-            r.bottom = o[3].toFloat()
-            r
+            if (o != null) {
+                r.left = o[0].toFloat()
+                r.top = o[1].toFloat()
+                r.right = o[2].toFloat()
+                r.bottom = o[3].toFloat()
+                r
+            } else null
         } catch (e: Exception) {
-            Log.e(TAG, "Exception throw from native")
-            e.printStackTrace()
             null
         }
     }
@@ -998,11 +804,11 @@ class PdfiumCore(context: Context) {
     fun extractText(pageIndex: Int, rect: RectF): String? {
         return try {
             val ptr = ensureTextPage(pageIndex)
-            if (!validPtr(ptr)) {
+            if (ptr == null || !validPtr(ptr)) {
                 return null
             }
             val length = nativeTextGetBoundedTextLength(
-                ptr!!,
+                ptr,
                 rect.left.toDouble(),
                 rect.top.toDouble(),
                 rect.right.toDouble(),
@@ -1027,10 +833,8 @@ class PdfiumCore(context: Context) {
                 val s = buf[i]
                 bb.putShort(s)
             }
-            String(bytes, StandardCharsets.UTF_16LE)
+            String(bytes, Charsets.UTF_16LE)
         } catch (e: Exception) {
-            Log.e(TAG, "Exception throw from native")
-            e.printStackTrace()
             null
         }
     }
@@ -1044,34 +848,31 @@ class PdfiumCore(context: Context) {
      * @param matchWholeWord match the whole word
      * @return A handle for the search context.
      */
-    fun newPageSearch(
-        pageIndex: Int,
-        query: String,
-        matchCase: Boolean,
-        matchWholeWord: Boolean
-    ): TextSearchContext {
+    fun newPageSearch(pageIndex: Int, query: String, matchCase: Boolean, matchWholeWord: Boolean):
+            TextSearchContext {
         return object : FPDFTextSearchContext(pageIndex, query, matchCase, matchWholeWord) {
             private var mSearchHandlePtr: Long? = null
             override fun prepareSearch() {
                 val textPage = prepareTextInfo(pageIndex)
                 if (hasSearchHandle(pageIndex)) {
-                    val sPtr = mNativeSearchHandlePtr[pageIndex]!!
-                    nativeSearchStop(sPtr)
+                    val sPtr = mNativeSearchHandlePtr[pageIndex]
+                    sPtr?.let { nativeSearchStop(it) }
                 }
-                mSearchHandlePtr = nativeSearchStart(textPage, query, matchCase, matchWholeWord)
+                mSearchHandlePtr = nativeSearchStart(textPage, query, isMatchCase, isMatchWholeWord)
             }
 
             override fun countResult(): Int {
                 return if (validPtr(mSearchHandlePtr)) {
-                    nativeCountSearchResult(mSearchHandlePtr!!)
+                    mSearchHandlePtr?.let { nativeCountSearchResult(it) } ?: -1
                 } else -1
             }
 
             override fun searchNext(): RectF? {
                 if (validPtr(mSearchHandlePtr)) {
-                    mHasNext = nativeSearchNext(mSearchHandlePtr!!)
+                    mHasNext = mSearchHandlePtr?.let { nativeSearchNext(it) } == true
                     if (mHasNext) {
-                        val index = nativeGetCharIndexOfSearchResult(mSearchHandlePtr!!)
+                        val index =
+                            mSearchHandlePtr?.let { nativeGetCharIndexOfSearchResult(it) } ?: -1
                         if (index > -1) {
                             return measureCharacterBox(this.pageIndex, index)
                         }
@@ -1083,9 +884,10 @@ class PdfiumCore(context: Context) {
 
             override fun searchPrev(): RectF? {
                 if (validPtr(mSearchHandlePtr)) {
-                    mHasPrev = nativeSearchPrev(mSearchHandlePtr!!)
+                    mHasPrev = mSearchHandlePtr?.let { nativeSearchPrev(it) } == true
                     if (mHasPrev) {
-                        val index = nativeGetCharIndexOfSearchResult(mSearchHandlePtr!!)
+                        val index =
+                            mSearchHandlePtr?.let { nativeGetCharIndexOfSearchResult(it) } ?: -1
                         if (index > -1) {
                             return measureCharacterBox(this.pageIndex, index)
                         }
@@ -1098,15 +900,11 @@ class PdfiumCore(context: Context) {
             override fun stopSearch() {
                 super.stopSearch()
                 if (validPtr(mSearchHandlePtr)) {
-                    nativeSearchStop(mSearchHandlePtr!!)
+                    mSearchHandlePtr?.let { nativeSearchStop(it) }
                     mNativeSearchHandlePtr.remove(pageIndex)
                 }
             }
         }
-    }
-
-    fun hasSearchHandle(index: Int): Boolean {
-        return mNativeSearchHandlePtr.containsKey(index)
     }
 
     fun hasPage(index: Int): Boolean {
@@ -1115,5 +913,125 @@ class PdfiumCore(context: Context) {
 
     fun hasTextPage(index: Int): Boolean {
         return mNativeTextPagesPtr.containsKey(index)
+    }
+
+    fun hasSearchHandle(index: Int): Boolean {
+        return mNativeSearchHandlePtr.containsKey(index)
+    }
+
+    private fun List<Bookmark>.getFlattenChapters(level: Int = 0): List<Bookmark> {
+        val flatten = mutableListOf<Bookmark>()
+        this.forEach {
+            flatten.add(it.also { it.level = level })
+            if (it.children.isNotEmpty()) {
+                val children = it.children.getFlattenChapters(level = level + 1)
+                flatten.addAll(children)
+            }
+        }
+        return flatten
+    }
+
+    fun getAllChaptersOneLevel(): List<Bookmark> {
+        return bookmarks.getFlattenChapters()
+    }
+
+    private fun getChapter(byPageIndex: Long): Bookmark? {
+        val chapters = bookmarks
+        val fir = chapters.firstOrNull { it.pageIdx == byPageIndex }
+        if (fir != null) {
+            return fir
+        } else {
+            val chaptersFlatten = chapters.getFlattenChapters()
+            val first1 = chaptersFlatten.firstOrNull { it.pageIdx == byPageIndex }
+            when {
+                first1 != null -> {
+                    return first1
+                }
+                chaptersFlatten.size >= 2 -> {
+                    val fff = chaptersFlatten.toMutableList().zipWithNext { a, b -> a to b }
+                    for (element in fff) {
+                        val first = element.first
+                        val second = element.second
+                        val ind = if (first.pageIdx > 0L) first.pageIdx - 1L
+                        else first.pageIdx
+                        if (byPageIndex in ind..second.pageIdx) {
+                            return first
+                        }
+                    }
+                    return chaptersFlatten.lastOrNull()
+                }
+                else -> return null
+            }
+        }
+    }
+
+    private data class SearchKey(
+        val fileDescriptor: ParcelFileDescriptor,
+        val query: String
+    )
+
+    private val searchCache: MutableMap<SearchKey, List<SearchData>> = mutableMapOf()
+
+    fun search(searchStr: String, ignoreCase: Boolean = true): List<SearchData> {
+        if (mFileDescriptor == null || mFileDescriptor?.fd ?: -1 <= 0) {
+            return emptyList()
+        }
+        val key = mFileDescriptor?.let {
+            SearchKey(fileDescriptor = it, query = searchStr)
+        }
+        val cacheItem = searchCache[key]
+        if (!cacheItem.isNullOrEmpty()) {
+            return cacheItem
+        }
+        return try {
+            val rList = ArrayList<SearchData>()
+            for (i in 0 until totalPagesCount) {
+                openPage(i)
+                extractCharacters(
+                    i, 0, countCharactersOnPage(pageIndex = i)
+                )?.let { chars ->
+                    if (chars.contains(other = searchStr, ignoreCase = ignoreCase)) {
+                        val sentences: List<String> = chars.split(".").filter {
+                            it.contains(other = searchStr, ignoreCase = ignoreCase)
+                        }
+                        if (sentences.isNotEmpty()) {
+                            val chapter = getChapter(byPageIndex = i.toLong())
+                            sentences.forEach { s ->
+                                val spannable = SpannableString(
+                                    s.trim().replace("\n", " ")
+                                )
+                                spannable.setSpan(
+                                    StyleSpan(Typeface.NORMAL), 0, spannable.length,
+                                    Spannable.SPAN_EXCLUSIVE_EXCLUSIVE
+                                )
+                                val fInd =
+                                    spannable.indexOf(string = searchStr, ignoreCase = ignoreCase)
+                                if (fInd > -1) {
+                                    val lInd = fInd + searchStr.length
+                                    if (lInd < spannable.length) {
+                                        spannable.setSpan(
+                                            StyleSpan(Typeface.BOLD),
+                                            fInd,
+                                            lInd,
+                                            Spannable.SPAN_EXCLUSIVE_EXCLUSIVE
+                                        )
+                                    }
+                                }
+                                rList += SearchData(chapter, i, spannable)
+                            }
+                        }
+                    }
+                }
+            }
+            if (rList.isNotEmpty()) {
+                val searchKey = mFileDescriptor?.let {
+                    SearchKey(fileDescriptor = it, query = searchStr)
+                }
+                searchKey?.let { searchCache[it] = rList }
+            }
+            rList
+        } catch (e: Exception) {
+            emptyList()
+        }
     }
 }
