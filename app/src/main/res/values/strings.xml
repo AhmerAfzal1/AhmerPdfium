@@ -28,8 +28,8 @@
     <string name="title_creator_of">Creator Of:</string>
     <string name="title_keywords">Keywords:</string>
     <string name="title_modify_date">Modify Date:</string>
-    <string name="title_pdf_file_path">PDF File Path:</string>
-    <string name="title_pdf_file_size">PDF File Size:</string>
+    <string name="title_pdf_file_path">File Path:</string>
+    <string name="title_pdf_file_size">File Size:</string>
     <string name="title_producer_of">Producer Of:</string>
     <string name="title_subject">Subject:</string>
     <string name="title_title">Title:</string>

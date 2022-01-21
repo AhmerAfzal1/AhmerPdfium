@@ -1,63 +1,53 @@
 <?xml version="1.0" encoding="utf-8"?>
-<RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
+<androidx.constraintlayout.widget.ConstraintLayout xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
     xmlns:card_view="http://schemas.android.com/apk/res-auto"
     xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
-    android:layout_height="wrap_content"
-    android:layout_gravity="center"
-    android:layout_margin="@dimen/margins_or_padding_05"
-    android:gravity="center"
-    android:orientation="vertical"
-    android:padding="@dimen/margins_or_padding_05">
+    android:layout_height="wrap_content">
 
-    <androidx.cardview.widget.CardView
+    <com.google.android.material.card.MaterialCardView
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:layout_marginStart="@dimen/margins_or_padding_10"
-        android:layout_marginLeft="@dimen/margins_or_padding_10"
-        android:layout_marginTop="@dimen/margins_or_padding_10"
-        android:layout_marginEnd="@dimen/margins_or_padding_10"
-        android:layout_marginRight="@dimen/margins_or_padding_10"
-        android:layout_marginBottom="@dimen/margins_or_padding_10"
+        android:layout_marginStart="8dp"
+        android:layout_marginEnd="8dp"
         app:cardBackgroundColor="@android:color/white"
         app:cardPreventCornerOverlap="true"
         app:cardUseCompatPadding="true"
-        card_view:cardCornerRadius="@dimen/about_app_card_view_elevation"
-        card_view:cardElevation="@dimen/about_app_card_view_elevation"
-        card_view:cardMaxElevation="@dimen/about_app_card_view_elevation">
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toTopOf="parent"
+        card_view:cardCornerRadius="8dp"
+        card_view:cardElevation="8dp"
+        card_view:cardMaxElevation="8dp">
 
         <TableLayout
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
+            android:layout_marginStart="5dp"
             android:gravity="center"
-            android:orientation="horizontal"
-            android:paddingStart="@dimen/margins_or_padding_05"
-            android:paddingTop="@dimen/margins_or_padding_05"
-            android:paddingEnd="@dimen/margins_or_padding_05"
-            android:paddingBottom="@dimen/margins_or_padding_05">
+            android:orientation="horizontal">
 
             <TextView
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:gravity="start"
-                android:paddingLeft="@dimen/margins_or_padding_10"
-                android:paddingTop="@dimen/margins_or_padding_10"
-                android:paddingRight="@dimen/margins_or_padding_10"
-                android:paddingBottom="@dimen/margins_or_padding_10"
+                android:paddingLeft="8dp"
+                android:paddingTop="8dp"
+                android:paddingRight="8dp"
+                android:paddingBottom="8dp"
                 android:text="@string/heading_document_info"
-                android:textAppearance="@style/Rose.TextAppearance.Heading"
                 android:textColor="@android:color/black"
+                android:textSize="18sp"
                 android:textStyle="bold" />
 
-            <TableRow
-                android:layout_marginTop="@dimen/margins_or_padding_05"
-                tools:ignore="UselessParent">
+            <TableRow tools:ignore="UselessParent">
 
                 <TextView
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
-                    android:layout_marginStart="@dimen/margins_or_padding_05"
+                    android:paddingTop="2dp"
+                    android:paddingBottom="2dp"
                     android:text="@string/title_title"
                     android:textAppearance="@style/Rose.TextAppearance.Normal"
                     android:textColor="@android:color/black"
@@ -67,22 +57,23 @@
                     android:id="@+id/tvTitle"
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
-                    android:layout_marginStart="@dimen/margins_or_padding_05"
+                    android:layout_marginStart="2dp"
                     android:layout_weight="1"
                     android:maxLines="2"
+                    android:paddingTop="2dp"
+                    android:paddingBottom="2dp"
                     android:text="@string/empty_description"
                     android:textAppearance="@style/Rose.TextAppearance.Caption"
                     android:textColor="@android:color/black" />
             </TableRow>
 
-            <TableRow
-                android:layout_marginTop="@dimen/margins_or_padding_05"
-                tools:ignore="UselessParent">
+            <TableRow tools:ignore="UselessParent">
 
                 <TextView
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
-                    android:layout_marginStart="@dimen/margins_or_padding_05"
+                    android:paddingTop="2dp"
+                    android:paddingBottom="2dp"
                     android:text="@string/title_author"
                     android:textAppearance="@style/Rose.TextAppearance.Normal"
                     android:textColor="@android:color/black"
@@ -92,22 +83,23 @@
                     android:id="@+id/tvAuthor"
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
-                    android:layout_marginStart="@dimen/margins_or_padding_05"
+                    android:layout_marginStart="2dp"
                     android:layout_weight="1"
                     android:maxLines="2"
+                    android:paddingTop="2dp"
+                    android:paddingBottom="2dp"
                     android:text="@string/empty_description"
                     android:textAppearance="@style/Rose.TextAppearance.Caption"
                     android:textColor="@android:color/black" />
             </TableRow>
 
-            <TableRow
-                android:layout_marginTop="@dimen/margins_or_padding_05"
-                tools:ignore="UselessParent">
+            <TableRow tools:ignore="UselessParent">
 
                 <TextView
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
-                    android:layout_marginStart="@dimen/margins_or_padding_05"
+                    android:paddingTop="2dp"
+                    android:paddingBottom="2dp"
                     android:text="@string/title_total_pages"
                     android:textAppearance="@style/Rose.TextAppearance.Normal"
                     android:textColor="@android:color/black"
@@ -117,22 +109,23 @@
                     android:id="@+id/tvTotalPage"
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
-                    android:layout_marginStart="@dimen/margins_or_padding_05"
+                    android:layout_marginStart="2dp"
                     android:layout_weight="1"
                     android:maxLines="2"
+                    android:paddingTop="2dp"
+                    android:paddingBottom="2dp"
                     android:text="@string/empty_description"
                     android:textAppearance="@style/Rose.TextAppearance.Caption"
                     android:textColor="@android:color/black" />
             </TableRow>
 
-            <TableRow
-                android:layout_marginTop="@dimen/margins_or_padding_05"
-                tools:ignore="UselessParent">
+            <TableRow tools:ignore="UselessParent">
 
                 <TextView
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
-                    android:layout_marginStart="@dimen/margins_or_padding_05"
+                    android:paddingTop="2dp"
+                    android:paddingBottom="2dp"
                     android:text="@string/title_subject"
                     android:textAppearance="@style/Rose.TextAppearance.Normal"
                     android:textColor="@android:color/black"
@@ -142,22 +135,23 @@
                     android:id="@+id/tvSubject"
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
-                    android:layout_marginStart="@dimen/margins_or_padding_05"
+                    android:layout_marginStart="2dp"
                     android:layout_weight="1"
                     android:maxLines="2"
+                    android:paddingTop="2dp"
+                    android:paddingBottom="2dp"
                     android:text="@string/empty_description"
                     android:textAppearance="@style/Rose.TextAppearance.Caption"
                     android:textColor="@android:color/black" />
             </TableRow>
 
-            <TableRow
-                android:layout_marginTop="@dimen/margins_or_padding_05"
-                tools:ignore="UselessParent">
+            <TableRow tools:ignore="UselessParent">
 
                 <TextView
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
-                    android:layout_marginStart="@dimen/margins_or_padding_05"
+                    android:paddingTop="2dp"
+                    android:paddingBottom="2dp"
                     android:text="@string/title_keywords"
                     android:textAppearance="@style/Rose.TextAppearance.Normal"
                     android:textColor="@android:color/black"
@@ -167,22 +161,23 @@
                     android:id="@+id/tvKeywords"
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
-                    android:layout_marginStart="@dimen/margins_or_padding_05"
+                    android:layout_marginStart="2dp"
                     android:layout_weight="1"
                     android:maxLines="2"
+                    android:paddingTop="2dp"
+                    android:paddingBottom="2dp"
                     android:text="@string/empty_description"
                     android:textAppearance="@style/Rose.TextAppearance.Caption"
                     android:textColor="@android:color/black" />
             </TableRow>
 
-            <TableRow
-                android:layout_marginTop="@dimen/margins_or_padding_05"
-                tools:ignore="UselessParent">
+            <TableRow tools:ignore="UselessParent">
 
                 <TextView
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
-                    android:layout_marginStart="@dimen/margins_or_padding_05"
+                    android:paddingTop="2dp"
+                    android:paddingBottom="2dp"
                     android:text="@string/title_creation_date"
                     android:textAppearance="@style/Rose.TextAppearance.Normal"
                     android:textColor="@android:color/black"
@@ -192,22 +187,23 @@
                     android:id="@+id/tvCreationDate"
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
-                    android:layout_marginStart="@dimen/margins_or_padding_05"
+                    android:layout_marginStart="2dp"
                     android:layout_weight="1"
                     android:maxLines="2"
+                    android:paddingTop="2dp"
+                    android:paddingBottom="2dp"
                     android:text="@string/empty_description"
                     android:textAppearance="@style/Rose.TextAppearance.Caption"
                     android:textColor="@android:color/black" />
             </TableRow>
 
-            <TableRow
-                android:layout_marginTop="@dimen/margins_or_padding_05"
-                tools:ignore="UselessParent">
+            <TableRow tools:ignore="UselessParent">
 
                 <TextView
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
-                    android:layout_marginStart="@dimen/margins_or_padding_05"
+                    android:paddingTop="2dp"
+                    android:paddingBottom="2dp"
                     android:text="@string/title_modify_date"
                     android:textAppearance="@style/Rose.TextAppearance.Normal"
                     android:textColor="@android:color/black"
@@ -217,22 +213,23 @@
                     android:id="@+id/tvModifyDate"
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
-                    android:layout_marginStart="@dimen/margins_or_padding_05"
+                    android:layout_marginStart="2dp"
                     android:layout_weight="1"
                     android:maxLines="2"
+                    android:paddingTop="2dp"
+                    android:paddingBottom="2dp"
                     android:text="@string/empty_description"
                     android:textAppearance="@style/Rose.TextAppearance.Caption"
                     android:textColor="@android:color/black" />
             </TableRow>
 
-            <TableRow
-                android:layout_marginTop="@dimen/margins_or_padding_05"
-                tools:ignore="UselessParent">
+            <TableRow tools:ignore="UselessParent">
 
                 <TextView
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
-                    android:layout_marginStart="@dimen/margins_or_padding_05"
+                    android:paddingTop="2dp"
+                    android:paddingBottom="2dp"
                     android:text="@string/title_creator_of"
                     android:textAppearance="@style/Rose.TextAppearance.Normal"
                     android:textColor="@android:color/black"
@@ -242,23 +239,24 @@
                     android:id="@+id/tvCreator"
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
-                    android:layout_marginStart="@dimen/margins_or_padding_05"
+                    android:layout_marginStart="2dp"
                     android:layout_weight="1"
                     android:maxLines="2"
+                    android:paddingTop="2dp"
+                    android:paddingBottom="2dp"
                     android:singleLine="false"
                     android:text="@string/empty_description"
                     android:textAppearance="@style/Rose.TextAppearance.Caption"
                     android:textColor="@android:color/black" />
             </TableRow>
 
-            <TableRow
-                android:layout_marginTop="@dimen/margins_or_padding_05"
-                tools:ignore="UselessParent">
+            <TableRow tools:ignore="UselessParent">
 
                 <TextView
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
-                    android:layout_marginStart="@dimen/margins_or_padding_05"
+                    android:paddingTop="2dp"
+                    android:paddingBottom="2dp"
                     android:text="@string/title_producer_of"
                     android:textAppearance="@style/Rose.TextAppearance.Normal"
                     android:textColor="@android:color/black"
@@ -268,22 +266,23 @@
                     android:id="@+id/tvProducer"
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
-                    android:layout_marginStart="@dimen/margins_or_padding_05"
+                    android:layout_marginStart="2dp"
                     android:layout_weight="1"
                     android:maxLines="2"
+                    android:paddingTop="2dp"
+                    android:paddingBottom="2dp"
                     android:text="@string/empty_description"
                     android:textAppearance="@style/Rose.TextAppearance.Caption"
                     android:textColor="@android:color/black" />
             </TableRow>
 
-            <TableRow
-                android:layout_marginTop="@dimen/margins_or_padding_05"
-                tools:ignore="UselessParent">
+            <TableRow tools:ignore="UselessParent">
 
                 <TextView
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
-                    android:layout_marginStart="@dimen/margins_or_padding_05"
+                    android:paddingTop="2dp"
+                    android:paddingBottom="2dp"
                     android:text="@string/title_pdf_file_size"
                     android:textAppearance="@style/Rose.TextAppearance.Normal"
                     android:textColor="@android:color/black"
@@ -293,23 +292,23 @@
                     android:id="@+id/tvFileSize"
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
-                    android:layout_marginStart="@dimen/margins_or_padding_05"
+                    android:layout_marginStart="2dp"
                     android:layout_weight="1"
                     android:maxLines="2"
+                    android:paddingTop="2dp"
+                    android:paddingBottom="2dp"
                     android:text="@string/empty_description"
                     android:textAppearance="@style/Rose.TextAppearance.Caption"
                     android:textColor="@android:color/black" />
             </TableRow>
 
-            <TableRow
-                android:layout_marginTop="@dimen/margins_or_padding_05"
-                android:layout_marginBottom="@dimen/margins_or_padding_05"
-                tools:ignore="UselessParent">
+            <TableRow tools:ignore="UselessParent">
 
                 <TextView
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
-                    android:layout_marginStart="@dimen/margins_or_padding_05"
+                    android:paddingTop="2dp"
+                    android:paddingBottom="2dp"
                     android:text="@string/title_pdf_file_path"
                     android:textAppearance="@style/Rose.TextAppearance.Normal"
                     android:textColor="@android:color/black"
@@ -319,9 +318,11 @@
                     android:id="@+id/tvFilePath"
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
-                    android:layout_marginStart="@dimen/margins_or_padding_05"
+                    android:layout_marginStart="2dp"
                     android:layout_weight="1"
                     android:maxLines="3"
+                    android:paddingTop="2dp"
+                    android:paddingBottom="2dp"
                     android:text="@string/empty_description"
                     android:textAppearance="@style/Rose.TextAppearance.Caption"
                     android:textColor="@android:color/black" />
@@ -330,14 +331,16 @@
             <LinearLayout
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:layout_marginTop="@dimen/margins_or_padding_05"
+                android:layout_marginTop="2dp"
+                android:layout_marginBottom="4dp"
                 android:gravity="end">
 
                 <Button
                     android:id="@+id/tvOk"
-                    style="@style/Widget.MaterialComponents.Button"
+                    style="@style/Widget.Material3.Button.ElevatedButton"
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
+                    android:layout_marginEnd="4dp"
                     android:backgroundTint="@color/colorAccent"
                     android:text="@android:string/ok"
                     android:textAllCaps="true"
@@ -346,5 +349,5 @@
                     android:textStyle="bold" />
             </LinearLayout>
         </TableLayout>
-    </androidx.cardview.widget.CardView>
-</RelativeLayout>
+    </com.google.android.material.card.MaterialCardView>
+</androidx.constraintlayout.widget.ConstraintLayout>

@@ -8,7 +8,7 @@ object PdfFileUtils {
     @Throws(IOException::class)
     @JvmStatic
     fun fileFromAsset(context: Context, assetName: String): File {
-        val outFile = File(context.cacheDir, "$assetName.pdf")
+        val outFile = File(context.cacheDir, assetName)
         return outFile.also {
             if (assetName.contains("/")) {
                 it.parentFile?.mkdirs()

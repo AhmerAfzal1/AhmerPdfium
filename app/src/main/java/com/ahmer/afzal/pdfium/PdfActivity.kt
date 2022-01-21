@@ -1,8 +1,8 @@
 package com.ahmer.afzal.pdfium
 
 import android.app.Dialog
+import android.content.Context
 import android.graphics.Color
-import android.graphics.drawable.ColorDrawable
 import android.os.Build
 import android.os.Bundle
 import android.text.Editable
@@ -13,27 +13,19 @@ import android.view.MotionEvent
 import android.view.View
 import android.view.Window
 import android.view.inputmethod.InputMethodManager
-import android.widget.EditText
-import android.widget.LinearLayout
-import android.widget.RelativeLayout
-import android.widget.TextView
+import android.widget.*
 import androidx.appcompat.app.AppCompatActivity
-import com.ahmer.afzal.pdfium.DialogJumpTo.JumpListener
 import com.ahmer.afzal.pdfium.databinding.ActivityPdfBinding
 import com.ahmer.pdfium.Bookmark
+import com.ahmer.pdfium.Meta
 import com.ahmer.pdfium.PdfPasswordException
 import com.ahmer.pdfviewer.link.DefaultLinkHandler
 import com.ahmer.pdfviewer.listener.*
 import com.ahmer.pdfviewer.scroll.DefaultScrollHandle
 import com.ahmer.pdfviewer.util.FitPolicy
 import com.ahmer.pdfviewer.util.PdfFileUtils.fileFromAsset
-import io.ahmer.utils.utilcode.SPUtils
-import io.ahmer.utils.utilcode.StringUtils
-import io.ahmer.utils.utilcode.ThrowableUtils
-import io.ahmer.utils.utilcode.ToastUtils
-import java.io.IOException
+import io.ahmer.utils.utilcode.*
 import java.util.*
-
 
 class PdfActivity : AppCompatActivity(), OnPageChangeListener, OnLoadCompleteListener {
 
@@ -52,47 +44,17 @@ class PdfActivity : AppCompatActivity(), OnPageChangeListener, OnLoadCompleteLis
         setContentView(binding!!.root)
         prefPage = SPUtils.getInstance("page")
         prefSwab = SPUtils.getInstance("swab")
-        binding!!.toolbar.setOnClickListener { v ->
+        binding!!.toolbar.setOnClickListener {
             finish()
             overridePendingTransition(R.anim.left_to_right, R.anim.right_to_left)
         }
         binding!!.toolbar.setOnMenuItemClickListener { item ->
             when (item.itemId) {
                 R.id.menuPdfInfo -> {
-                    try {
-                        val dialogMoreInfo = DialogMoreInfo(
-                            this@PdfActivity,
-                            binding!!.pdfView, fileFromAsset(this@PdfActivity, pdfFile!!)
-                        )
-                        val dialogMoreInfoWindow = dialogMoreInfo.window
-                        dialogMoreInfoWindow?.setBackgroundDrawable(ColorDrawable(Color.TRANSPARENT))
-                        dialogMoreInfo.show()
-                        dialogMoreInfoWindow!!.setLayout(
-                            LinearLayout.LayoutParams.MATCH_PARENT,
-                            LinearLayout.LayoutParams.MATCH_PARENT
-                        )
-                    } catch (e: IOException) {
-                        e.printStackTrace()
-                    }
+                    showMoreInfoDialog()
                 }
                 R.id.menuPdfJumpTo -> {
-                    val dialogJumpTo = DialogJumpTo(this,
-                        object : JumpListener {
-                            override fun onJump(numPage: Int) {
-                                if (numPage > totalPages) {
-                                    ToastUtils.showShort(getString(R.string.no_page))
-                                } else {
-                                    binding!!.pdfView.jumpTo(numPage - 1, true)
-                                }
-                            }
-                        })
-                    val window = dialogJumpTo.window
-                    window!!.setBackgroundDrawable(ColorDrawable(Color.TRANSPARENT))
-                    dialogJumpTo.show()
-                    window.setLayout(
-                        LinearLayout.LayoutParams.MATCH_PARENT,
-                        LinearLayout.LayoutParams.MATCH_PARENT
-                    )
+                    showJumpToDialog()
                 }
                 R.id.menuPdfSwitchView -> {
                     if (!isHorizontal) {
@@ -132,7 +94,7 @@ class PdfActivity : AppCompatActivity(), OnPageChangeListener, OnLoadCompleteLis
             }
             false
         }
-        binding!!.ivCancelSearch.setOnClickListener { v ->
+        binding!!.ivCancelSearch.setOnClickListener {
             binding!!.etSearch.setText("")
             binding!!.layoutSearch.visibility = View.GONE
         }
@@ -190,7 +152,7 @@ class PdfActivity : AppCompatActivity(), OnPageChangeListener, OnLoadCompleteLis
                     } else {
                         ToastUtils.showLong(resources.getString(R.string.error_loading_pdf))
                         t?.printStackTrace()
-                        Log.v(TAG, " onError: $t");
+                        Log.v(TAG, " onError: $t")
                     }
                 }
             })
@@ -248,12 +210,8 @@ class PdfActivity : AppCompatActivity(), OnPageChangeListener, OnLoadCompleteLis
             val inputPass = dialog.findViewById<EditText>(R.id.inputPassword)
             inputPass.requestFocus()
             inputPass.postDelayed({
-                val imm =
-                    (getSystemService(INPUT_METHOD_SERVICE) as InputMethodManager)
-                imm.showSoftInput(
-                    inputPass,
-                    InputMethodManager.SHOW_IMPLICIT
-                )
+                val imm = (getSystemService(INPUT_METHOD_SERVICE) as InputMethodManager)
+                imm.showSoftInput(inputPass, InputMethodManager.SHOW_IMPLICIT)
             }, 100)
             val open = dialog.findViewById<TextView>(R.id.tvOpen)
             open.isClickable = false
@@ -274,14 +232,12 @@ class PdfActivity : AppCompatActivity(), OnPageChangeListener, OnLoadCompleteLis
                     }
                 }
             }
-            val cancel = dialog.findViewById<TextView>(R.id.tvCancel)
-            cancel.setOnClickListener { v: View? ->
-                val imm =
-                    (getSystemService(INPUT_METHOD_SERVICE) as InputMethodManager)
+            val cancel = dialog.findViewById<TextView>(R.id.btnCancel)
+            cancel.setOnClickListener {
+                val imm = (getSystemService(INPUT_METHOD_SERVICE) as InputMethodManager)
                 dialog.dismiss()
                 imm.hideSoftInputFromInputMethod(inputPass.windowToken, 0)
                 dialog.dismiss()
-                super@PdfActivity.onBackPressed()
             }
             inputPass.addTextChangedListener(object : TextWatcher {
                 override fun beforeTextChanged(s: CharSequence, srt: Int, count: Int, after: Int) {}
@@ -290,6 +246,107 @@ class PdfActivity : AppCompatActivity(), OnPageChangeListener, OnLoadCompleteLis
                     open.isClickable = !TextUtils.isEmpty(s)
                 }
             })
+            dialog.show()
+        } catch (e: Exception) {
+            e.printStackTrace()
+        }
+    }
+
+    private fun showJumpToDialog() {
+        val dialog = Dialog(this)
+        try {
+            dialog.window!!.requestFeature(Window.FEATURE_NO_TITLE)
+            dialog.window!!.setBackgroundDrawableResource(android.R.color.transparent)
+            dialog.setContentView(R.layout.dialog_pdf_jumpto)
+            dialog.window!!.setLayout(-1, -2)
+            dialog.window!!.setLayout(
+                RelativeLayout.LayoutParams.MATCH_PARENT,
+                RelativeLayout.LayoutParams.WRAP_CONTENT
+            )
+            val inputPageNo = dialog.findViewById<EditText>(R.id.inputPageNumber)
+            inputPageNo.requestFocus()
+            inputPageNo.postDelayed({
+                val imm = (getSystemService(INPUT_METHOD_SERVICE) as InputMethodManager)
+                imm.showSoftInput(inputPageNo, InputMethodManager.SHOW_IMPLICIT)
+            }, 100)
+            val goTo = dialog.findViewById<Button>(R.id.btnGoTo)
+            goTo.isClickable = false
+            goTo.setOnClickListener {
+                val pageNumber: String = inputPageNo.text.toString()
+                if (pageNumber == "") {
+                    ToastUtils.showShort(getString(R.string.please_enter_number))
+                } else {
+                    //requestHideSelf(InputMethodManager.HIDE_NOT_ALWAYS)
+                    val imm =
+                        (getSystemService(Context.INPUT_METHOD_SERVICE) as InputMethodManager)
+                    imm.hideSoftInputFromInputMethod(inputPageNo.windowToken, 0)
+                    val number = pageNumber.toInt()
+                    if (number > totalPages) {
+                        ToastUtils.showShort(getString(R.string.no_page))
+                    } else {
+                        binding!!.pdfView.jumpTo(number - 1, true)
+                    }
+                }
+                dialog.dismiss()
+            }
+            val cancel = dialog.findViewById<Button>(R.id.btnCancel)
+            cancel.setOnClickListener {
+                val imm = (getSystemService(INPUT_METHOD_SERVICE) as InputMethodManager)
+                imm.hideSoftInputFromInputMethod(inputPageNo.windowToken, 0)
+                dialog.dismiss()
+            }
+            inputPageNo.addTextChangedListener(object : TextWatcher {
+                override fun beforeTextChanged(s: CharSequence, srt: Int, count: Int, after: Int) {}
+                override fun onTextChanged(s: CharSequence, start: Int, before: Int, count: Int) {}
+                override fun afterTextChanged(s: Editable) {
+                    goTo.isClickable = !TextUtils.isEmpty(s)
+                }
+            })
+            dialog.show()
+        } catch (e: Exception) {
+            e.printStackTrace()
+        }
+    }
+
+    private fun showMoreInfoDialog() {
+        val dialog = Dialog(this)
+        try {
+            dialog.window!!.requestFeature(Window.FEATURE_NO_TITLE)
+            dialog.window!!.setBackgroundDrawableResource(android.R.color.transparent)
+            dialog.setContentView(R.layout.dialog_pdf_info)
+            dialog.window!!.setLayout(-1, -2)
+            dialog.window!!.setLayout(
+                RelativeLayout.LayoutParams.MATCH_PARENT,
+                RelativeLayout.LayoutParams.WRAP_CONTENT
+            )
+            val tvTitle = dialog.findViewById<TextView>(R.id.tvTitle)
+            val tvAuthor = dialog.findViewById<TextView>(R.id.tvAuthor)
+            val tvTotalPage = dialog.findViewById<TextView>(R.id.tvTotalPage)
+            val tvSubject = dialog.findViewById<TextView>(R.id.tvSubject)
+            val tvKeywords = dialog.findViewById<TextView>(R.id.tvKeywords)
+            val tvCreationDate = dialog.findViewById<TextView>(R.id.tvCreationDate)
+            val tvModifyDate = dialog.findViewById<TextView>(R.id.tvModifyDate)
+            val tvCreator = dialog.findViewById<TextView>(R.id.tvCreator)
+            val tvProducer = dialog.findViewById<TextView>(R.id.tvProducer)
+            val tvFileSize = dialog.findViewById<TextView>(R.id.tvFileSize)
+            val tvFilePath = dialog.findViewById<TextView>(R.id.tvFilePath)
+            val tvOk = dialog.findViewById<TextView>(R.id.tvOk)
+            val meta: Meta? = binding!!.pdfView.getDocumentMeta()
+            tvTitle.text = meta!!.title
+            tvAuthor.text = meta.author
+            tvTotalPage.text = String.format(Locale.getDefault(), "%d", meta.totalPages)
+            tvSubject.text = meta.subject
+            tvKeywords.text = meta.keywords
+            tvCreationDate.text = meta.creationDate
+            tvModifyDate.text = meta.modDate
+            tvCreator.text = meta.creator
+            tvProducer.text = meta.producer
+            val file = fileFromAsset(this@PdfActivity, pdfFile!!)
+            tvFileSize.text = FileUtils.getSize(file)
+            tvFilePath.text = file.path
+            tvOk.setOnClickListener {
+                dialog.dismiss()
+            }
             dialog.show()
         } catch (e: Exception) {
             e.printStackTrace()
