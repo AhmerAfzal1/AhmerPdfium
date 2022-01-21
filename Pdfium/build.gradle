@@ -1,10 +1,10 @@
 plugins {
     id 'com.android.library'
+    id 'kotlin-android'
+    id 'kotlin-kapt'
+    id 'kotlin-parcelize'
     id 'maven-publish'
     id 'signing'
-    id 'kotlin-android'
-    id 'kotlin-kapt' // Kotlin annotation processing tool
-    id 'kotlin-parcelize'
 }
 
 ext.'signing.keyId' = System.getenv('SIGNING_KEY_ID')
@@ -27,6 +27,8 @@ android {
     defaultConfig {
         minSdk 19
         targetSdk 31
+        versionCode 6
+        versionName '1.3.0'
 
         externalNativeBuild {
             cmake {
@@ -77,20 +79,19 @@ tasks.withType(Javadoc).all {
     enabled false
 }
 
-task sourcesJar(type: Jar) {
-    archiveClassifier.set('sources')
-    from android.sourceSets.main.java.srcDirs
-}
-
 task javadoc(type: Javadoc) {
     source = android.sourceSets.main.java.srcDirs
     classpath += project.files(android.getBootClasspath().join(File.pathSeparator))
-    failOnError = false
 }
 
 task javadocJar(type: Jar, dependsOn: javadoc) {
     archiveClassifier.set('javadoc')
     from javadoc.destinationDir
+}
+
+task sourcesJar(type: Jar) {
+    archiveClassifier.set('sources')
+    from android.sourceSets.main.java.srcDirs
 }
 
 artifacts {
@@ -157,5 +158,11 @@ publishing {
 
 signing {
     sign publishing.publications.mavenJava
-    //sign configurations.archives
+}
+
+nexusStaging {
+    serverUrl = 'https://s01.oss.sonatype.org/service/local/'
+    username = ossrhUsername
+    password = ossrhPassword
+    packageGroup = 'io.github.ahmerafzal1'
 }
