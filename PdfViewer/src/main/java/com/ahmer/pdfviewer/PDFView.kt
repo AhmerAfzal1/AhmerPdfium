@@ -26,6 +26,7 @@ import com.ahmer.pdfviewer.util.*
 import java.io.File
 import java.util.*
 
+
 /**
  * It supports animations, zoom, cache, and swipe.
  *
@@ -165,7 +166,7 @@ class PDFView(context: Context?, set: AttributeSet?) : RelativeLayout(context, s
     var isSwipeVertical = true
         private set
     private var enableSwipe = true
-    var isDoubletapEnabled = true
+    var isDoubleTapEnabled = true
         private set
     private var nightMode = false
     private var searchQuery = ""
@@ -203,10 +204,8 @@ class PDFView(context: Context?, set: AttributeSet?) : RelativeLayout(context, s
      * Antialiasing and bitmap filtering
      */
     private var enableAntialiasing = true
-    private val antialiasFilter = PaintFlagsDrawFilter(
-        0,
-        Paint.ANTI_ALIAS_FLAG or Paint.FILTER_BITMAP_FLAG
-    )
+    private val antialiasFilter =
+        PaintFlagsDrawFilter(0, Paint.ANTI_ALIAS_FLAG or Paint.FILTER_BITMAP_FLAG)
 
     /**
      * Spacing between pages, in px
@@ -366,24 +365,14 @@ class PDFView(context: Context?, set: AttributeSet?) : RelativeLayout(context, s
 
     fun setNightMode(nightMode: Boolean) {
         this.nightMode = nightMode
-        if (nightMode) {
-            val colorMatrixInverted = ColorMatrix(
-                floatArrayOf(
-                    -1f, 0f, 0f, 0f, 255f,
-                    0f, -1f, 0f, 0f, 255f,
-                    0f, 0f, -1f, 0f, 255f,
-                    0f, 0f, 0f, 1f, 0f
-                )
-            )
-            val filter = ColorMatrixColorFilter(colorMatrixInverted)
-            paint.colorFilter = filter
-        } else {
-            paint.colorFilter = null
-        }
     }
 
-    fun enableDoubletap(enableDoubletap: Boolean) {
-        isDoubletapEnabled = enableDoubletap
+    fun getNightMode(): Boolean {
+        return nightMode
+    }
+
+    fun enableDoubleTap(enableDoubleTap: Boolean) {
+        isDoubleTapEnabled = enableDoubleTap
     }
 
     fun onPageError(ex: PageRenderingException) {
@@ -572,10 +561,7 @@ class PDFView(context: Context?, set: AttributeSet?) : RelativeLayout(context, s
         // Moves the canvas before drawing any element
         val currentXOffset = currentXOffset
         val currentYOffset = currentYOffset
-        canvas.translate(
-            currentXOffset,
-            currentYOffset
-        )
+        canvas.translate(currentXOffset, currentYOffset)
 
         // Draws thumbnails
         for (part in cacheManager.getThumbnails()) {
@@ -613,10 +599,7 @@ class PDFView(context: Context?, set: AttributeSet?) : RelativeLayout(context, s
             canvas.translate(translateX, translateY)
             val size = pdfFile?.getPageSize(page) ?: SizeF(0f, 0f)
             listener.onLayerDrawn(
-                canvas,
-                toCurrentScale(size.width),
-                toCurrentScale(size.height),
-                page
+                canvas, toCurrentScale(size.width), toCurrentScale(size.height), page
             )
             canvas.translate(-translateX, -translateY)
         }
@@ -646,10 +629,7 @@ class PDFView(context: Context?, set: AttributeSet?) : RelativeLayout(context, s
             val maxHeight = pdfFile?.maxPageHeight ?: 0f
             localTranslationY = toCurrentScale(maxHeight - size.height) / 2
         }
-        canvas.translate(
-            localTranslationX,
-            localTranslationY
-        )
+        canvas.translate(localTranslationX, localTranslationY)
         var srcRect: Rect? = null
         if (renderedBitmap != null) {
             srcRect = Rect(0, 0, renderedBitmap.width, renderedBitmap.height)
@@ -659,9 +639,8 @@ class PDFView(context: Context?, set: AttributeSet?) : RelativeLayout(context, s
         val width = toCurrentScale(pageRelativeBounds.width() * size.width).toInt()
         val height = toCurrentScale(pageRelativeBounds.height() * size.height).toInt()
 
-        // If we use float values for this rectangle, there will be
-        // a possible gap between page parts, especially when
-        // the zoom level is high.
+        // If we use float values for this rectangle, there will be a possible gap between page
+        // parts, especially when the zoom level is high.
         val dstRect = RectF(
             offsetX.toFloat(),
             offsetY.toFloat(),
@@ -755,7 +734,7 @@ class PDFView(context: Context?, set: AttributeSet?) : RelativeLayout(context, s
         onErrorListener?.onError(t) ?: Log.e(TAG, "Load PDF error", t)
     }
 
-    fun reDraw() {
+    private fun reDraw() {
         invalidate()
     }
 
@@ -807,8 +786,6 @@ class PDFView(context: Context?, set: AttributeSet?) : RelativeLayout(context, s
             return
         }
 
-        // Cancel all current tasks
-//        renderingHandler?.removeMessages(RenderingHandler.MSG_RENDER_PAGE_TASK)
         pagesLoader.renderPage(page = pageIndex, isThumbnail = isThumbnail)
         reDraw()
     }
@@ -1244,7 +1221,7 @@ class PDFView(context: Context?, set: AttributeSet?) : RelativeLayout(context, s
     inner class Configurator(private val documentSource: DocumentSource) {
         private var pageNumbers: IntArray? = null
         private var enableSwipe = true
-        private var enableDoubletap = true
+        private var enableDoubleTap = true
         private var onDrawListener: OnDrawListener? = null
         private var onDrawAllListener: OnDrawListener? = null
         private var onLoadCompleteListener: OnLoadCompleteListener? = null
@@ -1281,8 +1258,8 @@ class PDFView(context: Context?, set: AttributeSet?) : RelativeLayout(context, s
             return this
         }
 
-        fun enableDoubletap(enableDoubletap: Boolean): Configurator {
-            this.enableDoubletap = enableDoubletap
+        fun enableDoubleTap(enableDoubleTap: Boolean): Configurator {
+            this.enableDoubleTap = enableDoubleTap
             return this
         }
 
@@ -1414,7 +1391,7 @@ class PDFView(context: Context?, set: AttributeSet?) : RelativeLayout(context, s
             return this
         }
 
-        fun disableLongpress(): Configurator {
+        fun disableLongPress(): Configurator {
             dragPinchManager.disableLongPress()
             return this
         }
@@ -1443,7 +1420,7 @@ class PDFView(context: Context?, set: AttributeSet?) : RelativeLayout(context, s
             callbacks.setLinkHandler(linkHandler)
             setSwipeEnabled(enableSwipe)
             setNightMode(nightMode)
-            this@PDFView.enableDoubletap(enableDoubletap)
+            this@PDFView.enableDoubleTap(enableDoubleTap)
             setDefaultPage(defaultPage)
             isSwipeVertical = !swipeHorizontal
             this@PDFView.enableAnnotationRendering(annotationRendering)

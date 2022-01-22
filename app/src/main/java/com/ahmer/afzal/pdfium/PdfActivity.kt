@@ -176,17 +176,18 @@ class PdfActivity : AppCompatActivity(), OnPageChangeListener, OnLoadCompleteLis
             .fitEachPage(true)
             .nightMode(isNightMode)
             .enableSwipe(true)
-            .swipeHorizontal(prefSwab!!.getBoolean("rememberSwipe"))
+            .swipeHorizontal(isHorizontal)
             .pageSnap(true) // snap pages to screen boundaries
             .autoSpacing(true) // add dynamic spacing to fit each page on its own on the screen
             .pageFling(false) // make a fling change only a single page like ViewPager
-            .enableDoubletap(true)
+            .enableDoubleTap(true)
             .enableAnnotationRendering(true)
             .password(password)
             .textHighlightColor(Color.RED)
             .scrollHandle(DefaultScrollHandle(applicationContext))
             .enableAntialiasing(true)
             .spacing(5)
+            .autoSpacing(true)
             .linkHandler(DefaultLinkHandler(binding!!.pdfView))
             .pageFitPolicy(FitPolicy.BOTH)
             .load()

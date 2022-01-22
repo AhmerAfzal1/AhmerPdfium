@@ -15,10 +15,8 @@ class CacheManager {
 
     fun cachePart(part: PagePart) {
         synchronized(passiveActiveLock) {
-
             // If cache too big, remove and recycle
             makeAFreeSpace()
-
             // Then add part
             activeCache.offer(part)
         }
@@ -50,12 +48,10 @@ class CacheManager {
 
     fun cacheThumbnail(part: PagePart) {
         synchronized(thumbnails) {
-
             // If cache too big, remove and recycle
             while (thumbnails.size >= THUMBNAILS_CACHE_SIZE) {
                 thumbnails.removeAt(0).renderedBitmap?.recycle()
             }
-
             // Then add thumbnail
             addWithoutDuplicates(thumbnails, part)
         }

@@ -91,17 +91,42 @@ internal class RenderingHandler(looper: Looper, private val pdfView: PDFView) : 
         }
     }
 
+    private fun toNightMode(bmpOriginal: Bitmap, bestQuality: Boolean): Bitmap {
+        val height: Int = bmpOriginal.height
+        val width: Int = bmpOriginal.width
+        val nightModeBitmap = Bitmap.createBitmap(
+            width, height,
+            if (bestQuality) Bitmap.Config.ARGB_8888 else Bitmap.Config.RGB_565
+        )
+        val canvas = Canvas(nightModeBitmap)
+        val paint = Paint()
+        val grayScaleMatrix = ColorMatrix().apply {
+            setSaturation(0f)
+        }
+        val invertMatrix = ColorMatrix(
+            floatArrayOf(
+                -1f, 0f, 0f, 0f, 255f,
+                0f, -1f, 0f, 0f, 255f,
+                0f, 0f, -1f, 0f, 255f,
+                0f, 0f, 0f, 1f, 0f
+            )
+        )
+        val nightModeMatrix = ColorMatrix().apply {
+            postConcat(grayScaleMatrix)
+            postConcat(invertMatrix)
+        }
+        paint.colorFilter = ColorMatrixColorFilter(nightModeMatrix)
+        canvas.drawBitmap(bmpOriginal, 0f, 0f, paint)
+        return nightModeBitmap
+    }
+
     private fun renderPage(renderingTask: RenderingTask): Bitmap? {
         val pdfFile = pdfView.pdfFile
         pdfFile?.openPage(renderingTask.page)
         val w = renderingTask.width.roundToInt()
         val h = renderingTask.height.roundToInt()
         val pageBitmap: Bitmap = try {
-            Bitmap.createBitmap(
-                w,
-                h,  /*renderingTask.bestQuality ? */
-                Bitmap.Config.ARGB_8888 /* : Bitmap.Config.RGB_565*/
-            )
+            Bitmap.createBitmap(w, h, Bitmap.Config.ARGB_8888)
         } catch (e: IllegalArgumentException) {
             Log.e(TAG, "Cannot create bitmap", e)
             return null
@@ -129,22 +154,21 @@ internal class RenderingHandler(looper: Looper, private val pdfView: PDFView) : 
         if (w == 0 || h == 0 || pdfFile?.pageHasError(renderingTask.page) == true) {
             return null
         }
-        val pageBitmap: Bitmap = try {
+        var pageBitmap: Bitmap = try {
             Bitmap.createBitmap(
-                w,
-                h,  /*renderingTask.bestQuality ? */
-                Bitmap.Config.ARGB_8888 /* : Bitmap.Config.RGB_565*/
+                w, h,
+                if (renderingTask.bestQuality) Bitmap.Config.ARGB_8888 else Bitmap.Config.RGB_565
             )
         } catch (e: IllegalArgumentException) {
             Log.e(TAG, "Cannot create bitmap", e)
             return null
         }
-        val c = Canvas(pageBitmap)
-        val p = Paint()
+        val canvas = Canvas(pageBitmap)
+        val paint = Paint()
 
-        p.color = Color.WHITE
+        paint.color = Color.WHITE
         val bRect = Rect(0, 0, pageBitmap.width, pageBitmap.height)
-        c.drawRect(bRect, p)
+        canvas.drawRect(bRect, paint)
         calculateBounds(w, h, renderingTask.bounds)
 
         /*
@@ -185,8 +209,8 @@ internal class RenderingHandler(looper: Looper, private val pdfView: PDFView) : 
                                 strLen = 1
                             }
                             val w1 = l1 + (r1 - l1) * strLen
-                            p.color = pdfFile.textHighlightColor
-                            c.drawRect(RectF(l1, t1, w1, b1), p)
+                            paint.color = pdfFile.textHighlightColor
+                            canvas.drawRect(RectF(l1, t1, w1, b1), paint)
                         } else {
                             break
                         }
@@ -214,11 +238,7 @@ internal class RenderingHandler(looper: Looper, private val pdfView: PDFView) : 
                             ww1,
                             renderBounds.height() - rect.bottom / nativePageHeight * renderBounds.height()
                         )
-                        if ( /*rectForSearch.left <= rectForBitmap.right &&
-                            rectForSearch.right >= rectForBitmap.left*/rectForSearch.intersect(
-                                rectForBitmap
-                            )
-                        ) {
+                        if (rectForSearch.intersect(rectForBitmap)) {
 
                             // float halfSymbolWidth = symbolWidth / 4.0f;
                             val l1 = abs(abs(rectForSearch.left) - abs(rectForBitmap.left))
@@ -234,26 +254,22 @@ internal class RenderingHandler(looper: Looper, private val pdfView: PDFView) : 
                                 min(r1, pageBitmap.width.toFloat()),
                                 min(pageBitmap.height.toFloat(), b1)
                             )
-                            p.color = pdfFile.textHighlightColor
-                            c.drawRect(realRect, p)
+                            paint.color = pdfFile.textHighlightColor
+                            canvas.drawRect(realRect, paint)
                         }
                     }
                 }
             }
         }
         pdfFile?.renderPageBitmap(
-            pageBitmap,
-            renderingTask.page,
-            roundedRenderBounds,
-            renderingTask.annotationRendering,
+            pageBitmap, renderingTask.page, roundedRenderBounds, renderingTask.annotationRendering,
         )
+        if (pdfView.getNightMode()) {
+            pageBitmap = toNightMode(pageBitmap, renderingTask.bestQuality)
+        }
         return PagePart(
-            renderingTask.page,
-            pageBitmap,
-            renderingTask.bounds,
-            renderingTask.thumbnail,
-            renderingTask.cacheOrder,
-            searchQuery
+            renderingTask.page, pageBitmap, renderingTask.bounds, renderingTask.thumbnail,
+            renderingTask.cacheOrder, searchQuery
         )
     }
 
@@ -263,8 +279,7 @@ internal class RenderingHandler(looper: Looper, private val pdfView: PDFView) : 
             -(pageSliceBounds?.left ?: 0f) * width, -(pageSliceBounds?.top ?: 0f) * height
         )
         renderMatrix.postScale(
-            1 / (pageSliceBounds?.width() ?: 0f),
-            1 / (pageSliceBounds?.height() ?: 0f)
+            1 / (pageSliceBounds?.width() ?: 0f), 1 / (pageSliceBounds?.height() ?: 0f)
         )
         renderBounds[0f, 0f, width.toFloat()] = height.toFloat()
         renderMatrix.mapRect(renderBounds)
@@ -313,10 +328,7 @@ internal class RenderingHandler(looper: Looper, private val pdfView: PDFView) : 
             this.searchQuery = searchQuery
         }
 
-        constructor(
-            page: Int,
-            parseText: Boolean
-        ) {
+        constructor(page: Int, parseText: Boolean) {
             parseTextFromPdf = parseText
             this.page = page
             width = 0f
@@ -324,19 +336,19 @@ internal class RenderingHandler(looper: Looper, private val pdfView: PDFView) : 
             bounds = RectF(0f, 0f, 0f, 0f)
             thumbnail = false
             cacheOrder = 0
-            bestQuality = false
-            annotationRendering = false
+            bestQuality = true
+            annotationRendering = true
         }
 
-        constructor(width: Float, height: Float, page: Int) {
+        constructor(page: Int, width: Float, height: Float) {
             this.page = page
             this.width = width
             this.height = height
             this.bounds = RectF()
             this.thumbnail = true
             this.cacheOrder = 0
-            this.bestQuality = false
-            this.annotationRendering = false
+            this.bestQuality = true
+            this.annotationRendering = true
         }
     }
 

@@ -25,12 +25,13 @@ internal class DragPinchManager @SuppressLint("ClickableViewAccessibility") cons
     private val animationManager: AnimationManager
 ) : GestureDetector.OnGestureListener, OnDoubleTapListener, OnScaleGestureListener,
     OnTouchListener {
-    private val gestureDetector: GestureDetector = GestureDetector(pdfView.context, this)
-    private val scaleGestureDetector: ScaleGestureDetector =
-        ScaleGestureDetector(pdfView.context, this)
+
+    private val gestureDetector = GestureDetector(pdfView.context, this)
+    private val scaleGestureDetector = ScaleGestureDetector(pdfView.context, this)
     private var scrolling = false
     private var scaling = false
     private var enabled = false
+
     fun enable() {
         enabled = true
     }
@@ -78,16 +79,12 @@ internal class DragPinchManager @SuppressLint("ClickableViewAccessibility") cons
         }
         for (link in pdfFile.getPageLinks(page)) {
             val mapped = pdfFile.mapRectToDevice(
-                page, pageX, pageY, pageSize.width.toInt(),
-                pageSize.height.toInt(), link.bounds
+                page, pageX, pageY, pageSize.width.toInt(), pageSize.height.toInt(), link.bounds
             )
             mapped?.sort()
             if (mapped?.contains(mappedX, mappedY) == true) {
                 pdfView.callbacks.callLinkHandler(
-                    LinkTapEvent(
-                        x, y, mappedX, mappedY, mapped,
-                        link
-                    )
+                    LinkTapEvent(x, y, mappedX, mappedY, mapped, link)
                 )
                 return true
             }
@@ -96,8 +93,7 @@ internal class DragPinchManager @SuppressLint("ClickableViewAccessibility") cons
     }
 
     private fun startPageFling(
-        downEvent: MotionEvent, ev: MotionEvent,
-        velocityX: Float, velocityY: Float
+        downEvent: MotionEvent, ev: MotionEvent, velocityX: Float, velocityY: Float
     ) {
         if (!checkDoPageFling(velocityX, velocityY)) {
             return
@@ -119,7 +115,7 @@ internal class DragPinchManager @SuppressLint("ClickableViewAccessibility") cons
     }
 
     override fun onDoubleTap(e: MotionEvent): Boolean {
-        if (!pdfView.isDoubletapEnabled) {
+        if (!pdfView.isDoubleTapEnabled) {
             return false
         }
         when {

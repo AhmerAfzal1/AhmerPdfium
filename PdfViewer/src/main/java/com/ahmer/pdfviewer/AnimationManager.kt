@@ -17,8 +17,9 @@ import android.widget.OverScroller
  */
 internal class AnimationManager(private val pdfView: PDFView) {
 
-    private var animation: ValueAnimator? = null
+    private val flingDuration: Long = 400
     private val scroller: OverScroller = OverScroller(pdfView.context)
+    private var animation: ValueAnimator? = null
     private var flinging = false
     private var pageFlinging = false
 
@@ -29,7 +30,7 @@ internal class AnimationManager(private val pdfView: PDFView) {
         animation?.interpolator = DecelerateInterpolator()
         animation?.addUpdateListener(xAnimation)
         animation?.addListener(xAnimation)
-        animation?.duration = 400
+        animation?.duration = flingDuration
         animation?.start()
     }
 
@@ -40,7 +41,7 @@ internal class AnimationManager(private val pdfView: PDFView) {
         animation?.interpolator = DecelerateInterpolator()
         animation?.addUpdateListener(yAnimation)
         animation?.addListener(yAnimation)
-        animation?.duration = 400
+        animation?.duration = flingDuration
         animation?.start()
     }
 
@@ -51,19 +52,13 @@ internal class AnimationManager(private val pdfView: PDFView) {
         val zoomAnim = ZoomAnimation(centerX, centerY)
         animation?.addUpdateListener(zoomAnim)
         animation?.addListener(zoomAnim)
-        animation?.duration = 400
+        animation?.duration = flingDuration
         animation?.start()
     }
 
     fun startFlingAnimation(
-        startX: Int,
-        startY: Int,
-        velocityX: Int,
-        velocityY: Int,
-        minX: Int,
-        maxX: Int,
-        minY: Int,
-        maxY: Int
+        startX: Int, startY: Int, velocityX: Int, velocityY: Int, minX: Int, maxX: Int,
+        minY: Int, maxY: Int
     ) {
         stopAll()
         flinging = true

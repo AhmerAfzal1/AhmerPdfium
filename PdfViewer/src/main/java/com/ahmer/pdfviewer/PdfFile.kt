@@ -16,6 +16,7 @@ import com.ahmer.pdfviewer.exception.PageRenderingException
 import com.ahmer.pdfviewer.util.FitPolicy
 import com.ahmer.pdfviewer.util.MathUtils
 import com.ahmer.pdfviewer.util.PageSizeCalculator
+import com.ahmer.pdfviewer.util.PdfConstants
 import java.util.*
 
 class PdfFile(
@@ -98,6 +99,7 @@ class PdfFile(
      */
     private var documentLength = 0f
     var textHighlightColor = Color.WHITE
+
     private fun setup(viewSize: Size) {
         pagesCount =
             if (originalUserPages.isNotEmpty()) originalUserPages.size else pdfiumCore.totalPagesCount

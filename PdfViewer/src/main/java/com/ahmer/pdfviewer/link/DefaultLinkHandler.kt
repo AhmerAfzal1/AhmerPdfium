@@ -12,6 +12,7 @@ class DefaultLinkHandler(
     private val pdfView: PDFView,
     private val chooserTitle: String = "Select app for open link"
 ) : LinkHandler {
+
     override fun handleLinkEvent(event: LinkTapEvent?) {
         val uri = event?.link?.uri
         val page = event?.link?.destPageIdx
