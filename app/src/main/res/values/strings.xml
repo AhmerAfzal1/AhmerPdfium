@@ -4,16 +4,16 @@
     <!-- Miscellaneous strings -->
     <string name="error_loading_pdf">Error loading PDF document</string>
 
-    <!-- AhmerActivity strings -->
-
-    <!-- Log strings -->
-
-    <!-- Headings -->
-
-    <string name="menu_pdf_night_mode">Night Mode</string>
-    <string name="menu_pdf_scroll_handle">Scroll Handle Switch</string>
+    <string name="menu_pdf_delete">Delete File</string>
     <string name="menu_pdf_goto_page">Goto Page Number</string>
     <string name="menu_pdf_more_info">More Info</string>
+    <string name="menu_pdf_night_mode">Night Mode</string>
+    <string name="menu_pdf_print_file">Print File</string>
+    <string name="menu_pdf_view_horizontal">Horizontal View</string>
+    <string name="menu_pdf_view_vertical">Vertical View</string>
+    <string name="menu_pdf_share">Share File</string>
+    <string name="menu_pdf_snap_page">Snap Page</string>
+
     <string name="menu_pdf_search">Search</string>
     <string name="under_progress">This feature is under progress</string>
     <string name="empty_description">Empty Description</string>
@@ -50,4 +50,6 @@
     <string name="password_not_empty">Password should not be empty</string>
     <string name="password_not_space">Password should not be only space(s)</string>
     <string name="desc_pdf_protected">Please enter the password to open PDF file</string>
+    <!-- TODO: Remove or change this placeholder text -->
+    <string name="hello_blank_fragment">Hello blank fragment</string>
 </resources>

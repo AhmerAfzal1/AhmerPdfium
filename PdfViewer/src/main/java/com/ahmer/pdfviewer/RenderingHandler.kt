@@ -2,12 +2,12 @@ package com.ahmer.pdfviewer
 
 import android.graphics.*
 import android.os.Handler
-import android.os.Looper
-import android.os.Message
 import android.util.Log
 import com.ahmer.pdfviewer.RenderingHandler.RenderingTask
 import com.ahmer.pdfviewer.exception.PageRenderingException
 import com.ahmer.pdfviewer.model.PagePart
+import kotlinx.coroutines.*
+import kotlin.coroutines.CoroutineContext
 import kotlin.math.abs
 import kotlin.math.max
 import kotlin.math.min
@@ -18,74 +18,48 @@ import kotlin.math.roundToInt
  * and alert [PDFView.onBitmapRendered] when the portion of the
  * PDF is ready to render.
  */
-internal class RenderingHandler(looper: Looper, private val pdfView: PDFView) : Handler(looper) {
+class RenderingHandler(private val pdfView: PDFView) : CoroutineScope {
     private val renderBounds = RectF()
     private val roundedRenderBounds = Rect()
     private val renderMatrix = Matrix()
     private var running = false
 
+    override val coroutineContext: CoroutineContext
+        get() = Dispatchers.Main + Job()
+
     fun addPartRenderingTask(
         page: Int, width: Float, height: Float, bounds: RectF, thumbnail: Boolean, cacheOrder: Int,
-        bestQuality: Boolean, annotationRendering: Boolean, searchQuery: String?
+        bestQuality: Boolean, annotation: Boolean, searchQuery: String
     ) {
-        val task = RenderingTask(
-            width, height, bounds, page, thumbnail, cacheOrder, bestQuality,
-            annotationRendering, searchQuery
-        )
-        val msg = obtainMessage(MSG_RENDER_PART_TASK, task)
-        sendMessage(msg)
-    }
-
-    fun addParseTextTask(page: Int) {
-        val task = RenderingTask(page, true)
-        val msg = obtainMessage(MSG_PARSE_TEXT_TASK, task)
-        sendMessage(msg)
-    }
-
-    fun addPageRenderingTask(page: Int, width: Float, height: Float) {
-        val task = RenderingTask(page = page, width = width, height = height)
-        val msg = obtainMessage(MSG_RENDER_PAGE_TASK, task)
-        sendMessage(msg)
-    }
-
-    override fun handleMessage(message: Message) {
-        val task = message.obj as RenderingTask
-        try {
-            if (task.parseTextFromPdf && message.what == MSG_PARSE_TEXT_TASK) {
-                val pageStr = parseText(task)
-                if (running) {
-                    pdfView.post { pdfView.onTextParsed(task.page, pageStr) }
-                }
-            } else if (message.what == MSG_RENDER_PAGE_TASK) {
-                val bitmap = renderPage(renderingTask = task)
-                if (running) {
-                    pdfView.post { pdfView.onPageRendered(pageIndex = task.page, bitmap = bitmap) }
-                } else {
-                    bitmap?.recycle()
-                }
-            } else {
-                val part = proceed(task)
+        CoroutineScope(coroutineContext).launch(SupervisorJob()) {
+            val task = RenderingTask(
+                width, height, bounds, page, thumbnail, cacheOrder, bestQuality,
+                annotation, searchQuery
+            )
+            val part = proceed(task)
+            try {
                 if (part != null) {
                     if (running) {
                         pdfView.post { pdfView.onBitmapRendered(part) }
                     } else {
-                        val b = part.renderedBitmap
-                        b?.recycle()
+                        part.renderedBitmap?.recycle()
                     }
+                } else {
+                    part?.renderedBitmap?.recycle()
                 }
+            } catch (ex: PageRenderingException) {
+                pdfView.post { pdfView.onPageError(ex) }
             }
-        } catch (ex: PageRenderingException) {
-            pdfView.post { pdfView.onPageError(ex) }
         }
     }
 
     @Throws(PageRenderingException::class)
-    private fun parseText(renderingTask: RenderingTask): String? {
+    private fun parseText(task: RenderingTask): String? {
         val pdfFile = pdfView.pdfFile
-        pdfFile?.openPage(renderingTask.page)
-        val countCharsOnPage = pdfFile?.countCharactersOnPage(renderingTask.page) ?: 0
+        pdfFile?.openPage(task.page)
+        val countCharsOnPage = pdfFile?.countCharactersOnPage(task.page) ?: 0
         return if (countCharsOnPage > 0) {
-            pdfFile?.extractCharacters(renderingTask.page, 0, countCharsOnPage)
+            pdfFile?.extractCharacters(task.page, 0, countCharsOnPage)
         } else {
             null
         }
@@ -120,45 +94,21 @@ internal class RenderingHandler(looper: Looper, private val pdfView: PDFView) : 
         return nightModeBitmap
     }
 
-    private fun renderPage(renderingTask: RenderingTask): Bitmap? {
-        val pdfFile = pdfView.pdfFile
-        pdfFile?.openPage(renderingTask.page)
-        val w = renderingTask.width.roundToInt()
-        val h = renderingTask.height.roundToInt()
-        val pageBitmap: Bitmap = try {
-            Bitmap.createBitmap(w, h, Bitmap.Config.ARGB_8888)
-        } catch (e: IllegalArgumentException) {
-            Log.e(TAG, "Cannot create bitmap", e)
-            return null
-        }
-
-        pdfFile?.renderPageBitmap(
-            bitmap = pageBitmap,
-            pageIndex = renderingTask.page,
-            bounds = Rect(0, 0, w, h),
-            annotationRendering = renderingTask.annotationRendering
-        )
-
-        return pageBitmap
-    }
-
     @Throws(PageRenderingException::class)
-    private fun proceed(renderingTask: RenderingTask): PagePart? {
+    private fun proceed(task: RenderingTask): PagePart? {
         val pdfFile = pdfView.pdfFile
-        pdfFile?.openPage(renderingTask.page)
-        val w = renderingTask.width.roundToInt()
-        val h = renderingTask.height.roundToInt()
-        val nativePageSize = pdfFile?.getPageSizeNative(renderingTask.page)
+        pdfFile?.openPage(task.page)
+        val width = task.width.roundToInt()
+        val height = task.height.roundToInt()
+        val nativePageSize = pdfFile?.getPageSizeNative(task.page)
         val nativePageWidth = nativePageSize?.width?.toFloat() ?: 0f
         val nativePageHeight = nativePageSize?.height?.toFloat() ?: 0f
-        if (w == 0 || h == 0 || pdfFile?.pageHasError(renderingTask.page) == true) {
+        if (width == 0 || height == 0 || pdfFile?.pageHasError(task.page) == true) {
             return null
         }
+        val bitmapQuality = if (task.bestQuality) Bitmap.Config.ARGB_8888 else Bitmap.Config.RGB_565
         var pageBitmap: Bitmap = try {
-            Bitmap.createBitmap(
-                w, h,
-                if (renderingTask.bestQuality) Bitmap.Config.ARGB_8888 else Bitmap.Config.RGB_565
-            )
+            Bitmap.createBitmap(width, height, bitmapQuality)
         } catch (e: IllegalArgumentException) {
             Log.e(TAG, "Cannot create bitmap", e)
             return null
@@ -169,7 +119,7 @@ internal class RenderingHandler(looper: Looper, private val pdfView: PDFView) : 
         paint.color = Color.WHITE
         val bRect = Rect(0, 0, pageBitmap.width, pageBitmap.height)
         canvas.drawRect(bRect, paint)
-        calculateBounds(w, h, renderingTask.bounds)
+        calculateBounds(width, height, task.bounds)
 
         /*
         val rotation = pdfFile?.getPageRotation(renderingTask.page) ?: 0
@@ -178,24 +128,33 @@ internal class RenderingHandler(looper: Looper, private val pdfView: PDFView) : 
         }
         */
 
-        val searchQuery = renderingTask.searchQuery ?: ""
+        val searchQuery = task.searchQuery
+        val countCharsOnPage = pdfFile?.countCharactersOnPage(task.page) ?: 0
+        var textQuery: String? = null
+        if (countCharsOnPage > 0) {
+            textQuery = pdfFile?.extractCharacters(task.page, 0, countCharsOnPage)
+        }
+
         if (searchQuery.isNotBlank()) {
             val search = pdfFile?.newPageSearch(
-                pageIndex = renderingTask.page,
+                pageIndex = task.page,
                 query = searchQuery,
                 matchCase = false,
                 matchWholeWord = false
             )
+            //Log.e(TAG, "SearchQuery: $searchQuery")
+            //Log.e(TAG, "SearchQuery TextQuery: $textQuery")
             if (search?.hasNext() == true) {
                 while (true) {
+                    //Log.e(TAG, "SearchQuery CountCharsOnPage: $countCharsOnPage")
                     val rect = search.searchNext() ?: break
                     //If thumbnail
                     if (roundedRenderBounds.width() <= nativePageWidth.toInt()) {
                         val currentRenderedRealRectByBounds = RectF(
-                            renderingTask.bounds.left * nativePageWidth,
-                            renderingTask.bounds.top * nativePageHeight,
-                            renderingTask.bounds.right * nativePageWidth,
-                            renderingTask.bounds.bottom * nativePageHeight
+                            task.bounds.left * nativePageWidth,
+                            task.bounds.top * nativePageHeight,
+                            task.bounds.right * nativePageWidth,
+                            task.bounds.bottom * nativePageHeight
                         )
                         if (rect.intersect(currentRenderedRealRectByBounds)) {
                             val l1 = rect.left * roundedRenderBounds.width() / nativePageWidth
@@ -216,13 +175,13 @@ internal class RenderingHandler(looper: Looper, private val pdfView: PDFView) : 
                         }
                     } else {
                         val rectForBitmap = RectF(
-                            renderingTask.bounds.left * renderBounds.width(),
-                            renderingTask.bounds.top * renderBounds.height(),
-                            renderingTask.bounds.right * renderBounds.width(),
-                            renderingTask.bounds.bottom * renderBounds.height()
+                            task.bounds.left * renderBounds.width(),
+                            task.bounds.top * renderBounds.height(),
+                            task.bounds.right * renderBounds.width(),
+                            task.bounds.bottom * renderBounds.height()
                         )
                         val left = rect.left / nativePageWidth * renderBounds.width()
-                        val rr = rect.right / nativePageWidth * renderBounds.width()
+                        val right = rect.right / nativePageWidth * renderBounds.width()
                         var strLen = searchQuery.length - 2
                         if (strLen < 1) {
                             strLen = 1
@@ -230,7 +189,7 @@ internal class RenderingHandler(looper: Looper, private val pdfView: PDFView) : 
                         if (searchQuery.length <= 2 && strLen < 2) {
                             strLen = 2
                         }
-                        val symbolWidth = rr - left
+                        val symbolWidth = right - left
                         val ww1 = left + symbolWidth * strLen
                         val rectForSearch = RectF(
                             left,
@@ -261,15 +220,12 @@ internal class RenderingHandler(looper: Looper, private val pdfView: PDFView) : 
                 }
             }
         }
-        pdfFile?.renderPageBitmap(
-            pageBitmap, renderingTask.page, roundedRenderBounds, renderingTask.annotationRendering,
-        )
+        pdfFile?.renderPageBitmap(pageBitmap, task.page, roundedRenderBounds, task.annotation)
         if (pdfView.getNightMode()) {
-            pageBitmap = toNightMode(pageBitmap, renderingTask.bestQuality)
+            pageBitmap = toNightMode(pageBitmap, task.bestQuality)
         }
         return PagePart(
-            renderingTask.page, pageBitmap, renderingTask.bounds, renderingTask.thumbnail,
-            renderingTask.cacheOrder, searchQuery
+            task.page, pageBitmap, task.bounds, task.thumbnail, task.cacheOrder, searchQuery
         )
     }
 
@@ -294,71 +250,19 @@ internal class RenderingHandler(looper: Looper, private val pdfView: PDFView) : 
         running = true
     }
 
-    private class RenderingTask {
-        var width: Float
-        var height: Float
-        var bounds: RectF
-        var page: Int
-        var thumbnail: Boolean
-        var cacheOrder: Int
-        var bestQuality: Boolean
-        var annotationRendering: Boolean
-        var searchQuery: String? = ""
-        var parseTextFromPdf = false
-
-        constructor(
-            width: Float,
-            height: Float,
-            bounds: RectF,
-            page: Int,
-            thumbnail: Boolean,
-            cacheOrder: Int,
-            bestQuality: Boolean,
-            annotationRendering: Boolean,
-            searchQuery: String?
-        ) {
-            this.page = page
-            this.width = width
-            this.height = height
-            this.bounds = bounds
-            this.thumbnail = thumbnail
-            this.cacheOrder = cacheOrder
-            this.bestQuality = bestQuality
-            this.annotationRendering = annotationRendering
-            this.searchQuery = searchQuery
-        }
-
-        constructor(page: Int, parseText: Boolean) {
-            parseTextFromPdf = parseText
-            this.page = page
-            width = 0f
-            height = 0f
-            bounds = RectF(0f, 0f, 0f, 0f)
-            thumbnail = false
-            cacheOrder = 0
-            bestQuality = true
-            annotationRendering = true
-        }
-
-        constructor(page: Int, width: Float, height: Float) {
-            this.page = page
-            this.width = width
-            this.height = height
-            this.bounds = RectF()
-            this.thumbnail = true
-            this.cacheOrder = 0
-            this.bestQuality = true
-            this.annotationRendering = true
-        }
-    }
+    private class RenderingTask(
+        val width: Float,
+        val height: Float,
+        val bounds: RectF,
+        val page: Int,
+        val thumbnail: Boolean,
+        val cacheOrder: Int,
+        val bestQuality: Boolean,
+        val annotation: Boolean,
+        val searchQuery: String
+    )
 
     companion object {
-        /**
-         * [Message.what] kind of message this handler processes.
-         */
-        const val MSG_RENDER_PART_TASK = 1
-        const val MSG_PARSE_TEXT_TASK = 2
-        const val MSG_RENDER_PAGE_TASK = 3
         private val TAG = RenderingHandler::class.java.name
     }
 }

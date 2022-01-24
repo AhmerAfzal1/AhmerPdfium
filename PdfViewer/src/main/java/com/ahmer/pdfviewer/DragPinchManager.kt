@@ -9,12 +9,16 @@ import android.view.ScaleGestureDetector
 import android.view.ScaleGestureDetector.OnScaleGestureListener
 import android.view.View
 import android.view.View.OnTouchListener
+import com.ahmer.pdfium.util.SizeF
 import com.ahmer.pdfviewer.model.LinkTapEvent
 import com.ahmer.pdfviewer.util.PdfConstants.Pinch.MAXIMUM_ZOOM
 import com.ahmer.pdfviewer.util.PdfConstants.Pinch.MINIMUM_ZOOM
 import kotlin.math.abs
 import kotlin.math.max
 import kotlin.math.min
+import com.ahmer.pdfviewer.util.SnapEdge
+import kotlin.math.roundToInt
+
 
 /**
  * This Manager takes care of moving the PDFView,
@@ -49,7 +53,7 @@ internal class DragPinchManager @SuppressLint("ClickableViewAccessibility") cons
         val linkTapped = checkLinkTapped(e.x, e.y)
         if (!onTapHandled && !linkTapped) {
             val ps = pdfView.scrollHandle
-            if (ps != null && !pdfView.documentFitsView()) {
+            if (ps != null && pdfView.documentFitsView()) {
                 if (!ps.shown()) {
                     ps.show()
                 } else {
@@ -67,7 +71,7 @@ internal class DragPinchManager @SuppressLint("ClickableViewAccessibility") cons
         val mappedY = -pdfView.currentYOffset + y
         val page =
             pdfFile.getPageAtOffset(if (pdfView.isSwipeVertical) mappedY else mappedX, pdfView.zoom)
-        val pageSize = pdfFile.getScaledPageSize(page, pdfView.zoom)
+        val pageSize: SizeF = pdfFile.getScaledPageSize(page, pdfView.zoom)
         val pageX: Int
         val pageY: Int
         if (pdfView.isSwipeVertical) {
@@ -81,8 +85,8 @@ internal class DragPinchManager @SuppressLint("ClickableViewAccessibility") cons
             val mapped = pdfFile.mapRectToDevice(
                 page, pageX, pageY, pageSize.width.toInt(), pageSize.height.toInt(), link.bounds
             )
-            mapped?.sort()
-            if (mapped?.contains(mappedX, mappedY) == true) {
+            mapped!!.sort()
+            if (mapped.contains(mappedX, mappedY)) {
                 pdfView.callbacks.callLinkHandler(
                     LinkTapEvent(x, y, mappedX, mappedY, mapped, link)
                 )
@@ -189,14 +193,16 @@ internal class DragPinchManager @SuppressLint("ClickableViewAccessibility") cons
         val minY: Float
         val pdfFile = pdfView.pdfFile
         if (pdfView.isSwipeVertical) {
-            minX = -(pdfView.toCurrentScale(pdfFile?.maxPageWidth ?: 0f) - pdfView.width)
-            minY = -((pdfFile?.getDocLen(pdfView.zoom) ?: 0f) - pdfView.height)
+            minX = -(pdfView.toCurrentScale(pdfFile!!.maxPageWidth) - pdfView.width)
+            minY = -(pdfFile.getDocLen(pdfView.zoom) - pdfView.height)
         } else {
-            minX = -((pdfFile?.getDocLen(pdfView.zoom) ?: 0f) - pdfView.width)
-            minY = -(pdfView.toCurrentScale(pdfFile?.maxPageHeight ?: 0f) - pdfView.height)
+            minX = -(pdfFile!!.getDocLen(pdfView.zoom) - pdfView.width)
+            minY = -(pdfView.toCurrentScale(pdfFile.maxPageHeight) - pdfView.height)
         }
         animationManager.startFlingAnimation(
-            xOffset, yOffset, velocityX.toInt(), velocityY.toInt(), minX.toInt(), 0, minY.toInt(), 0
+            xOffset, yOffset, velocityX.toInt(), velocityY.toInt(), minX.toInt(), 0,
+            minY.toInt() - pdfView.toCurrentScale(pdfView.defaultOffset).roundToInt(),
+            pdfView.toCurrentScale(pdfView.defaultOffset).roundToInt()
         )
         return true
     }

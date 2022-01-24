@@ -5,15 +5,12 @@ import com.ahmer.pdfium.util.SizeF
 import kotlin.math.floor
 
 class PageSizeCalculator(
-    private val fitPolicy: FitPolicy,
-    private val originalMaxWidthPageSize: Size,
-    private val originalMaxHeightPageSize: Size,
-    private val viewSize: Size,
-    private val fitEachPage: Boolean
+    private val fitPolicy: FitPolicy, private val originalWidth: Size,
+    private val originalHeight: Size, private val viewSize: Size, private val fitEachPage: Boolean
 ) {
-    var optimalMaxWidthPageSize: SizeF? = null
+    var optimalWidth: SizeF? = null
         private set
-    var optimalMaxHeightPageSize: SizeF? = null
+    var optimalHeight: SizeF? = null
         private set
     private var widthRatio = 0f
     private var heightRatio = 0f
@@ -35,51 +32,37 @@ class PageSizeCalculator(
     private fun calculateMaxPages() {
         when (fitPolicy) {
             FitPolicy.HEIGHT -> {
-                optimalMaxHeightPageSize =
-                    fitHeight(originalMaxHeightPageSize, viewSize.height.toFloat())
-                heightRatio = optimalMaxHeightPageSize!!.height / originalMaxHeightPageSize.height
-                optimalMaxWidthPageSize = fitHeight(
-                    originalMaxWidthPageSize, originalMaxWidthPageSize.height * heightRatio
-                )
+                optimalHeight = fitHeight(originalHeight, viewSize.height.toFloat())
+                heightRatio = optimalHeight!!.height / originalHeight.height
+                optimalWidth = fitHeight(originalWidth, originalWidth.height * heightRatio)
             }
             FitPolicy.BOTH -> {
                 val localOptimalMaxWidth = fitBoth(
-                    originalMaxWidthPageSize,
-                    viewSize.width.toFloat(),
+                    originalWidth, viewSize.width.toFloat(), viewSize.height.toFloat()
+                )
+                val localWidthRatio = localOptimalMaxWidth.width / originalWidth.width
+                optimalHeight = fitBoth(
+                    originalHeight,
+                    originalHeight.width * localWidthRatio,
                     viewSize.height.toFloat()
                 )
-                val localWidthRatio = localOptimalMaxWidth.width / originalMaxWidthPageSize.width
-                optimalMaxHeightPageSize = fitBoth(
-                    originalMaxHeightPageSize,
-                    originalMaxHeightPageSize.width * localWidthRatio,
-                    viewSize.height.toFloat()
-                )
-                heightRatio = optimalMaxHeightPageSize!!.height / originalMaxHeightPageSize.height
-                optimalMaxWidthPageSize = fitBoth(
-                    originalMaxWidthPageSize,
+                heightRatio = optimalHeight!!.height / originalHeight.height
+                optimalWidth = fitBoth(
+                    originalWidth,
                     viewSize.width.toFloat(),
-                    originalMaxWidthPageSize.height * heightRatio
+                    originalWidth.height * heightRatio
                 )
-                widthRatio = optimalMaxWidthPageSize!!.width / originalMaxWidthPageSize.width
+                widthRatio = optimalWidth!!.width / originalWidth.width
             }
             else -> {
-                optimalMaxWidthPageSize = fitWidth(
-                    originalMaxWidthPageSize,
-                    viewSize.width.toFloat()
-                )
-                widthRatio = optimalMaxWidthPageSize!!.width / originalMaxWidthPageSize.width
-                optimalMaxHeightPageSize = fitWidth(
-                    originalMaxHeightPageSize,
-                    originalMaxHeightPageSize.width * widthRatio
-                )
+                optimalWidth = fitWidth(originalWidth, viewSize.width.toFloat())
+                widthRatio = optimalWidth!!.width / originalWidth.width
+                optimalHeight = fitWidth(originalHeight, originalHeight.width * widthRatio)
             }
         }
     }
 
-    private fun fitWidth(
-        pageSize: Size,
-        maxWidth: Float
-    ): SizeF {
+    private fun fitWidth(pageSize: Size, maxWidth: Float): SizeF {
         var w = pageSize.width.toFloat()
         var h = pageSize.height.toFloat()
         val ratio = w / h
@@ -88,10 +71,7 @@ class PageSizeCalculator(
         return SizeF(w, h)
     }
 
-    private fun fitHeight(
-        pageSize: Size,
-        maxHeight: Float
-    ): SizeF {
+    private fun fitHeight(pageSize: Size, maxHeight: Float): SizeF {
         var w = pageSize.width.toFloat()
         var h = pageSize.height.toFloat()
         val ratio = h / w
@@ -100,11 +80,7 @@ class PageSizeCalculator(
         return SizeF(w, h)
     }
 
-    private fun fitBoth(
-        pageSize: Size,
-        maxWidth: Float,
-        maxHeight: Float
-    ): SizeF {
+    private fun fitBoth(pageSize: Size, maxWidth: Float, maxHeight: Float): SizeF {
         var w = pageSize.width.toFloat()
         var h = pageSize.height.toFloat()
         val ratio = w / h

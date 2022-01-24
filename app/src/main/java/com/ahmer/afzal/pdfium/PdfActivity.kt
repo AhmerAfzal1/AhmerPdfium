@@ -24,12 +24,13 @@ import com.ahmer.pdfviewer.listener.*
 import com.ahmer.pdfviewer.scroll.DefaultScrollHandle
 import com.ahmer.pdfviewer.util.FitPolicy
 import com.ahmer.pdfviewer.util.PdfFileUtils.fileFromAsset
+import dagger.hilt.android.AndroidEntryPoint
 import io.ahmer.utils.utilcode.*
 import java.util.*
 
+@AndroidEntryPoint
 class PdfActivity : AppCompatActivity(), OnPageChangeListener, OnLoadCompleteListener {
 
-    val TAG = "AhmerPDF"
     private var password: String? = null
     private var isNightMode = false
     private var pdfFile: String? = null
@@ -50,39 +51,39 @@ class PdfActivity : AppCompatActivity(), OnPageChangeListener, OnLoadCompleteLis
         }
         binding!!.toolbar.setOnMenuItemClickListener { item ->
             when (item.itemId) {
-                R.id.menuPdfInfo -> {
+                R.id.menuInfo -> {
                     showMoreInfoDialog()
                 }
-                R.id.menuPdfJumpTo -> {
+                R.id.menuJumpTo -> {
                     showJumpToDialog()
                 }
-                R.id.menuPdfSwitchView -> {
+                R.id.menuSwitchView -> {
                     if (!isHorizontal) {
                         isHorizontal = true
                         //prefSwab.put("rememberSwipe", true)
-                        binding!!.toolbar.menu.findItem(R.id.menuPdfSwitchView)
-                            .setIcon(R.drawable.ic_menu_pdf_vertical)
+                        binding!!.toolbar.menu.findItem(R.id.menuSwitchView)
+                            .setIcon(R.drawable.ic_baseline_swipe_vert)
                     } else {
                         isHorizontal = false
                         //prefSwab.put("rememberSwipe", false)
-                        binding!!.toolbar.menu.findItem(R.id.menuPdfSwitchView)
-                            .setIcon(R.drawable.ic_menu_pdf_horizontal)
+                        binding!!.toolbar.menu.findItem(R.id.menuSwitchView)
+                            .setIcon(R.drawable.ic_baseline_swipe_horiz)
                     }
                     displayFromAsset()
                 }
-                R.id.menuPdfNightMode -> {
+                R.id.menuNightMode -> {
                     if (!isNightMode) {
                         isNightMode = true
-                        binding!!.toolbar.menu.findItem(R.id.menuPdfNightMode)
-                            .setIcon(R.drawable.ic_menu_pdf_sun)
+                        binding!!.toolbar.menu.findItem(R.id.menuNightMode)
+                            .setIcon(R.drawable.ic_baseline_light_mode)
                     } else {
                         isNightMode = false
-                        binding!!.toolbar.menu.findItem(R.id.menuPdfNightMode)
-                            .setIcon(R.drawable.ic_menu_pdf_moon)
+                        binding!!.toolbar.menu.findItem(R.id.menuNightMode)
+                            .setIcon(R.drawable.ic_baseline_dark_mode)
                     }
                     displayFromAsset()
                 }
-                R.id.menuPdfSearch -> {
+                R.id.menuSearch -> {
                     /*if (binding!!.layoutSearch.visibility != View.VISIBLE) {
                         binding!!.layoutSearch.visibility = View.VISIBLE
                     } else {
@@ -94,47 +95,46 @@ class PdfActivity : AppCompatActivity(), OnPageChangeListener, OnLoadCompleteLis
             }
             false
         }
-        binding!!.ivCancelSearch.setOnClickListener {
-            binding!!.etSearch.setText("")
-            binding!!.layoutSearch.visibility = View.GONE
-        }
         if (!isHorizontal) {
-            binding!!.toolbar.menu.findItem(R.id.menuPdfSwitchView)
-                .setIcon(R.drawable.ic_menu_pdf_horizontal)
+            binding!!.toolbar.menu.findItem(R.id.menuSwitchView)
+                .setIcon(R.drawable.ic_baseline_swipe_horiz)
         } else {
-            binding!!.toolbar.menu.findItem(R.id.menuPdfSwitchView)
-                .setIcon(R.drawable.ic_menu_pdf_vertical)
+            binding!!.toolbar.menu.findItem(R.id.menuSwitchView)
+                .setIcon(R.drawable.ic_baseline_swipe_vert)
         }
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {
-            binding!!.toolbar.menu.findItem(R.id.menuPdfInfo).icon.setTint(Color.WHITE)
-            binding!!.toolbar.menu.findItem(R.id.menuPdfJumpTo).icon.setTint(Color.WHITE)
-            binding!!.toolbar.menu.findItem(R.id.menuPdfSwitchView).icon.setTint(Color.WHITE)
-            binding!!.toolbar.menu.findItem(R.id.menuPdfNightMode).icon.setTint(Color.WHITE)
+            binding!!.toolbar.menu.findItem(R.id.menuInfo).icon.setTint(Color.WHITE)
+            binding!!.toolbar.menu.findItem(R.id.menuJumpTo).icon.setTint(Color.WHITE)
+            binding!!.toolbar.menu.findItem(R.id.menuSwitchView).icon.setTint(Color.WHITE)
+            binding!!.toolbar.menu.findItem(R.id.menuNightMode).icon.setTint(Color.WHITE)
         }
         init()
     }
 
     private fun init() {
         try {
-            if (intent.hasExtra("pdfNormal")) {
+            if (intent.getBooleanExtra(Constants.PDF_IS_NORMAL, true)) {
                 pdfFile = "grammar.pdf"
                 password = "5632"
-            } else if (intent.hasExtra("pdfProtected")) {
+            } else  {
                 pdfFile = "grammar.pdf"
                 password = null
             }
             displayFromAsset()
         } catch (e: Exception) {
             ThrowableUtils.getFullStackTrace(e)
-            Log.v(TAG, "Calling Intent or getIntent won't work in $javaClass Activity!")
+            Log.v(
+                Constants.LOG_TAG,
+                "Calling Intent or getIntent won't work in $javaClass Activity!"
+            )
         }
     }
 
     private fun displayFromAsset() {
-        binding?.toolbar?.menu?.findItem(R.id.menuPdfInfo)?.isEnabled = false
-        binding?.toolbar?.menu?.findItem(R.id.menuPdfJumpTo)?.isEnabled = false
-        binding?.toolbar?.menu?.findItem(R.id.menuPdfSwitchView)?.isEnabled = false
-        binding?.toolbar?.menu?.findItem(R.id.menuPdfNightMode)?.isEnabled = false
+        binding?.toolbar?.menu?.findItem(R.id.menuInfo)?.isEnabled = false
+        binding?.toolbar?.menu?.findItem(R.id.menuJumpTo)?.isEnabled = false
+        binding?.toolbar?.menu?.findItem(R.id.menuSwitchView)?.isEnabled = false
+        binding?.toolbar?.menu?.findItem(R.id.menuNightMode)?.isEnabled = false
         binding?.pdfView?.setBackgroundColor(Color.LTGRAY)
         binding!!.pdfView.fromAsset(pdfFile)
             .defaultPage(prefPage!!.getInt(pdfFile!!))
@@ -142,7 +142,10 @@ class PdfActivity : AppCompatActivity(), OnPageChangeListener, OnLoadCompleteLis
             .onPageChange(this)
             .onPageScroll(object : OnPageScrollListener {
                 override fun onPageScrolled(page: Int, positionOffset: Float) {
-                    Log.v(TAG, "onPageScrolled: Page $page PositionOffset: $positionOffset")
+                    Log.v(
+                        Constants.LOG_TAG,
+                        "onPageScrolled: Page $page PositionOffset: $positionOffset"
+                    )
                 }
             })
             .onError(object : OnErrorListener {
@@ -152,7 +155,7 @@ class PdfActivity : AppCompatActivity(), OnPageChangeListener, OnLoadCompleteLis
                     } else {
                         ToastUtils.showLong(resources.getString(R.string.error_loading_pdf))
                         t?.printStackTrace()
-                        Log.v(TAG, " onError: $t")
+                        Log.v(Constants.LOG_TAG, " onError: $t")
                     }
                 }
             })
@@ -160,7 +163,7 @@ class PdfActivity : AppCompatActivity(), OnPageChangeListener, OnLoadCompleteLis
                 override fun onPageError(page: Int, t: Throwable?) {
                     t?.printStackTrace()
                     ToastUtils.showLong("onPageError")
-                    Log.v(TAG, "onPageError: $t on page: $page")
+                    Log.v(Constants.LOG_TAG, "onPageError: $t on page: $page")
                 }
             })
             .onRender(object : OnRenderListener {
@@ -362,18 +365,18 @@ class PdfActivity : AppCompatActivity(), OnPageChangeListener, OnLoadCompleteLis
 
     override fun loadComplete(nbPages: Int) {
         printBookmarksTree(binding?.pdfView!!.getTableOfContents(), "-")
-        binding?.progressBarPdfView?.visibility = View.GONE
+        binding?.progressBar?.visibility = View.GONE
         totalPages = nbPages
-        binding?.toolbar?.menu?.findItem(R.id.menuPdfInfo)?.isEnabled = true
-        binding?.toolbar?.menu?.findItem(R.id.menuPdfJumpTo)?.isEnabled = true
-        binding?.toolbar?.menu?.findItem(R.id.menuPdfSwitchView)?.isEnabled = true
-        binding?.toolbar?.menu?.findItem(R.id.menuPdfNightMode)?.isEnabled = true
+        binding?.toolbar?.menu?.findItem(R.id.menuInfo)?.isEnabled = true
+        binding?.toolbar?.menu?.findItem(R.id.menuJumpTo)?.isEnabled = true
+        binding?.toolbar?.menu?.findItem(R.id.menuSwitchView)?.isEnabled = true
+        binding?.toolbar?.menu?.findItem(R.id.menuNightMode)?.isEnabled = true
     }
 
     private fun printBookmarksTree(tree: List<Bookmark>, sep: String) {
         for (bookmark in tree) {
             Log.v(
-                TAG, String.format(
+                Constants.LOG_TAG, String.format(
                     Locale.getDefault(), "%s %s, Page %d", sep,
                     bookmark.title, bookmark.pageIdx
                 )
@@ -390,8 +393,6 @@ class PdfActivity : AppCompatActivity(), OnPageChangeListener, OnLoadCompleteLis
 
     public override fun onPause() {
         super.onPause()
-        binding?.etSearch?.setText("")
-        binding?.layoutSearch?.visibility = View.GONE
     }
 
     public override fun onDestroy() {

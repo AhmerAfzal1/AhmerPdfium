@@ -6,12 +6,12 @@
     android:versionName="1.00">
 
     <uses-permission android:name="android.permission.READ_EXTERNAL_STORAGE" />
-    <!-- Must keep permission WRITE_EXTERNAL_STORAGE otherwise maybe not working properly -->
     <uses-permission
         android:name="android.permission.WRITE_EXTERNAL_STORAGE"
         tools:ignore="ScopedStorage" />
 
     <application
+        android:name=".App"
         android:icon="@drawable/icon_pdf"
         android:label="@string/app_name"
         android:requestLegacyExternalStorage="true"
@@ -30,6 +30,7 @@
         </activity>
         <activity
             android:name=".PdfActivity"
+            android:exported="false"
             android:theme="@style/AppTheme.NoActionBar" />
     </application>
 

@@ -3,9 +3,7 @@ package com.ahmer.pdfviewer.decoding
 import com.ahmer.pdfviewer.PDFView
 import com.ahmer.pdfviewer.PdfFile
 import com.ahmer.pdfviewer.source.DocumentSource
-import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.launch
+import kotlinx.coroutines.*
 
 class DecodingRunner(
     private val docSource: DocumentSource,
@@ -16,7 +14,7 @@ class DecodingRunner(
     private val userPages: IntArray = pages ?: intArrayOf()
 
     fun executeAsync() {
-        CoroutineScope(Dispatchers.Main).launch {
+        CoroutineScope(Dispatchers.Main + Job()).launch(SupervisorJob()) {
             val task = DecodingTask(docSource, password, userPages, pdfView)
             try {
                 val pdfFile: PdfFile? = task.call()

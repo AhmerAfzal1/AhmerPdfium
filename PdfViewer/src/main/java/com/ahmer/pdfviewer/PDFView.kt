@@ -2,7 +2,6 @@ package com.ahmer.pdfviewer
 
 import android.content.Context
 import android.graphics.*
-import android.os.HandlerThread
 import android.util.AttributeSet
 import android.util.Log
 import android.widget.RelativeLayout
@@ -23,9 +22,10 @@ import com.ahmer.pdfviewer.source.AssetSource
 import com.ahmer.pdfviewer.source.DocumentSource
 import com.ahmer.pdfviewer.source.FileSource
 import com.ahmer.pdfviewer.util.*
+import kotlinx.coroutines.cancel
 import java.io.File
 import java.util.*
-
+import com.ahmer.pdfviewer.util.SnapEdge
 
 /**
  * It supports animations, zoom, cache, and swipe.
@@ -52,6 +52,8 @@ class PDFView(context: Context?, set: AttributeSet?) : RelativeLayout(context, s
     var minZoom = DEFAULT_MIN_SCALE
     var midZoom = DEFAULT_MID_SCALE
     var maxZoom = DEFAULT_MAX_SCALE
+
+    var defaultOffset = 0f
 
     fun getSearchQuery(): String {
         return searchQuery
@@ -128,11 +130,6 @@ class PDFView(context: Context?, set: AttributeSet?) : RelativeLayout(context, s
      * Current state of the view
      */
     private var state = State.DEFAULT
-
-    /**
-     * The thread [.renderingHandler] will run on
-     */
-    private var renderingHandlerThread: HandlerThread?
 
     /**
      * Handler always waiting in the background and rendering tasks
@@ -290,8 +287,7 @@ class PDFView(context: Context?, set: AttributeSet?) : RelativeLayout(context, s
             return
         }
 
-        // Check the page number and makes the
-        // difference between UserPages and DocumentPages
+        // Check the page number and makes the difference between UserPages and DocumentPages
         pdfFile?.determineValidPageNumberFrom(pageNumber)?.let {
             pageNumber = it
         }
@@ -390,8 +386,7 @@ class PDFView(context: Context?, set: AttributeSet?) : RelativeLayout(context, s
         // Stop tasks
         if (renderingHandler != null) {
             renderingHandler?.stop()
-            renderingHandler?.removeMessages(RenderingHandler.MSG_RENDER_PART_TASK)
-            renderingHandler?.removeMessages(RenderingHandler.MSG_RENDER_PAGE_TASK)
+            renderingHandler?.cancel()
         }
 
         // Clear caches
@@ -427,10 +422,6 @@ class PDFView(context: Context?, set: AttributeSet?) : RelativeLayout(context, s
 
     override fun onDetachedFromWindow() {
         recycle()
-        if (renderingHandlerThread != null) {
-            renderingHandlerThread?.quitSafely()
-            renderingHandlerThread = null
-        }
         super.onDetachedFromWindow()
     }
 
@@ -676,7 +667,7 @@ class PDFView(context: Context?, set: AttributeSet?) : RelativeLayout(context, s
         }
 
         // Cancel all current tasks
-        renderingHandler?.removeMessages(RenderingHandler.MSG_RENDER_PART_TASK)
+        renderingHandler?.cancel()
         cacheManager.makeANewSet()
         pagesLoader.loadPages(searchQuery)
         reDraw()
@@ -688,7 +679,7 @@ class PDFView(context: Context?, set: AttributeSet?) : RelativeLayout(context, s
     }
 
     private var parseListener: OnTextParseListener? = null
-    fun parseText(pagesIndexes: List<Int>, listener: OnTextParseListener) {
+    fun parseText(listener: OnTextParseListener) {
         if (pdfFile == null) {
             return
         }
@@ -696,10 +687,6 @@ class PDFView(context: Context?, set: AttributeSet?) : RelativeLayout(context, s
             return
         }
         parseListener = listener
-
-        // Cancel all current tasks
-        renderingHandler?.removeMessages(RenderingHandler.MSG_PARSE_TEXT_TASK)
-        pagesLoader.parseText(pagesIndexes)
         reDraw()
     }
 
@@ -709,12 +696,7 @@ class PDFView(context: Context?, set: AttributeSet?) : RelativeLayout(context, s
     fun loadComplete(pdfFile: PdfFile?) {
         state = State.LOADED
         this.pdfFile = pdfFile
-        if (renderingHandlerThread?.isAlive != true) {
-            renderingHandlerThread?.start()
-        }
-        renderingHandler = renderingHandlerThread?.looper?.let {
-            RenderingHandler(it, this)
-        }
+        renderingHandler = RenderingHandler(this)
         renderingHandler?.start()
         if (scrollHandle != null) {
             scrollHandle?.setupLayout(this)
@@ -745,7 +727,7 @@ class PDFView(context: Context?, set: AttributeSet?) : RelativeLayout(context, s
      * @param part The created PagePart.
      */
     fun onBitmapRendered(part: PagePart) {
-        // when it is first rendered part
+        // When it is first rendered part
         if (state == State.LOADED) {
             state = State.SHOWN
             callbacks.callOnRender(pdfFile?.pagesCount ?: 0)
@@ -776,18 +758,6 @@ class PDFView(context: Context?, set: AttributeSet?) : RelativeLayout(context, s
 
     internal fun onPageRendered(pageIndex: Int, bitmap: Bitmap?) {
         pageRenderingListener?.onPageRendered(pageIndex = pageIndex, bitmap = bitmap)
-    }
-
-    fun renderPageBitmap(pageIndex: Int, isThumbnail: Boolean = false) {
-        if (pdfFile == null) {
-            return
-        }
-        if (renderingHandler == null) {
-            return
-        }
-
-        pagesLoader.renderPage(page = pageIndex, isThumbnail = isThumbnail)
-        reDraw()
     }
 
     /**
@@ -841,13 +811,16 @@ class PDFView(context: Context?, set: AttributeSet?) : RelativeLayout(context, s
         } else {
             // Check Y offset
             val scaledPageHeight = toCurrentScale(pdfFile?.maxPageHeight ?: 0f)
-            if (scaledPageHeight < height) {
+            if (scaledPageHeight < height && defaultOffset == 0f) {
                 offY = height.toFloat() / 2f - scaledPageHeight / 2f
+                if (defaultOffset == 0f && currentYOffset == 0f) {
+                    defaultOffset = offsetY
+                }
             } else {
-                if (offY > 0) {
-                    offY = 0f
-                } else if (offY + scaledPageHeight < height) {
-                    offY = height - scaledPageHeight
+                if (offY - toCurrentScale(defaultOffset) > 0) {
+                    offY = toCurrentScale(defaultOffset)
+                } else if (offsetY + (scaledPageHeight + toCurrentScale(defaultOffset)) < getHeight()) {
+                    offY = height - scaledPageHeight - toCurrentScale(defaultOffset)
                 }
             }
 
@@ -906,6 +879,16 @@ class PDFView(context: Context?, set: AttributeSet?) : RelativeLayout(context, s
     }
 
     /**
+     * Invoke on changing view height to calculate new default offset
+     */
+    fun calculateDefaultOffset() {
+        val scaledPageHeight = toCurrentScale(pdfFile!!.maxPageHeight)
+        if (scaledPageHeight < height) {
+            defaultOffset = height / 2f - scaledPageHeight / 2
+        }
+    }
+
+    /**
      * Animate to the nearest snapping position for the current SnapPolicy
      */
     fun performPageSnap() {
@@ -914,13 +897,10 @@ class PDFView(context: Context?, set: AttributeSet?) : RelativeLayout(context, s
         }
         val centerPage = findFocusPage(currentXOffset, currentYOffset)
         val edge = findSnapEdge(centerPage)
-        if (edge === SnapEdge.NONE) {
+        if (edge == SnapEdge.NONE) {
             return
         }
-        val offset = snapOffsetForPage(
-            centerPage,
-            edge
-        )
+        val offset = snapOffsetForPage(centerPage, edge)
         if (isSwipeVertical) {
             animationManager.startYAnimation(currentYOffset, -offset)
         } else {
@@ -962,9 +942,9 @@ class PDFView(context: Context?, set: AttributeSet?) : RelativeLayout(context, s
         var offset = pdfFile?.getPageOffset(pageIndex, zoom) ?: 0f
         val length = if (isSwipeVertical) height.toFloat() else width.toFloat()
         val pageLength = pdfFile?.getPageLength(pageIndex, zoom) ?: 0f
-        if (edge === SnapEdge.CENTER) {
+        if (edge == SnapEdge.CENTER) {
             offset = offset - length / 2f + pageLength / 2f
-        } else if (edge === SnapEdge.END) {
+        } else if (edge == SnapEdge.END) {
             offset = offset - length + pageLength
         }
         return offset
@@ -1451,10 +1431,6 @@ class PDFView(context: Context?, set: AttributeSet?) : RelativeLayout(context, s
      * Construct the initial view
      */
     init {
-        renderingHandlerThread = HandlerThread("PDF renderer")
-        /*if (isInEditMode) {
-            return
-        }*/
         cacheManager = CacheManager()
         animationManager = AnimationManager(this)
         dragPinchManager = DragPinchManager(this, animationManager)

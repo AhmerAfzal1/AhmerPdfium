@@ -21,64 +21,9 @@
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toTopOf="parent"
         app:menu="@menu/pdf"
-        app:navigationIcon="@drawable/ic_toolbar_arrow_back"
+        app:navigationIcon="@drawable/ic_baseline_arrow_back"
         app:title="@string/empty_description"
         app:titleMarginStart="0dp" />
-
-    <androidx.constraintlayout.widget.ConstraintLayout
-        android:id="@+id/layoutSearch"
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:background="@drawable/bg_rounded_card"
-        android:paddingStart="@dimen/margins_or_padding_05"
-        android:paddingLeft="@dimen/margins_or_padding_05"
-        android:paddingEnd="@dimen/margins_or_padding_05"
-        android:paddingRight="@dimen/margins_or_padding_05"
-        android:visibility="gone"
-        app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toBottomOf="@+id/toolbar">
-
-        <EditText
-            android:id="@+id/etSearch"
-            android:layout_width="0dp"
-            android:layout_height="wrap_content"
-            android:layout_marginStart="5dp"
-            android:layout_marginEnd="5dp"
-            android:ellipsize="start"
-            android:gravity="center_vertical"
-            android:hint="@string/searching"
-            android:importantForAutofill="no"
-            android:inputType="textAutoComplete"
-            android:paddingStart="@dimen/margins_or_padding_10"
-            android:paddingLeft="@dimen/margins_or_padding_10"
-            android:paddingTop="@dimen/margins_or_padding_05"
-            android:paddingEnd="@dimen/margins_or_padding_10"
-            android:paddingRight="@dimen/margins_or_padding_10"
-            android:paddingBottom="@dimen/margins_or_padding_05"
-            android:singleLine="true"
-            android:textAppearance="@style/Rose.TextAppearance.Normal"
-            android:textColor="@color/colorBlack"
-            app:layout_constraintBottom_toBottomOf="parent"
-            app:layout_constraintEnd_toStartOf="@+id/ivCancelSearch"
-            app:layout_constraintStart_toStartOf="parent"
-            app:layout_constraintTop_toTopOf="parent" />
-
-        <ImageView
-            android:id="@+id/ivCancelSearch"
-            android:layout_width="@dimen/pdf_image_view_cancel_size"
-            android:layout_height="@dimen/pdf_image_view_cancel_size"
-            android:layout_alignParentEnd="true"
-            android:layout_centerVertical="true"
-            android:contentDescription="@string/empty_description"
-            android:padding="@dimen/pdf_image_view_cancel_padding_size"
-            app:layout_constraintBottom_toBottomOf="parent"
-            app:layout_constraintEnd_toEndOf="parent"
-            app:layout_constraintStart_toEndOf="@+id/etSearch"
-            app:layout_constraintTop_toTopOf="parent"
-            app:srcCompat="@drawable/ic_pdf_cancel"
-            app:tint="@color/colorBlack" />
-    </androidx.constraintlayout.widget.ConstraintLayout>
 
     <com.ahmer.pdfviewer.PDFView
         android:id="@+id/pdfView"
@@ -87,10 +32,10 @@
         app:layout_constraintBottom_toBottomOf="parent"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toBottomOf="@+id/layoutSearch">
+        app:layout_constraintTop_toBottomOf="@+id/toolbar">
 
         <androidx.core.widget.ContentLoadingProgressBar
-            android:id="@+id/progressBarPdfView"
+            android:id="@+id/progressBar"
             style="?android:attr/progressBarStyleLarge"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"

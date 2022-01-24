@@ -16,7 +16,6 @@ import com.ahmer.pdfviewer.exception.PageRenderingException
 import com.ahmer.pdfviewer.util.FitPolicy
 import com.ahmer.pdfviewer.util.MathUtils
 import com.ahmer.pdfviewer.util.PageSizeCalculator
-import com.ahmer.pdfviewer.util.PdfConstants
 import java.util.*
 
 class PdfFile(
@@ -98,23 +97,22 @@ class PdfFile(
      * Calculated document length (width or height, depending on swipe mode)
      */
     private var documentLength = 0f
-    var textHighlightColor = Color.WHITE
 
-    private fun setup(viewSize: Size) {
-        pagesCount =
-            if (originalUserPages.isNotEmpty()) originalUserPages.size else pdfiumCore.totalPagesCount
-        for (i in 0 until pagesCount) {
-            val pageSize = pdfiumCore.getPageSize(i)
-            if (pageSize.width > originalMaxWidthPageSize.width) {
-                originalMaxWidthPageSize = pageSize
-            }
-            if (pageSize.height > originalMaxHeightPageSize.height) {
-                originalMaxHeightPageSize = pageSize
-            }
-            originalPageSizes.add(pageSize)
-        }
-        recalculatePageSizes(viewSize)
-    }
+    /**
+     * Get page size with biggest dimension (width in vertical mode and height in horizontal mode)
+     *
+     * @return size of page
+     */
+    private val maxPageSize: SizeF?
+        get() = if (isVertical) maxWidthPageSize else maxHeightPageSize
+
+    val maxPageWidth: Float
+        get() = maxPageSize?.width ?: 0f
+
+    val maxPageHeight: Float
+        get() = maxPageSize?.height ?: 0f
+
+    var textHighlightColor = Color.WHITE
 
     fun getPageRotation(pageIndex: Int): Int {
         return pdfiumCore.getPageRotation(pageIndex)
@@ -155,8 +153,8 @@ class PdfFile(
             pageFitPolicy, originalMaxWidthPageSize,
             originalMaxHeightPageSize, viewSize, fitEachPage
         )
-        maxWidthPageSize = calculator.optimalMaxWidthPageSize
-        maxHeightPageSize = calculator.optimalMaxHeightPageSize
+        maxWidthPageSize = calculator.optimalWidth
+        maxHeightPageSize = calculator.optimalHeight
         for (size in originalPageSizes) {
             pageSizes.add(calculator.calculate(size))
         }
@@ -169,27 +167,13 @@ class PdfFile(
 
     fun getPageSize(pageIndex: Int): SizeF {
         val docPage = documentPage(pageIndex)
-        return if (docPage < 0) {
-            SizeF(0f, 0f)
-        } else pageSizes[pageIndex]
+        return if (docPage < 0) SizeF(0f, 0f) else pageSizes[pageIndex]
     }
 
     fun getScaledPageSize(pageIndex: Int, zoom: Float): SizeF {
         val size = getPageSize(pageIndex)
         return SizeF(size.width * zoom, size.height * zoom)
     }
-
-    /**
-     * get page size with biggest dimension (width in vertical mode and height in horizontal mode)
-     *
-     * @return size of page
-     */
-    private val maxPageSize: SizeF?
-        get() = if (isVertical) maxWidthPageSize else maxHeightPageSize
-    val maxPageWidth: Float
-        get() = maxPageSize?.width ?: 0f
-    val maxPageHeight: Float
-        get() = maxPageSize?.height ?: 0f
 
     private fun prepareAutoSpacing(viewSize: Size) {
         pageSpacing.clear()
@@ -320,13 +304,10 @@ class PdfFile(
         return !openedPages[docPage, false]
     }
 
-    fun renderPageBitmap(
-        bitmap: Bitmap, pageIndex: Int, bounds: Rect, annotationRendering: Boolean
-    ) {
+    fun renderPageBitmap(bitmap: Bitmap, pageIndex: Int, bounds: Rect, annotation: Boolean) {
         val docPage = documentPage(pageIndex)
         pdfiumCore.renderPageBitmap(
-            bitmap, docPage, bounds.left, bounds.top, bounds.width(), bounds.height(),
-            annotationRendering
+            bitmap, docPage, bounds.left, bounds.top, bounds.width(), bounds.height(), annotation
         )
     }
 
@@ -388,6 +369,22 @@ class PdfFile(
         return if (documentPage < 0 || userPage >= pagesCount) {
             -1
         } else documentPage
+    }
+
+    private fun setup(viewSize: Size) {
+        pagesCount =
+            if (originalUserPages.isNotEmpty()) originalUserPages.size else getTotalPagesCount()
+        for (i in 0 until pagesCount) {
+            val pageSize = pdfiumCore.getPageSize(i)
+            if (pageSize.width > originalMaxWidthPageSize.width) {
+                originalMaxWidthPageSize = pageSize
+            }
+            if (pageSize.height > originalMaxHeightPageSize.height) {
+                originalMaxHeightPageSize = pageSize
+            }
+            originalPageSizes.add(pageSize)
+        }
+        recalculatePageSizes(viewSize)
     }
 
     companion object {

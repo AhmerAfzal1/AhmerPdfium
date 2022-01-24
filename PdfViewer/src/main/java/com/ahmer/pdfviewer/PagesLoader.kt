@@ -64,7 +64,7 @@ internal class PagesLoader(private val pdfView: PDFView) {
     }
 
     /**
-     * calculate the render range of each page
+     * Calculate the render range of each page
      */
     private fun getRenderRangeList(
         firstXOffset: Float, firstYOffset: Float, lastXOffset: Float, lastYOffset: Float
@@ -304,21 +304,5 @@ internal class PagesLoader(private val pdfView: PDFView) {
         xOffset = -MathUtils.max(pdfView.currentXOffset, 0f)
         yOffset = -MathUtils.max(pdfView.currentYOffset, 0f)
         loadVisible(searchQuery)
-    }
-
-    fun parseText(pagesIndexes: List<Int>) {
-        if (pagesIndexes.isNotEmpty()) {
-            for (index in pagesIndexes) {
-                pdfView.renderingHandler?.addParseTextTask(index)
-            }
-        }
-    }
-
-    fun renderPage(page: Int, isThumbnail: Boolean = true) {
-        val ratio = if (isThumbnail) PdfConstants.THUMBNAIL_RATIO else 1.0f
-        val pageSize = pdfView.pdfFile?.getPageSize(page) ?: SizeF(0f, 0f)
-        val width = pageSize.width * ratio
-        val height = pageSize.height * ratio
-        pdfView.renderingHandler?.addPageRenderingTask(page = page, width = width, height = height)
     }
 }
