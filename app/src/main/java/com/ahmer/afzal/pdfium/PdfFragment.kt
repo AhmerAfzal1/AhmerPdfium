@@ -61,6 +61,9 @@ class PdfFragment : Fragment(R.layout.fragment_pdf), OnPageChangeListener, OnLoa
             mPdfView = pdfView
             mProgressBar = progressBar
             mMenu = toolbar.menu
+            toolbar.setNavigationOnClickListener {
+                requireActivity().onBackPressed()
+            }
         }
         lifecycleScope.launch {
             mIsPageSnap = mViewModel.flow.first().pdfPageSnap
@@ -303,6 +306,7 @@ class PdfFragment : Fragment(R.layout.fragment_pdf), OnPageChangeListener, OnLoa
         pdfView.minZoom = 1.0f
         pdfView.midZoom = 2.5f
         pdfView.maxZoom = 4.0f
+        pdfView.setTextHighlightColor(Color.RED)
     }
 
     private fun printBookmarksTree(tree: List<Bookmark>, sep: String) {
@@ -324,7 +328,7 @@ class PdfFragment : Fragment(R.layout.fragment_pdf), OnPageChangeListener, OnLoa
     override fun onPageChanged(page: Int, pageCount: Int) {
         mCurrentPage = page
         val title = String.format(Locale.getDefault(), "%s %s of %s", "Page", page + 1, pageCount)
-        activity?.title = title
+        mBinding.toolbar.title = title
     }
 
     override fun loadComplete(nbPages: Int) {

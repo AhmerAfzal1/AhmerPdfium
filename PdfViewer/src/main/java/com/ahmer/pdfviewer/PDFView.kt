@@ -25,7 +25,6 @@ import com.ahmer.pdfviewer.util.*
 import kotlinx.coroutines.cancel
 import java.io.File
 import java.util.*
-import com.ahmer.pdfviewer.util.SnapEdge
 
 /**
  * It supports animations, zoom, cache, and swipe.
@@ -819,7 +818,7 @@ class PDFView(context: Context?, set: AttributeSet?) : RelativeLayout(context, s
             } else {
                 if (offY - toCurrentScale(defaultOffset) > 0) {
                     offY = toCurrentScale(defaultOffset)
-                } else if (offsetY + (scaledPageHeight + toCurrentScale(defaultOffset)) < getHeight()) {
+                } else if (offsetY + (scaledPageHeight + toCurrentScale(defaultOffset)) < height) {
                     offY = height - scaledPageHeight - toCurrentScale(defaultOffset)
                 }
             }
@@ -1081,10 +1080,7 @@ class PDFView(context: Context?, set: AttributeSet?) : RelativeLayout(context, s
 
     fun zoomWithAnimation(scale: Float) {
         animationManager.startZoomAnimation(
-            width.toFloat() / 2f,
-            height.toFloat() / 2f,
-            zoom,
-            scale
+            width.toFloat() / 2f, height.toFloat() / 2f, zoom, scale
         )
     }
 
