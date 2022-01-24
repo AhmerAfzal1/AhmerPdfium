@@ -1,7 +1,6 @@
 package com.ahmer.afzal.pdfium
 
 import android.app.Dialog
-import android.content.Context
 import android.graphics.Color
 import android.os.Build
 import android.os.Bundle
@@ -87,8 +86,7 @@ class PdfFragment : Fragment(R.layout.fragment_pdf), OnPageChangeListener, OnLoa
             dialog.setContentView(R.layout.dialog_pdf_password)
             dialog.window!!.setLayout(-1, -2)
             dialog.window!!.setLayout(
-                RelativeLayout.LayoutParams.MATCH_PARENT,
-                RelativeLayout.LayoutParams.WRAP_CONTENT
+                RelativeLayout.LayoutParams.MATCH_PARENT, RelativeLayout.LayoutParams.WRAP_CONTENT
             )
             val inputPass = dialog.findViewById<EditText>(R.id.inputPassword)
             inputPass.requestFocus()
@@ -118,10 +116,7 @@ class PdfFragment : Fragment(R.layout.fragment_pdf), OnPageChangeListener, OnLoa
             }
             val cancel = dialog.findViewById<TextView>(R.id.btnCancel)
             cancel.setOnClickListener {
-                val imm =
-                    (requireContext().getSystemService(AppCompatActivity.INPUT_METHOD_SERVICE) as InputMethodManager)
-                dialog.dismiss()
-                imm.hideSoftInputFromInputMethod(inputPass.windowToken, 0)
+                AppServices.hideKeyboard()
                 dialog.dismiss()
             }
             inputPass.addTextChangedListener(object : TextWatcher {
@@ -145,8 +140,7 @@ class PdfFragment : Fragment(R.layout.fragment_pdf), OnPageChangeListener, OnLoa
             dialog.setContentView(R.layout.dialog_pdf_jumpto)
             dialog.window!!.setLayout(-1, -2)
             dialog.window!!.setLayout(
-                RelativeLayout.LayoutParams.MATCH_PARENT,
-                RelativeLayout.LayoutParams.WRAP_CONTENT
+                RelativeLayout.LayoutParams.MATCH_PARENT, RelativeLayout.LayoutParams.WRAP_CONTENT
             )
             val inputPageNo = dialog.findViewById<EditText>(R.id.inputPageNumber)
             inputPageNo.requestFocus()
@@ -159,17 +153,16 @@ class PdfFragment : Fragment(R.layout.fragment_pdf), OnPageChangeListener, OnLoa
             goTo.isClickable = false
             goTo.setOnClickListener {
                 val pageNumber: String = inputPageNo.text.toString()
-                if (pageNumber == "") {
-                    ToastUtils.showShort(getString(R.string.please_enter_number))
-                } else {
-                    //requestHideSelf(InputMethodManager.HIDE_NOT_ALWAYS)
-                    val imm =
-                        (requireContext().getSystemService(Context.INPUT_METHOD_SERVICE) as InputMethodManager)
-                    imm.hideSoftInputFromInputMethod(inputPageNo.windowToken, 0)
-                    val number = pageNumber.toInt()
-                    if (number > pdfView.getTotalPagesCount()) {
+                val number: Int = pageNumber.toInt()
+                when {
+                    pageNumber == "" -> {
+                        ToastUtils.showShort(getString(R.string.please_enter_number))
+                    }
+                    number > pdfView.getTotalPagesCount() -> {
                         ToastUtils.showShort(getString(R.string.no_page))
-                    } else {
+                    }
+                    else -> {
+                        AppServices.hideKeyboard()
                         pdfView.jumpTo(number - 1, true)
                     }
                 }
@@ -177,9 +170,7 @@ class PdfFragment : Fragment(R.layout.fragment_pdf), OnPageChangeListener, OnLoa
             }
             val cancel = dialog.findViewById<Button>(R.id.btnCancel)
             cancel.setOnClickListener {
-                val imm =
-                    (requireContext().getSystemService(AppCompatActivity.INPUT_METHOD_SERVICE) as InputMethodManager)
-                imm.hideSoftInputFromInputMethod(inputPageNo.windowToken, 0)
+                AppServices.hideKeyboard()
                 dialog.dismiss()
             }
             inputPageNo.addTextChangedListener(object : TextWatcher {
@@ -203,8 +194,7 @@ class PdfFragment : Fragment(R.layout.fragment_pdf), OnPageChangeListener, OnLoa
             dialog.setContentView(R.layout.dialog_pdf_info)
             dialog.window!!.setLayout(-1, -2)
             dialog.window!!.setLayout(
-                RelativeLayout.LayoutParams.MATCH_PARENT,
-                RelativeLayout.LayoutParams.WRAP_CONTENT
+                RelativeLayout.LayoutParams.MATCH_PARENT, RelativeLayout.LayoutParams.WRAP_CONTENT
             )
             val tvTitle = dialog.findViewById<TextView>(R.id.tvTitle)
             val tvAuthor = dialog.findViewById<TextView>(R.id.tvAuthor)
@@ -352,7 +342,7 @@ class PdfFragment : Fragment(R.layout.fragment_pdf), OnPageChangeListener, OnLoa
         mSearchView.onQueryTextChanged {
             mViewModel.searchDescription.value = it
             mPdfView.setSearchQuery(it)
-            Log.v(Constants.LOG_TAG,"Search query: $it")
+            Log.v(Constants.LOG_TAG, "Search query: $it")
         }
     }
 

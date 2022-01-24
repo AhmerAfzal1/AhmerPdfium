@@ -67,6 +67,10 @@
                 android:layout_below="@id/tvDescription"
                 android:fontFamily="@font/roboto"
                 android:padding="4dp"
+                app:counterOverflowTextAppearance="@style/TextAppearance.Design.Counter.Overflow"
+                app:counterTextAppearance="@style/TextAppearance.Design.Counter"
+                app:errorTextAppearance="@style/TextAppearance.Design.Error"
+                app:hintTextAppearance="@style/TextAppearance.Design.Hint"
                 app:layout_constraintEnd_toEndOf="parent"
                 app:layout_constraintStart_toStartOf="parent"
                 app:layout_constraintTop_toBottomOf="@+id/tvDescription">
