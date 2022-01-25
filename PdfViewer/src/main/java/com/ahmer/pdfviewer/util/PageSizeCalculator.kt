@@ -48,23 +48,24 @@ class PageSizeCalculator(
                 )
                 heightRatio = optimalHeight!!.height / originalHeight.height
                 optimalWidth = fitBoth(
-                    originalWidth,
-                    viewSize.width.toFloat(),
-                    originalWidth.height * heightRatio
+                    originalWidth, viewSize.width.toFloat(), originalWidth.height * heightRatio
                 )
                 widthRatio = optimalWidth!!.width / originalWidth.width
             }
             else -> {
                 optimalWidth = fitWidth(originalWidth, viewSize.width.toFloat())
                 widthRatio = optimalWidth!!.width / originalWidth.width
-                optimalHeight = fitWidth(originalHeight, originalHeight.width * widthRatio)
+                val newPageSize = fitWidth(originalHeight, originalHeight.width * widthRatio)
+                if (optimalHeight == null || newPageSize.height > optimalHeight!!.height) {
+                    optimalHeight = newPageSize
+                }
             }
         }
     }
 
     private fun fitWidth(pageSize: Size, maxWidth: Float): SizeF {
-        var w = pageSize.width.toFloat()
-        var h = pageSize.height.toFloat()
+        var w: Float = pageSize.width.toFloat()
+        var h: Float = pageSize.height.toFloat()
         val ratio = w / h
         w = maxWidth
         h = floor((maxWidth / ratio).toDouble()).toFloat()
@@ -72,8 +73,8 @@ class PageSizeCalculator(
     }
 
     private fun fitHeight(pageSize: Size, maxHeight: Float): SizeF {
-        var w = pageSize.width.toFloat()
-        var h = pageSize.height.toFloat()
+        var w: Float = pageSize.width.toFloat()
+        var h: Float = pageSize.height.toFloat()
         val ratio = h / w
         h = maxHeight
         w = floor((maxHeight / ratio).toDouble()).toFloat()
@@ -81,8 +82,8 @@ class PageSizeCalculator(
     }
 
     private fun fitBoth(pageSize: Size, maxWidth: Float, maxHeight: Float): SizeF {
-        var w = pageSize.width.toFloat()
-        var h = pageSize.height.toFloat()
+        var w: Float = pageSize.width.toFloat()
+        var h: Float = pageSize.height.toFloat()
         val ratio = w / h
         w = maxWidth
         h = floor((maxWidth / ratio).toDouble()).toFloat()

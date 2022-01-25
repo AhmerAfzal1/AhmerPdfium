@@ -198,7 +198,7 @@ class PdfiumCore(context: Context, file: File, pdfPassword: String? = null) {
      */
     @Synchronized
     @Throws(IOException::class)
-    private fun newDocument(fd: ParcelFileDescriptor, password: String? = null) {
+    fun newDocument(fd: ParcelFileDescriptor, password: String? = null) {
         mFileDescriptor = fd
         mNativeDocPtr = nativeOpenDocument(fd.fd, password)
     }

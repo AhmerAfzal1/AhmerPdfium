@@ -26,15 +26,14 @@ internal class DecodingTask(
             val pdfiumCore = docSource.createDocument(pdfView.context, password)
             pdfFile = PdfFile(
                 pdfiumCore = pdfiumCore,
-                pageFitPolicy = pdfView.pageFitPolicy,
+                pageFitPolicy = pdfView.getPageFitPolicy(),
                 viewSize = getViewSize(pdfView),
                 originalUserPages = userPages,
-                isVertical = pdfView.isSwipeVertical,
-                spacingPx = pdfView.spacingPx,
+                isVertical = pdfView.isSwipeVertical(),
+                spacingPx = pdfView.getSpacingPx(),
                 autoSpacing = pdfView.isAutoSpacingEnabled(),
-                fitEachPage = pdfView.isFitEachPage
+                fitEachPage = pdfView.isFitEachPage()
             )
-            pdfFile?.textHighlightColor = pdfView.getTextHighlightColor()
             pdfFile
         } else {
             throw NullPointerException("pdfView == null")

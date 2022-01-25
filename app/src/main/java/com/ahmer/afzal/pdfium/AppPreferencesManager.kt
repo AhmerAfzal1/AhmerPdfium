@@ -19,8 +19,8 @@ import javax.inject.Singleton
 class AppPreferencesManager @Inject constructor(@ApplicationContext private val context: Context) {
 
     private object PreferencesKeys {
-        val PDF_PAGE_SNAP = booleanPreferencesKey("PageSnapKey")
-        val PDF_VIEW_CHANGE = booleanPreferencesKey("ViewChangeKey")
+        val PDF_PAGE_SNAP = booleanPreferencesKey("SnapKey")
+        val PDF_VIEW_CHANGE = booleanPreferencesKey("ViewKey")
     }
 
     data class FilterPreferences(

@@ -44,8 +44,8 @@ class PdfFragment : Fragment(R.layout.fragment_pdf), OnPageChangeListener, OnLoa
     private lateinit var mPdfView: PDFView
     private lateinit var mProgressBar: ProgressBar
     private lateinit var mSearchView: SearchView
+    private val mViewModel: PdfFragmentModel by viewModels()
     private var mCurrentPage: Int = 0
-    private val mViewModel: PdfViewModel by viewModels()
     private var mIsNightMode: Boolean = false
     private var mIsPageSnap: Boolean = true
     private var mIsViewHorizontal: Boolean = false
@@ -64,11 +64,16 @@ class PdfFragment : Fragment(R.layout.fragment_pdf), OnPageChangeListener, OnLoa
                 requireActivity().onBackPressed()
             }
         }
-        lifecycleScope.launch {
+        viewLifecycleOwner.lifecycleScope.launch {
             mIsPageSnap = mViewModel.flow.first().pdfPageSnap
             mIsViewHorizontal = mViewModel.flow.first().pdfViewChange
         }
         setHasOptionsMenu(true)
+        if (!mIsViewHorizontal) {
+            mMenu.findItem(R.id.menuSwitchView).setIcon(R.drawable.ic_baseline_swipe_horiz)
+        } else {
+            mMenu.findItem(R.id.menuSwitchView).setIcon(R.drawable.ic_baseline_swipe_vert)
+        }
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {
             mMenu.findItem(R.id.menuInfo).icon.setTint(Color.WHITE)
             mMenu.findItem(R.id.menuJumpTo).icon.setTint(Color.WHITE)
@@ -164,9 +169,9 @@ class PdfFragment : Fragment(R.layout.fragment_pdf), OnPageChangeListener, OnLoa
                     else -> {
                         AppServices.hideKeyboard()
                         pdfView.jumpTo(number - 1, true)
+                        dialog.dismiss()
                     }
                 }
-                dialog.dismiss()
             }
             val cancel = dialog.findViewById<Button>(R.id.btnCancel)
             cancel.setOnClickListener {
@@ -293,9 +298,9 @@ class PdfFragment : Fragment(R.layout.fragment_pdf), OnPageChangeListener, OnLoa
             .pageFitPolicy(FitPolicy.BOTH)
             .load()
         pdfView.useBestQuality(true)
-        pdfView.minZoom = 1.0f
-        pdfView.midZoom = 2.5f
-        pdfView.maxZoom = 4.0f
+        pdfView.setMinZoom(1f)
+        pdfView.setMidZoom(2.5f)
+        pdfView.setMaxZoom(4.0f)
         pdfView.setTextHighlightColor(Color.RED)
     }
 
@@ -303,11 +308,9 @@ class PdfFragment : Fragment(R.layout.fragment_pdf), OnPageChangeListener, OnLoa
         for (b in tree) {
             Log.v(
                 Constants.LOG_TAG,
-                " ${
-                    String.format(
-                        Locale.getDefault(), "Bookmark %s %s, Page %d", sep, b.title, b.pageIdx
-                    )
-                }"
+                String.format(
+                    Locale.getDefault(), "Bookmark %s %s, Page %d", sep, b.title, b.pageIdx
+                )
             )
             if (b.hasChildren()) {
                 printBookmarksTree(b.children, "$sep-")
@@ -366,18 +369,19 @@ class PdfFragment : Fragment(R.layout.fragment_pdf), OnPageChangeListener, OnLoa
             R.id.menuPageSnap -> {
                 mIsPageSnap = !mIsPageSnap
                 mViewModel.updatePdfPageSnap(mIsPageSnap)
+                mPdfFile?.let { displayFromAsset(mPdfView, it) }
                 true
             }
             R.id.menuSwitchView -> {
-                if (mIsViewHorizontal) {
+                if (!mIsViewHorizontal) {
                     mIsViewHorizontal = true
                     mMenu.findItem(R.id.menuSwitchView).setIcon(R.drawable.ic_baseline_swipe_vert)
                 } else {
                     mIsViewHorizontal = false
                     mMenu.findItem(R.id.menuSwitchView).setIcon(R.drawable.ic_baseline_swipe_horiz)
                 }
-                mPdfFile?.let { displayFromAsset(mPdfView, it) }
                 mViewModel.updatePdfViewChange(mIsViewHorizontal)
+                mPdfFile?.let { displayFromAsset(mPdfView, it) }
                 true
             }
             R.id.menuInfo -> {
@@ -386,6 +390,11 @@ class PdfFragment : Fragment(R.layout.fragment_pdf), OnPageChangeListener, OnLoa
             }
             else -> super.onOptionsItemSelected(item)
         }
+    }
+
+    override fun onDestroyView() {
+        super.onDestroyView()
+        mSearchView.setOnQueryTextListener(null)
     }
 
     private fun init() {
@@ -403,10 +412,5 @@ class PdfFragment : Fragment(R.layout.fragment_pdf), OnPageChangeListener, OnLoa
                 Constants.LOG_TAG, "Calling arguments or getArguments won't work. Ex: ${e.message}"
             )
         }
-    }
-
-    override fun onDestroyView() {
-        super.onDestroyView()
-        mSearchView.setOnQueryTextListener(null)
     }
 }

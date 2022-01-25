@@ -33,15 +33,11 @@ class CacheManager {
         synchronized(passiveActiveLock) {
             while (activeCache.size + passiveCache.size >= CACHE_SIZE && !passiveCache.isEmpty()) {
                 val part = passiveCache.poll()
-                if (part != null) {
-                    part.renderedBitmap?.recycle()
-                }
+                part?.renderedBitmap?.recycle()
             }
             while (activeCache.size + passiveCache.size >= CACHE_SIZE && !activeCache.isEmpty()) {
                 val part = activeCache.poll()
-                if (part != null) {
-                    part.renderedBitmap?.recycle()
-                }
+                part?.renderedBitmap?.recycle()
             }
         }
     }
@@ -94,7 +90,7 @@ class CacheManager {
     private fun addWithoutDuplicates(collection: MutableCollection<PagePart>, newPart: PagePart) {
         for (part in collection) {
             if (part == newPart) {
-                newPart.renderedBitmap?.recycle()
+                newPart.renderedBitmap!!.recycle()
                 return
             }
         }

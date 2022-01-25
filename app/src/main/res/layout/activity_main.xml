@@ -26,30 +26,52 @@
         app:titleMarginStart="0dp" />
 
     <Button
-        android:id="@+id/pdfNormal"
+        android:id="@+id/pdfNormalFragment"
         style="@style/Widget.AppCompat.Button.Colored"
-        android:layout_width="wrap_content"
+        android:layout_width="204dp"
         android:layout_height="wrap_content"
-        android:text="@string/normal_pdf"
+        android:text="@string/normal_fragment"
+        android:textAllCaps="false"
         android:textSize="16sp"
         app:layout_constraintBottom_toBottomOf="parent"
-        app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintEnd_toStartOf="@+id/pdfProtected"
-        app:layout_constraintHorizontal_bias="0.1"
         app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toBottomOf="@+id/toolbar" />
+        app:layout_constraintTop_toTopOf="@+id/toolbar" />
 
     <Button
-        android:id="@+id/pdfProtected"
+        android:id="@+id/pdfProtectedFragment"
         style="@style/Widget.AppCompat.Button.Colored"
-        android:layout_width="wrap_content"
+        android:layout_width="204dp"
         android:layout_height="wrap_content"
-        android:text="@string/protected_pdf"
+        android:text="@string/protected_fragment"
+        android:textAllCaps="false"
         android:textSize="16sp"
         app:layout_constraintBottom_toBottomOf="parent"
         app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintHorizontal_bias="0.1"
-        app:layout_constraintStart_toEndOf="@+id/pdfNormal"
-        app:layout_constraintTop_toBottomOf="@+id/toolbar" />
+        app:layout_constraintStart_toEndOf="@+id/pdfNormalFragment"
+        app:layout_constraintTop_toTopOf="@+id/toolbar" />
+
+    <Button
+        android:id="@+id/pdfNormalActivity"
+        style="@style/Widget.AppCompat.Button.Colored"
+        android:layout_width="204dp"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="16dp"
+        android:text="@string/normal_activity"
+        android:textAllCaps="false"
+        android:textSize="16sp"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toBottomOf="@+id/pdfNormalFragment" />
+
+    <Button
+        android:id="@+id/pdfProtectedActivity"
+        style="@style/Widget.AppCompat.Button.Colored"
+        android:layout_width="204dp"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="16dp"
+        android:text="@string/protected_activity"
+        android:textAllCaps="false"
+        android:textSize="16sp"
+        app:layout_constraintStart_toEndOf="@+id/pdfNormalActivity"
+        app:layout_constraintTop_toBottomOf="@+id/pdfProtectedFragment" />
 
 </androidx.constraintlayout.widget.ConstraintLayout>

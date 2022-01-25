@@ -8,7 +8,7 @@ import kotlinx.coroutines.launch
 import javax.inject.Inject
 
 @HiltViewModel
-class PdfViewModel @Inject constructor(private val pref: AppPreferencesManager) : ViewModel() {
+class PdfActivityModel @Inject constructor(private val pref: AppPreferencesManager) : ViewModel() {
 
     val searchDescription = MutableStateFlow("")
 

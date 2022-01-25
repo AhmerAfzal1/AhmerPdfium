@@ -1,6 +1,5 @@
 package com.ahmer.pdfviewer.scroll
 
-import android.annotation.SuppressLint
 import android.content.Context
 import android.graphics.Color
 import android.graphics.drawable.Drawable
@@ -23,15 +22,15 @@ class DefaultScrollHandle @JvmOverloads constructor(
     private var textView: TextView = TextView(context)
     private var pdfView: PDFView? = null
     private var currentPos = 0f
-
     private val hidePageScrollerRunnable = Runnable { hide() }
+
     override fun setupLayout(pdfView: PDFView) {
         val align: Int
         val width: Int
         val height: Int
         val background: Drawable?
         // Determine handler position, default is right (when scrolling vertically) or bottom (when scrolling horizontally)
-        if (pdfView.isSwipeVertical) {
+        if (pdfView.isSwipeVertical()) {
             width = HANDLE_LONG
             height = HANDLE_SHORT
             if (inverted) { // left
@@ -40,26 +39,20 @@ class DefaultScrollHandle @JvmOverloads constructor(
                     ContextCompat.getDrawable(context, R.drawable.default_scroll_handle_left)
             } else { // right
                 align = ALIGN_PARENT_RIGHT
-                background = ContextCompat.getDrawable(
-                    context,
-                    R.drawable.default_scroll_handle_right
-                )
+                background =
+                    ContextCompat.getDrawable(context, R.drawable.default_scroll_handle_right)
             }
         } else {
             width = HANDLE_SHORT
             height = HANDLE_LONG
             if (inverted) { // top
                 align = ALIGN_PARENT_TOP
-                background = ContextCompat.getDrawable(
-                    context,
-                    R.drawable.default_scroll_handle_top
-                )
+                background =
+                    ContextCompat.getDrawable(context, R.drawable.default_scroll_handle_top)
             } else { // bottom
                 align = ALIGN_PARENT_BOTTOM
-                background = ContextCompat.getDrawable(
-                    context,
-                    R.drawable.default_scroll_handle_bottom
-                )
+                background =
+                    ContextCompat.getDrawable(context, R.drawable.default_scroll_handle_bottom)
             }
         }
         setBackground(background)
@@ -90,10 +83,7 @@ class DefaultScrollHandle @JvmOverloads constructor(
             handler.removeCallbacks(hidePageScrollerRunnable)
         }
         if (pdfView != null) {
-            setPosition(
-                (if (pdfView?.isSwipeVertical == true) pdfView?.height ?: 0 else pdfView?.width
-                    ?: 0) * position
-            )
+            setPosition((if (pdfView!!.isSwipeVertical()) pdfView!!.height else pdfView!!.width) * position)
         }
     }
 
@@ -102,22 +92,18 @@ class DefaultScrollHandle @JvmOverloads constructor(
         if (java.lang.Float.isInfinite(position) || java.lang.Float.isNaN(position)) {
             return
         }
-        val pdfViewSize: Float = if (pdfView?.isSwipeVertical == true) {
-            pdfView?.height?.toFloat() ?: 0f
+        val pdfViewSize: Float = if (pdfView!!.isSwipeVertical()) {
+            pdfView!!.height.toFloat()
         } else {
-            pdfView?.width?.toFloat() ?: 0f
+            pdfView!!.width.toFloat()
         }
         position -= relativeHandlerMiddle
         if (position < 0) {
             position = 0f
-        } else if (position > pdfViewSize - PdfUtils.getDP(
-                context,
-                HANDLE_SHORT
-            )
-        ) {
+        } else if (position > pdfViewSize - PdfUtils.getDP(context, HANDLE_SHORT)) {
             position = pdfViewSize - PdfUtils.getDP(context, HANDLE_SHORT)
         }
-        if (pdfView?.isSwipeVertical == true) {
+        if (pdfView!!.isSwipeVertical()) {
             y = position
         } else {
             x = position
@@ -130,14 +116,14 @@ class DefaultScrollHandle @JvmOverloads constructor(
         val pos: Float
         val viewSize: Float
         val pdfViewSize: Float
-        if (pdfView?.isSwipeVertical == true) {
+        if (pdfView!!.isSwipeVertical()) {
             pos = y
             viewSize = height.toFloat()
-            pdfViewSize = pdfView?.height?.toFloat() ?: 0f
+            pdfViewSize = pdfView!!.height.toFloat()
         } else {
             pos = x
             viewSize = width.toFloat()
-            pdfViewSize = pdfView?.width?.toFloat() ?: 0f
+            pdfViewSize = pdfView!!.width.toFloat()
         }
         relativeHandlerMiddle = (pos + relativeHandlerMiddle) / pdfViewSize * viewSize
     }
@@ -177,60 +163,52 @@ class DefaultScrollHandle @JvmOverloads constructor(
     }
 
     private val isPDFViewReady: Boolean
-        get() = pdfView != null && pdfView?.getPageCount() ?: 0 > 0 && pdfView?.documentFitsView() != true
+        get() = pdfView != null && pdfView!!.getPageCount() > 0 && pdfView!!.documentFitsView()
 
-    @SuppressLint("ClickableViewAccessibility")
     override fun onTouchEvent(event: MotionEvent): Boolean {
         if (!isPDFViewReady) {
             return super.onTouchEvent(event)
         }
         when (event.action) {
             MotionEvent.ACTION_DOWN, MotionEvent.ACTION_POINTER_DOWN -> {
-                pdfView?.stopFling()
+                pdfView!!.stopFling()
                 handler.removeCallbacks(hidePageScrollerRunnable)
-                currentPos = if (pdfView?.isSwipeVertical == true) {
+                currentPos = if (pdfView!!.isSwipeVertical()) {
                     event.rawY - y
                 } else {
                     event.rawX - x
                 }
-                if (pdfView?.isSwipeVertical == true) {
+                if (pdfView!!.isSwipeVertical()) {
                     setPosition(event.rawY - currentPos + relativeHandlerMiddle)
-                    pdfView?.setPositionOffset(
-                        relativeHandlerMiddle / height.toFloat(),
-                        false
-                    )
+                    pdfView!!.setPositionOffset(relativeHandlerMiddle / height.toFloat(), false)
                 } else {
                     setPosition(event.rawX - currentPos + relativeHandlerMiddle)
-                    pdfView?.setPositionOffset(
-                        relativeHandlerMiddle / width.toFloat(),
-                        false
-                    )
+                    pdfView!!.setPositionOffset(relativeHandlerMiddle / width.toFloat(), false)
                 }
                 return true
             }
             MotionEvent.ACTION_MOVE -> {
-                if (pdfView?.isSwipeVertical == true) {
+                if (pdfView!!.isSwipeVertical()) {
                     setPosition(event.rawY - currentPos + relativeHandlerMiddle)
-                    pdfView?.setPositionOffset(
-                        relativeHandlerMiddle / height.toFloat(),
-                        false
-                    )
+                    pdfView!!.setPositionOffset(relativeHandlerMiddle / height.toFloat(), false)
                 } else {
                     setPosition(event.rawX - currentPos + relativeHandlerMiddle)
-                    pdfView?.setPositionOffset(
-                        relativeHandlerMiddle / width.toFloat(),
-                        false
-                    )
+                    pdfView!!.setPositionOffset(relativeHandlerMiddle / width.toFloat(), false)
                 }
                 return true
             }
             MotionEvent.ACTION_CANCEL, MotionEvent.ACTION_UP, MotionEvent.ACTION_POINTER_UP -> {
                 hideDelayed()
-                pdfView?.performPageSnap()
+                pdfView!!.performPageSnap()
                 return true
             }
         }
+        performClick()
         return super.onTouchEvent(event)
+    }
+
+    override fun performClick(): Boolean {
+        return super.performClick()
     }
 
     companion object {

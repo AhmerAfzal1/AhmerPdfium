@@ -18,8 +18,10 @@
     <string name="under_progress">This feature is under progress</string>
     <string name="empty_description">Empty Description</string>
     <string name="searching">Search…</string>
-    <string name="normal_pdf">Normal Pdf</string>
-    <string name="protected_pdf">Protected Pdf</string>
+    <string name="normal_fragment">Normal Fragment</string>
+    <string name="normal_activity">Normal Activity</string>
+    <string name="protected_fragment">Protected Fragment</string>
+    <string name="protected_activity">Protected Activity</string>
 
     <!-- DialogPDFInfo strings -->
     <string name="heading_document_info">Document Info</string>

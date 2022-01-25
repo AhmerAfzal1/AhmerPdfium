@@ -21,14 +21,4 @@ class PagePart(
                 && other.pageRelativeBounds.top == pageRelativeBounds.top
                 && other.pageRelativeBounds.bottom == pageRelativeBounds.bottom)
     }
-
-    override fun hashCode(): Int {
-        var result = page
-        result += (31 * result + renderedBitmap.hashCode())
-        result += (31 * result + pageRelativeBounds.hashCode())
-        result += (31 * result + isThumbnail.hashCode())
-        result += (31 * result + cacheOrder)
-        result += (31 * result + searchQuery.hashCode())
-        return result
-    }
 }
