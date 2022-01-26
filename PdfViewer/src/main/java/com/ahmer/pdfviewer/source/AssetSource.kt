@@ -9,7 +9,7 @@ class AssetSource(private val assetName: String) : DocumentSource {
 
     @Throws(IOException::class)
     override fun createDocument(context: Context, password: String?): PdfiumCore {
-        val file = PdfFileUtils.fileFromAsset(context, assetName)
-        return PdfiumCore(context, file, password)
+        val mFile = PdfFileUtils.fileFromAsset(context, assetName)
+        return PdfiumCore(context, mFile, password)
     }
 }

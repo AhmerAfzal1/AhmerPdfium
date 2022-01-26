@@ -10,34 +10,34 @@ import com.ahmer.pdfviewer.model.PagePart
 import kotlin.math.roundToInt
 
 class RenderingHandler(looper: Looper, private val pdfView: PDFView) : Handler(looper) {
-    private val renderBounds = RectF()
-    private val roundedRenderBounds = Rect()
-    private val renderMatrix = Matrix()
-    private var running = false
+    private val mBounds = RectF()
+    private val mRenderMatrix = Matrix()
+    private val mRoundedBounds = Rect()
+    private var isRunning = false
 
     fun addRenderingTask(
-        page: Int, width: Float, height: Float, bounds: RectF, thumbnail: Boolean, cacheOrder: Int,
-        bestQuality: Boolean, annotation: Boolean, searchQuery: String
+        page: Int, width: Float, height: Float, bounds: RectF, isThumbnail: Boolean,
+        cacheOrder: Int, isBestQuality: Boolean, isAnnotation: Boolean, query: String
     ) {
         val task = RenderingTask(
-            width, height, bounds, page, thumbnail, cacheOrder, bestQuality, annotation, searchQuery
+            width, height, bounds, page, isThumbnail, cacheOrder, isBestQuality, isAnnotation, query
         )
-        val msg = obtainMessage(MSG_RENDER_PART_TASK, task)
-        sendMessage(msg)
+        val mMessage = obtainMessage(MSG_RENDER_PART_TASK, task)
+        sendMessage(mMessage)
     }
 
     override fun handleMessage(message: Message) {
-        val task = message.obj as RenderingTask
-        val part = proceed(task)
+        val mTask = message.obj as RenderingTask
+        val mPart = proceed(mTask)
         try {
-            if (part != null) {
-                if (running) {
-                    pdfView.post { pdfView.onBitmapRendered(part) }
+            if (mPart != null) {
+                if (isRunning) {
+                    pdfView.post { pdfView.onBitmapRendered(mPart) }
                 } else {
-                    part.renderedBitmap?.recycle()
+                    mPart.renderedBitmap?.recycle()
                 }
             } else {
-                part?.renderedBitmap?.recycle()
+                mPart?.renderedBitmap?.recycle()
             }
         } catch (ex: PageRenderingException) {
             pdfView.post { pdfView.onPageError(ex) }
@@ -46,29 +46,24 @@ class RenderingHandler(looper: Looper, private val pdfView: PDFView) : Handler(l
 
     @Throws(PageRenderingException::class)
     private fun parseText(task: RenderingTask): String? {
-        val pdfFile = pdfView.pdfFile
-        pdfFile?.openPage(task.page)
-        val countCharsOnPage = pdfFile?.countCharactersOnPage(task.page) ?: 0
-        return if (countCharsOnPage > 0) {
-            pdfFile?.extractCharacters(task.page, 0, countCharsOnPage)
+        val mPdfFile = pdfView.pdfFile
+        mPdfFile?.openPage(task.page)
+        val mCountCharsOnPage = mPdfFile?.getCountCharactersOnPage(task.page) ?: 0
+        return if (mCountCharsOnPage > 0) {
+            mPdfFile?.getExtractCharacters(task.page, 0, mCountCharsOnPage)
         } else {
             null
         }
     }
 
     private fun toNightMode(bmpOriginal: Bitmap, bestQuality: Boolean): Bitmap {
-        val height: Int = bmpOriginal.height
-        val width: Int = bmpOriginal.width
-        val nightModeBitmap = Bitmap.createBitmap(
-            width, height,
-            if (bestQuality) Bitmap.Config.ARGB_8888 else Bitmap.Config.RGB_565
-        )
-        val canvas = Canvas(nightModeBitmap)
-        val paint = Paint()
-        val grayScaleMatrix = ColorMatrix().apply {
-            setSaturation(0f)
-        }
-        val invertMatrix = ColorMatrix(
+        val mBitmapQuality = if (bestQuality) Bitmap.Config.ARGB_8888 else Bitmap.Config.RGB_565
+        val mHeight: Int = bmpOriginal.height
+        val mWidth: Int = bmpOriginal.width
+        val mNightModeBitmap = Bitmap.createBitmap(mWidth, mHeight, mBitmapQuality)
+        val mNightModeCanvas = Canvas(mNightModeBitmap)
+        val mPaint = Paint()
+        val mInvertMatrix = ColorMatrix(
             floatArrayOf(
                 -1f, 0f, 0f, 0f, 255f,
                 0f, -1f, 0f, 0f, 255f,
@@ -76,58 +71,59 @@ class RenderingHandler(looper: Looper, private val pdfView: PDFView) : Handler(l
                 0f, 0f, 0f, 1f, 0f
             )
         )
-        val nightModeMatrix = ColorMatrix().apply {
-            postConcat(grayScaleMatrix)
-            postConcat(invertMatrix)
+        val mMatrix = ColorMatrix().apply {
+            setSaturation(0f)
         }
-        paint.colorFilter = ColorMatrixColorFilter(nightModeMatrix)
-        canvas.drawBitmap(bmpOriginal, 0f, 0f, paint)
-        return nightModeBitmap
+        val mNightModeMatrix = ColorMatrix().apply {
+            postConcat(mMatrix)
+            postConcat(mInvertMatrix)
+        }
+        mPaint.colorFilter = ColorMatrixColorFilter(mNightModeMatrix)
+        mNightModeCanvas.drawBitmap(bmpOriginal, 0f, 0f, mPaint)
+        return mNightModeBitmap
     }
 
     @Throws(PageRenderingException::class)
     private fun proceed(task: RenderingTask): PagePart? {
-        val pdfFile = pdfView.pdfFile
-        pdfFile?.openPage(task.page)
-        val width = task.width.roundToInt()
-        val height = task.height.roundToInt()
-        if (width == 0 || height == 0 || pdfFile?.pageHasError(task.page) == true) {
-            return null
-        }
-        val bitmapQuality = if (task.bestQuality) Bitmap.Config.ARGB_8888 else Bitmap.Config.RGB_565
-        var render: Bitmap
-        render = try {
-            Bitmap.createBitmap(width, height, bitmapQuality)
+        val mPdfFile = pdfView.pdfFile
+        mPdfFile?.openPage(task.page)
+        val mHeight = task.height.roundToInt()
+        val mWidth = task.width.roundToInt()
+        if (mWidth == 0 || mHeight == 0 || mPdfFile?.pageHasError(task.page) == true) return null
+        val mQuality = if (task.isBestQuality) Bitmap.Config.ARGB_8888 else Bitmap.Config.RGB_565
+        var mBitmap: Bitmap
+        mBitmap = try {
+            Bitmap.createBitmap(mWidth, mHeight, mQuality)
         } catch (e: IllegalArgumentException) {
             Log.e(TAG, "Cannot create bitmap", e)
             return null
         }
-        calculateBounds(width, height, task.bounds)
-        val searchQuery = task.searchQuery
-        pdfFile?.renderPageBitmap(render, task.page, roundedRenderBounds, task.annotation)
+        calculateBounds(mWidth, mHeight, task.bounds)
+        val mSearchQuery = task.searchQuery
+        mPdfFile?.renderPageBitmap(mBitmap, task.page, mRoundedBounds, task.isAnnotation)
         if (pdfView.isNightMode()) {
-            render = toNightMode(render, task.bestQuality)
+            mBitmap = toNightMode(mBitmap, task.isBestQuality)
         }
         return PagePart(
-            task.page, render, task.bounds, task.thumbnail, task.cacheOrder, searchQuery
+            task.page, mBitmap, task.bounds, task.isThumbnail, task.cacheOrder, mSearchQuery
         )
     }
 
     private fun calculateBounds(width: Int, height: Int, pageSliceBounds: RectF) {
-        renderMatrix.reset()
-        renderMatrix.postTranslate(-pageSliceBounds.left * width, -pageSliceBounds.top * height)
-        renderMatrix.postScale(1 / pageSliceBounds.width(), 1 / pageSliceBounds.height())
-        renderBounds[0f, 0f, width.toFloat()] = height.toFloat()
-        renderMatrix.mapRect(renderBounds)
-        renderBounds.round(roundedRenderBounds)
+        mRenderMatrix.reset()
+        mRenderMatrix.postTranslate(-pageSliceBounds.left * width, -pageSliceBounds.top * height)
+        mRenderMatrix.postScale(1 / pageSliceBounds.width(), 1 / pageSliceBounds.height())
+        mBounds[0f, 0f, width.toFloat()] = height.toFloat()
+        mRenderMatrix.mapRect(mBounds)
+        mBounds.round(mRoundedBounds)
     }
 
     fun stop() {
-        running = false
+        isRunning = false
     }
 
     fun start() {
-        running = true
+        isRunning = true
     }
 
     private class RenderingTask(
@@ -135,10 +131,10 @@ class RenderingHandler(looper: Looper, private val pdfView: PDFView) : Handler(l
         val height: Float,
         val bounds: RectF,
         val page: Int,
-        val thumbnail: Boolean,
+        val isThumbnail: Boolean,
         val cacheOrder: Int,
-        val bestQuality: Boolean,
-        val annotation: Boolean,
+        val isBestQuality: Boolean,
+        val isAnnotation: Boolean,
         val searchQuery: String
     )
 

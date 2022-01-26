@@ -28,9 +28,9 @@ interface ScrollHandle {
     /**
      * Set page number displayed on handle
      *
-     * @param pageNum page number
+     * @param pageNumber page number
      */
-    fun setPageNum(pageNum: Int)
+    fun setPageNumber(pageNumber: Int)
 
     /**
      * Get handle visibility

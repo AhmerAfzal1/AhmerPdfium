@@ -1,8 +1,7 @@
 package com.ahmer.pdfviewer.listener
 
 /**
- * Implement this interface to receive events from PDFView
- * when loading is complete.
+ * Implement this interface to receive events from PDFView when loading is complete.
  */
 interface OnLoadCompleteListener {
     /**

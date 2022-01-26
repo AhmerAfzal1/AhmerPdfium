@@ -32,7 +32,7 @@ android {
         consumerProguardFiles 'consumer-rules.pro'
     }
 
-    lintOptions {
+    lint {
         abortOnError false
         disable 'TypographyFractions', 'TypographyQuotes'
     }

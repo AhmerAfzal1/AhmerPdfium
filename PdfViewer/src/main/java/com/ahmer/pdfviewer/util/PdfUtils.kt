@@ -20,12 +20,12 @@ object PdfUtils {
     @Throws(IOException::class)
     @JvmStatic
     fun toByteArray(inputStream: InputStream): ByteArray {
-        val os = ByteArrayOutputStream()
-        val buffer = ByteArray(DEFAULT_BUFFER_SIZE)
-        var n: Int
-        while (-1 != inputStream.read(buffer).also { n = it }) {
-            os.write(buffer, 0, n)
+        val mBuffer = ByteArray(DEFAULT_BUFFER_SIZE)
+        val mOutputStream = ByteArrayOutputStream()
+        var mLength: Int
+        while (-1 != inputStream.read(mBuffer).also { read -> mLength = read }) {
+            mOutputStream.write(mBuffer, 0, mLength)
         }
-        return os.toByteArray()
+        return mOutputStream.toByteArray()
     }
 }

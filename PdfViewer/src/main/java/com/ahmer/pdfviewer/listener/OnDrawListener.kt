@@ -3,8 +3,7 @@ package com.ahmer.pdfviewer.listener
 import android.graphics.Canvas
 
 /**
- * This interface allows an extern class to draw
- * something on the PDFView canvas, above all images.
+ * This interface allows an extern class to draw something on the PDFView canvas, above all images.
  */
 interface OnDrawListener {
     /**

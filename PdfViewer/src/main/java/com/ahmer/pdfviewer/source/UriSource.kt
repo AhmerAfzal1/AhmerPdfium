@@ -10,7 +10,6 @@ class UriSource(private val uri: Uri) : DocumentSource {
 
     @Throws(IOException::class)
     override fun createDocument(context: Context, password: String?): PdfiumCore {
-        val file = uri.toFile()
-        return PdfiumCore(context, file, password)
+        return PdfiumCore(context, uri.toFile(), password)
     }
 }

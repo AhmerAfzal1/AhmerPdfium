@@ -8,31 +8,29 @@ object PdfFileUtils {
     @Throws(IOException::class)
     @JvmStatic
     fun fileFromAsset(context: Context, assetName: String): File {
-        val outFile = File(context.cacheDir, assetName)
-        return outFile.also {
-            if (assetName.contains("/")) {
-                it.parentFile?.mkdirs()
-            }
-            copy(context.assets.open(assetName), it)
+        val mFile = File(context.cacheDir, assetName)
+        return mFile.also { file ->
+            if (assetName.contains("/")) file.parentFile?.mkdirs()
+            copy(context.assets.open(assetName), file)
         }
     }
 
     @Throws(IOException::class)
     @JvmStatic
-    fun copy(inputStream: InputStream, output: File?) {
-        var outputStream: OutputStream? = null
+    fun copy(inputStream: InputStream, file: File?) {
+        var mOutputStream: OutputStream? = null
         try {
-            outputStream = FileOutputStream(output)
-            var read: Int
-            val bytes = ByteArray(1024)
-            while (inputStream.read(bytes).also { read = it } != -1) {
-                outputStream.write(bytes, 0, read)
+            mOutputStream = FileOutputStream(file)
+            val mBytes = ByteArray(1024)
+            var mRead: Int
+            while (inputStream.read(mBytes).also { read -> mRead = read } != -1) {
+                mOutputStream.write(mBytes, 0, mRead)
             }
         } finally {
             try {
                 inputStream.close()
             } finally {
-                outputStream?.close()
+                mOutputStream?.close()
             }
         }
     }

@@ -3,8 +3,7 @@ package com.ahmer.pdfviewer.listener
 import android.view.MotionEvent
 
 /**
- * Implement this interface to receive events from PDFView
- * when view has been touched
+ * Implement this interface to receive events from PDFView when view has been touched
  */
 interface OnTapListener {
     /**

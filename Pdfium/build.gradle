@@ -50,7 +50,7 @@ android {
         }
     }
 
-    lintOptions {
+    lint {
         abortOnError false
         disable 'TypographyFractions', 'TypographyQuotes'
     }

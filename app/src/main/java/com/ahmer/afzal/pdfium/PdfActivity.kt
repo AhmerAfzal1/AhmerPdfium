@@ -296,7 +296,7 @@ class PdfActivity : AppCompatActivity(), OnPageChangeListener, OnLoadCompleteLis
             .linkHandler(DefaultLinkHandler(pdfView))
             .pageFitPolicy(FitPolicy.BOTH)
             .load()
-        pdfView.useBestQuality(true)
+        pdfView.setBestQuality(true)
         pdfView.setMinZoom(1f)
         pdfView.setMidZoom(2.5f)
         pdfView.setMaxZoom(4.0f)

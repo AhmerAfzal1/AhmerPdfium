@@ -1,8 +1,7 @@
 package com.ahmer.pdfviewer.listener
 
 /**
- * Implements this interface to receive events from PDFView
- * when a page has changed through swipe
+ * Implements this interface to receive events from PDFView when a page has changed through swipe
  */
 interface OnPageChangeListener {
     /**
