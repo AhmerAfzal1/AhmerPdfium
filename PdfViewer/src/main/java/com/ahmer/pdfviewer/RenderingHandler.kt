@@ -1,45 +1,46 @@
 package com.ahmer.pdfviewer
 
 import android.graphics.*
+import android.os.Handler
+import android.os.Looper
+import android.os.Message
 import android.util.Log
 import com.ahmer.pdfviewer.exception.PageRenderingException
 import com.ahmer.pdfviewer.model.PagePart
-import kotlinx.coroutines.*
-import kotlin.coroutines.CoroutineContext
 import kotlin.math.roundToInt
 
-class RenderingHandler(private val pdfView: PDFView) : CoroutineScope {
+class RenderingHandler(looper: Looper, private val pdfView: PDFView) : Handler(looper) {
     private val renderBounds = RectF()
     private val roundedRenderBounds = Rect()
     private val renderMatrix = Matrix()
     private var running = false
 
-    override val coroutineContext: CoroutineContext
-        get() = Dispatchers.Main + Job()
-
     fun addRenderingTask(
         page: Int, width: Float, height: Float, bounds: RectF, thumbnail: Boolean, cacheOrder: Int,
         bestQuality: Boolean, annotation: Boolean, searchQuery: String
     ) {
-        CoroutineScope(coroutineContext).launch(SupervisorJob()) {
-            val task = RenderingTask(
-                width, height, bounds, page, thumbnail, cacheOrder, bestQuality,
-                annotation, searchQuery
-            )
-            val part = proceed(task)
-            try {
-                if (part != null) {
-                    if (running) {
-                        pdfView.post { pdfView.onBitmapRendered(part) }
-                    } else {
-                        part.renderedBitmap?.recycle()
-                    }
+        val task = RenderingTask(
+            width, height, bounds, page, thumbnail, cacheOrder, bestQuality, annotation, searchQuery
+        )
+        val msg = obtainMessage(MSG_RENDER_PART_TASK, task)
+        sendMessage(msg)
+    }
+
+    override fun handleMessage(message: Message) {
+        val task = message.obj as RenderingTask
+        val part = proceed(task)
+        try {
+            if (part != null) {
+                if (running) {
+                    pdfView.post { pdfView.onBitmapRendered(part) }
                 } else {
-                    part?.renderedBitmap?.recycle()
+                    part.renderedBitmap?.recycle()
                 }
-            } catch (ex: PageRenderingException) {
-                pdfView.post { pdfView.onPageError(ex) }
+            } else {
+                part?.renderedBitmap?.recycle()
             }
+        } catch (ex: PageRenderingException) {
+            pdfView.post { pdfView.onPageError(ex) }
         }
     }
 
@@ -142,6 +143,7 @@ class RenderingHandler(private val pdfView: PDFView) : CoroutineScope {
     )
 
     companion object {
+        const val MSG_RENDER_PART_TASK = 1
         private val TAG = RenderingHandler::class.java.name
     }
 }

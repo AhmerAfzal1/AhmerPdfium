@@ -3,6 +3,7 @@ package com.ahmer.pdfviewer
 import android.content.Context
 import android.graphics.*
 import android.net.Uri
+import android.os.HandlerThread
 import android.util.AttributeSet
 import android.util.Log
 import android.widget.RelativeLayout
@@ -12,7 +13,6 @@ import com.ahmer.pdfium.Link
 import com.ahmer.pdfium.Meta
 import com.ahmer.pdfium.util.Size
 import com.ahmer.pdfium.util.SizeF
-import com.ahmer.pdfviewer.decoding.DecodingRunner
 import com.ahmer.pdfviewer.exception.PageRenderingException
 import com.ahmer.pdfviewer.link.DefaultLinkHandler
 import com.ahmer.pdfviewer.link.LinkHandler
@@ -24,7 +24,6 @@ import com.ahmer.pdfviewer.source.DocumentSource
 import com.ahmer.pdfviewer.source.FileSource
 import com.ahmer.pdfviewer.source.UriSource
 import com.ahmer.pdfviewer.util.*
-import kotlinx.coroutines.cancel
 import java.io.File
 import java.util.*
 
@@ -64,6 +63,12 @@ class PDFView(context: Context?, set: AttributeSet?) : RelativeLayout(context, s
      */
     var cacheManager: CacheManager? = null
     var pdfFile: PdfFile? = null
+
+    /**
+     * The thread [.renderingHandler] will run on
+     */
+    private var renderingHandlerThread: HandlerThread? = null
+    private var decodingTask: DecodingTask? = null
 
     /**
      * Handler always waiting in the background and rendering tasks
@@ -118,8 +123,6 @@ class PDFView(context: Context?, set: AttributeSet?) : RelativeLayout(context, s
      * Current state of the view
      */
     private var state = State.DEFAULT
-
-    private var decodingRunner: DecodingRunner? = null
     private var pagesLoader: PagesLoader? = null
 
     /**
@@ -224,8 +227,8 @@ class PDFView(context: Context?, set: AttributeSet?) : RelativeLayout(context, s
         check(isRecycled) { "Don't call load on a PDF View without recycling it first." }
         isRecycled = false
         // Start decoding document
-        decodingRunner = DecodingRunner(docSource, password, userPages, this)
-        decodingRunner!!.executeAsync()
+        decodingTask = DecodingTask(docSource, password, userPages, this)
+        decodingTask!!.execute()
     }
 
     /**
@@ -343,9 +346,9 @@ class PDFView(context: Context?, set: AttributeSet?) : RelativeLayout(context, s
         // Stop tasks
         if (renderingHandler != null) {
             renderingHandler?.stop()
-            renderingHandler?.cancel()
+            renderingHandler?.removeMessages(RenderingHandler.MSG_RENDER_PART_TASK)
         }
-        decodingRunner?.cancel()
+        decodingTask?.cancel()
         // Clear caches
         cacheManager!!.recycle()
         if (scrollHandle != null && isScrollHandleInit) {
@@ -383,6 +386,10 @@ class PDFView(context: Context?, set: AttributeSet?) : RelativeLayout(context, s
 
     override fun onDetachedFromWindow() {
         recycle()
+        if (renderingHandlerThread != null) {
+            renderingHandlerThread?.quitSafely()
+            renderingHandlerThread = null
+        }
         super.onDetachedFromWindow()
     }
 
@@ -628,7 +635,7 @@ class PDFView(context: Context?, set: AttributeSet?) : RelativeLayout(context, s
         }
 
         // Cancel all current tasks
-        renderingHandler?.cancel()
+        renderingHandler?.removeMessages(RenderingHandler.MSG_RENDER_PART_TASK)
         cacheManager!!.makeANewSet()
         pagesLoader!!.loadPages(searchQuery)
         reDraw()
@@ -657,8 +664,13 @@ class PDFView(context: Context?, set: AttributeSet?) : RelativeLayout(context, s
     fun loadComplete(pdfFile: PdfFile) {
         state = State.LOADED
         this.pdfFile = pdfFile
-        renderingHandler = RenderingHandler(this)
-        renderingHandler!!.start()
+        if (renderingHandlerThread?.isAlive != true) {
+            renderingHandlerThread?.start()
+        }
+        renderingHandler = renderingHandlerThread?.looper?.let {
+            RenderingHandler(it, this)
+        }
+        renderingHandler?.start()
         if (scrollHandle != null) {
             scrollHandle!!.setupLayout(this)
             isScrollHandleInit = true
@@ -1464,6 +1476,7 @@ class PDFView(context: Context?, set: AttributeSet?) : RelativeLayout(context, s
     }
 
     private fun initPDFView() {
+        renderingHandlerThread = HandlerThread("PDF renderer")
         if (isInEditMode) {
             return
         }
