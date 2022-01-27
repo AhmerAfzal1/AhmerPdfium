@@ -16,13 +16,13 @@ class PdfActivityModel @Inject constructor(private val pref: AppPreferencesManag
 
     fun updatePdfPageSnap(isChecked: Boolean) {
         viewModelScope.launch {
-            pref.updatePdfPageSnap(isChecked)
+            pref.updatePageSnap(isChecked)
         }
     }
 
     fun updatePdfViewChange(isChecked: Boolean) {
         viewModelScope.launch {
-            pref.updatePdfViewChange(isChecked)
+            pref.updateViewHorizontal(isChecked)
         }
     }
 }

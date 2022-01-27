@@ -3,10 +3,7 @@ package com.ahmer.afzal.pdfium
 import android.content.Context
 import android.util.Log
 import androidx.datastore.core.DataStore
-import androidx.datastore.preferences.core.Preferences
-import androidx.datastore.preferences.core.booleanPreferencesKey
-import androidx.datastore.preferences.core.edit
-import androidx.datastore.preferences.core.emptyPreferences
+import androidx.datastore.preferences.core.*
 import androidx.datastore.preferences.preferencesDataStore
 import dagger.hilt.android.qualifiers.ApplicationContext
 import kotlinx.coroutines.flow.catch
@@ -19,13 +16,17 @@ import javax.inject.Singleton
 class AppPreferencesManager @Inject constructor(@ApplicationContext private val context: Context) {
 
     private object PreferencesKeys {
-        val PDF_PAGE_SNAP = booleanPreferencesKey("SnapKey")
-        val PDF_VIEW_CHANGE = booleanPreferencesKey("ViewKey")
+        val AUTO_SPACING = booleanPreferencesKey("AutoSpacingKey")
+        val PAGE_SNAP = booleanPreferencesKey("SnapKey")
+        val SPACING = intPreferencesKey("SpacingKey")
+        val VIEW_HORIZONTAL = booleanPreferencesKey("ViewKey")
     }
 
     data class FilterPreferences(
-        val pdfPageSnap: Boolean,
-        val pdfViewChange: Boolean
+        val isAutoSpacing: Boolean,
+        val isPageSnap: Boolean,
+        val isViewHorizontal: Boolean,
+        val spacing: Int
     )
 
     private val Context.dataStore: DataStore<Preferences> by preferencesDataStore(name = "RosePdfiumPrefs")
@@ -40,20 +41,34 @@ class AppPreferencesManager @Inject constructor(@ApplicationContext private val 
             }
         }
         .map { preferences ->
-            val pdfPageSnap = preferences[PreferencesKeys.PDF_PAGE_SNAP] ?: true
-            val pdfSwapHandle = preferences[PreferencesKeys.PDF_VIEW_CHANGE] ?: false
-            FilterPreferences(pdfPageSnap, pdfSwapHandle)
+            val isAutoSpacing = preferences[PreferencesKeys.AUTO_SPACING] ?: true
+            val isPageSnap = preferences[PreferencesKeys.PAGE_SNAP] ?: true
+            val isViewHorizontal = preferences[PreferencesKeys.VIEW_HORIZONTAL] ?: false
+            val setSpacing = preferences[PreferencesKeys.SPACING] ?: 5
+            FilterPreferences(isAutoSpacing, isPageSnap, isViewHorizontal, setSpacing)
         }
 
-    suspend fun updatePdfPageSnap(isChecked: Boolean) {
+    suspend fun updateAutoSpacing(isChecked: Boolean) {
         context.dataStore.edit { preferences ->
-            preferences[PreferencesKeys.PDF_PAGE_SNAP] = isChecked
+            preferences[PreferencesKeys.AUTO_SPACING] = isChecked
         }
     }
 
-    suspend fun updatePdfViewChange(isChecked: Boolean) {
+    suspend fun updatePageSnap(isChecked: Boolean) {
         context.dataStore.edit { preferences ->
-            preferences[PreferencesKeys.PDF_VIEW_CHANGE] = isChecked
+            preferences[PreferencesKeys.PAGE_SNAP] = isChecked
+        }
+    }
+
+    suspend fun updateViewHorizontal(isChecked: Boolean) {
+        context.dataStore.edit { preferences ->
+            preferences[PreferencesKeys.VIEW_HORIZONTAL] = isChecked
+        }
+    }
+
+    suspend fun updateSpacing(px: Int) {
+        context.dataStore.edit { preferences ->
+            preferences[PreferencesKeys.SPACING] = px
         }
     }
 }

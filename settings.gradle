@@ -3,7 +3,7 @@ dependencyResolutionManagement {
     repositories {
         google()
         mavenCentral()
-        jcenter() // Warning: this repository is going to shut down soon
+        maven { url 'https://androidx.dev/snapshots/builds/8054565/artifacts/repository' }
     }
 }
 rootProject.name = "AhmerPdfium"

@@ -9,7 +9,6 @@ import android.text.TextUtils
 import android.text.TextWatcher
 import android.util.Log
 import android.view.*
-import android.view.View
 import android.view.inputmethod.InputMethodManager
 import android.widget.*
 import androidx.appcompat.app.AppCompatActivity
@@ -46,11 +45,13 @@ class PdfFragment : Fragment(R.layout.fragment_pdf), OnPageChangeListener, OnLoa
     private lateinit var mSearchView: SearchView
     private val mViewModel: PdfFragmentModel by viewModels()
     private var mCurrentPage: Int = 0
+    private var mIsAutoSpacing: Boolean = true
     private var mIsNightMode: Boolean = false
     private var mIsPageSnap: Boolean = true
     private var mIsViewHorizontal: Boolean = false
     private var mPassword: String = ""
     private var mPdfFile: String? = null
+    private var mSpacing: Int = 5
 
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
@@ -65,8 +66,10 @@ class PdfFragment : Fragment(R.layout.fragment_pdf), OnPageChangeListener, OnLoa
             }
         }
         viewLifecycleOwner.lifecycleScope.launch {
-            mIsPageSnap = mViewModel.flow.first().pdfPageSnap
-            mIsViewHorizontal = mViewModel.flow.first().pdfViewChange
+            mIsAutoSpacing = mViewModel.flow.first().isAutoSpacing
+            mIsPageSnap = mViewModel.flow.first().isPageSnap
+            mIsViewHorizontal = mViewModel.flow.first().isViewHorizontal
+            mSpacing = mViewModel.flow.first().spacing
         }
         setHasOptionsMenu(true)
         if (!mIsViewHorizontal) {
@@ -100,7 +103,7 @@ class PdfFragment : Fragment(R.layout.fragment_pdf), OnPageChangeListener, OnLoa
                     (requireContext().getSystemService(AppCompatActivity.INPUT_METHOD_SERVICE) as InputMethodManager)
                 imm.showSoftInput(inputPass, InputMethodManager.SHOW_IMPLICIT)
             }, 100)
-            val open = dialog.findViewById<TextView>(R.id.tvOpen)
+            val open = dialog.findViewById<TextView>(R.id.btnOpen)
             open.isClickable = false
             open.setOnClickListener { v: View ->
                 when {
@@ -201,18 +204,18 @@ class PdfFragment : Fragment(R.layout.fragment_pdf), OnPageChangeListener, OnLoa
             dialog.window!!.setLayout(
                 RelativeLayout.LayoutParams.MATCH_PARENT, RelativeLayout.LayoutParams.WRAP_CONTENT
             )
-            val tvTitle = dialog.findViewById<TextView>(R.id.tvTitle)
-            val tvAuthor = dialog.findViewById<TextView>(R.id.tvAuthor)
-            val tvTotalPage = dialog.findViewById<TextView>(R.id.tvTotalPage)
-            val tvSubject = dialog.findViewById<TextView>(R.id.tvSubject)
-            val tvKeywords = dialog.findViewById<TextView>(R.id.tvKeywords)
-            val tvCreationDate = dialog.findViewById<TextView>(R.id.tvCreationDate)
-            val tvModifyDate = dialog.findViewById<TextView>(R.id.tvModifyDate)
-            val tvCreator = dialog.findViewById<TextView>(R.id.tvCreator)
-            val tvProducer = dialog.findViewById<TextView>(R.id.tvProducer)
-            val tvFileSize = dialog.findViewById<TextView>(R.id.tvFileSize)
-            val tvFilePath = dialog.findViewById<TextView>(R.id.tvFilePath)
-            val tvOk = dialog.findViewById<TextView>(R.id.tvOk)
+            val tvTitle = dialog.findViewById<TextView>(R.id.dialogTvTitle)
+            val tvAuthor = dialog.findViewById<TextView>(R.id.dialogTvAuthor)
+            val tvTotalPage = dialog.findViewById<TextView>(R.id.dialogTvTotalPage)
+            val tvSubject = dialog.findViewById<TextView>(R.id.dialogTvSubject)
+            val tvKeywords = dialog.findViewById<TextView>(R.id.dialogTvKeywords)
+            val tvCreationDate = dialog.findViewById<TextView>(R.id.dialogTvCreationDate)
+            val tvModifyDate = dialog.findViewById<TextView>(R.id.dialogTvModifyDate)
+            val tvCreator = dialog.findViewById<TextView>(R.id.dialogTvCreator)
+            val tvProducer = dialog.findViewById<TextView>(R.id.dialogTvProducer)
+            val tvFileSize = dialog.findViewById<TextView>(R.id.dialogTvFileSize)
+            val tvFilePath = dialog.findViewById<TextView>(R.id.dialogTvFilePath)
+            val tvOk = dialog.findViewById<TextView>(R.id.btnOk)
             val meta: Meta? = pdfView.getDocumentMeta()
             tvTitle.text = meta!!.title
             tvAuthor.text = meta.author
@@ -286,14 +289,14 @@ class PdfFragment : Fragment(R.layout.fragment_pdf), OnPageChangeListener, OnLoa
             .enableSwipe(true)
             .swipeHorizontal(mIsViewHorizontal)
             .pageSnap(mIsPageSnap) // snap pages to screen boundaries
-            .autoSpacing(true) // add dynamic spacing to fit each page on its own on the screen
+            .autoSpacing(mIsAutoSpacing) // add dynamic spacing to fit each page on its own on the screen
             .pageFling(false) // make a fling change only a single page like ViewPager
             .enableDoubleTap(true)
             .enableAnnotationRendering(true)
             .password(mPassword)
             .scrollHandle(DefaultScrollHandle(requireContext()))
             .enableAntialiasing(true)
-            .spacing(5)
+            .spacing(mSpacing)
             .linkHandler(DefaultLinkHandler(pdfView))
             .pageFitPolicy(FitPolicy.BOTH)
             .load()
@@ -367,8 +370,18 @@ class PdfFragment : Fragment(R.layout.fragment_pdf), OnPageChangeListener, OnLoa
                 true
             }
             R.id.menuPageSnap -> {
-                mIsPageSnap = !mIsPageSnap
-                mViewModel.updatePdfPageSnap(mIsPageSnap)
+                if (mIsPageSnap) {
+                    mIsPageSnap = false
+                    mIsAutoSpacing = false
+                    mSpacing = 10
+                } else {
+                    mIsPageSnap = true
+                    mIsAutoSpacing = true
+                    mSpacing = 5
+                }
+                mViewModel.updateAutoSpacing(mIsAutoSpacing)
+                mViewModel.updatePageSnap(mIsPageSnap)
+                mViewModel.updateSpacing(mSpacing)
                 mPdfFile?.let { displayFromAsset(mPdfView, it) }
                 true
             }
@@ -380,7 +393,7 @@ class PdfFragment : Fragment(R.layout.fragment_pdf), OnPageChangeListener, OnLoa
                     mIsViewHorizontal = false
                     mMenu.findItem(R.id.menuSwitchView).setIcon(R.drawable.ic_baseline_swipe_horiz)
                 }
-                mViewModel.updatePdfViewChange(mIsViewHorizontal)
+                mViewModel.updateViewHorizontal(mIsViewHorizontal)
                 mPdfFile?.let { displayFromAsset(mPdfView, it) }
                 true
             }

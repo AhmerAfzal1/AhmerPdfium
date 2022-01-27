@@ -6,13 +6,14 @@
 
     <string name="menu_pdf_delete">Delete File</string>
     <string name="menu_pdf_goto_page">Goto Page Number</string>
-    <string name="menu_pdf_more_info">More Info</string>
+    <string name="menu_pdf_file_info">File Info</string>
     <string name="menu_pdf_night_mode">Night Mode</string>
     <string name="menu_pdf_print_file">Print File</string>
     <string name="menu_pdf_view_horizontal">Horizontal View</string>
     <string name="menu_pdf_view_vertical">Vertical View</string>
     <string name="menu_pdf_share">Share File</string>
-    <string name="menu_pdf_snap_page">Snap Page</string>
+    <string name="menu_pdf_disable_snap_page">Disable Snap Page</string>
+    <string name="menu_pdf_enable_snap_page">Enable Snap Page</string>
 
     <string name="menu_pdf_search">Search</string>
     <string name="under_progress">This feature is under progress</string>
@@ -39,8 +40,7 @@
 
     <!-- DialogPDFJumpTo strings -->
     <string name="button_go_to">Go To</string>
-    <string name="enter_number">Enter a page number</string>
-    <string name="heading_jump_to_page">Jump to a specific page</string>
+    <string name="enter_number">Enter page number</string>
     <string name="desc_jump_to_page">Enter the page number to which you want to move</string>
     <string name="no_page">No page found in this document</string>
     <string name="please_enter_number">Please enter a number page</string>
@@ -48,10 +48,7 @@
     <!-- DialogPDFPassword strings -->
     <string name="button_open_pdf">Open</string>
     <string name="enter_password">Enter password here</string>
-    <string name="heading_pdf_protected">This file is password protected</string>
     <string name="password_not_empty">Password should not be empty</string>
     <string name="password_not_space">Password should not be only space(s)</string>
-    <string name="desc_pdf_protected">Please enter the password to open PDF file</string>
-    <!-- TODO: Remove or change this placeholder text -->
-    <string name="hello_blank_fragment">Hello blank fragment</string>
+    <string name="desc_pdf_protected">This file is password protected.\nPlease enter the password to open PDF file</string>
 </resources>

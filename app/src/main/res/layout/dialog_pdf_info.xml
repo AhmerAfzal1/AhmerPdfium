@@ -1,353 +1,317 @@
 <?xml version="1.0" encoding="utf-8"?>
-<androidx.constraintlayout.widget.ConstraintLayout xmlns:android="http://schemas.android.com/apk/res/android"
-    xmlns:app="http://schemas.android.com/apk/res-auto"
+<layout xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:card_view="http://schemas.android.com/apk/res-auto"
     xmlns:tools="http://schemas.android.com/tools"
-    android:layout_width="match_parent"
-    android:layout_height="wrap_content">
+    tools:context="com.ahmer.reb.dialogs.PdfInfo">
 
-    <com.google.android.material.card.MaterialCardView
+    <FrameLayout
         android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:layout_marginStart="8dp"
-        android:layout_marginEnd="8dp"
-        app:cardBackgroundColor="@android:color/white"
-        app:cardPreventCornerOverlap="true"
-        app:cardUseCompatPadding="true"
-        app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toTopOf="parent"
-        card_view:cardCornerRadius="8dp"
-        card_view:cardElevation="8dp"
-        card_view:cardMaxElevation="8dp">
+        android:layout_height="match_parent">
 
-        <TableLayout
-            android:layout_width="wrap_content"
+        <com.google.android.material.card.MaterialCardView
+            android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:layout_marginStart="5dp"
-            android:gravity="center"
-            android:orientation="horizontal">
+            android:layout_gravity="center"
+            android:layout_marginStart="8dp"
+            android:layout_marginEnd="8dp"
+            card_view:cardCornerRadius="8dp"
+            card_view:cardElevation="8dp"
+            card_view:cardMaxElevation="8dp"
+            card_view:cardPreventCornerOverlap="true"
+            card_view:cardUseCompatPadding="true">
 
-            <TextView
+            <ScrollView
                 android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:gravity="start"
-                android:paddingLeft="8dp"
-                android:paddingTop="8dp"
-                android:paddingRight="8dp"
-                android:paddingBottom="8dp"
-                android:text="@string/heading_document_info"
-                android:textColor="@android:color/black"
-                android:textSize="18sp"
-                android:textStyle="bold" />
+                android:layout_height="match_parent">
 
-            <TableRow tools:ignore="UselessParent">
-
-                <TextView
-                    android:layout_width="wrap_content"
+                <TableLayout
+                    android:layout_width="match_parent"
                     android:layout_height="wrap_content"
-                    android:paddingTop="2dp"
-                    android:paddingBottom="2dp"
-                    android:text="@string/title_title"
-                    android:textAppearance="@style/Rose.TextAppearance.Normal"
-                    android:textColor="@android:color/black"
-                    android:textStyle="bold" />
+                    android:layout_margin="8dp">
 
-                <TextView
-                    android:id="@+id/tvTitle"
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:layout_marginStart="2dp"
-                    android:layout_weight="1"
-                    android:maxLines="2"
-                    android:paddingTop="2dp"
-                    android:paddingBottom="2dp"
-                    android:text="@string/empty_description"
-                    android:textAppearance="@style/Rose.TextAppearance.Caption"
-                    android:textColor="@android:color/black" />
-            </TableRow>
+                    <TextView
+                        style="@style/Widget.MaterialComponents.TextView"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:layout_marginTop="5dp"
+                        android:layout_marginBottom="5dp"
+                        android:text="@string/heading_document_info"
+                        android:textAppearance="@style/TextAppearance.AppCompat.Medium"
+                        android:textColor="@android:color/black"
+                        android:textStyle="bold" />
 
-            <TableRow tools:ignore="UselessParent">
+                    <TableRow
+                        android:paddingTop="2dp"
+                        android:paddingBottom="2dp"
+                        android:weightSum="1">
 
-                <TextView
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:paddingTop="2dp"
-                    android:paddingBottom="2dp"
-                    android:text="@string/title_author"
-                    android:textAppearance="@style/Rose.TextAppearance.Normal"
-                    android:textColor="@android:color/black"
-                    android:textStyle="bold" />
+                        <TextView
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:text="@string/title_title"
+                            android:textColor="@android:color/black"
+                            android:textStyle="bold" />
 
-                <TextView
-                    android:id="@+id/tvAuthor"
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:layout_marginStart="2dp"
-                    android:layout_weight="1"
-                    android:maxLines="2"
-                    android:paddingTop="2dp"
-                    android:paddingBottom="2dp"
-                    android:text="@string/empty_description"
-                    android:textAppearance="@style/Rose.TextAppearance.Caption"
-                    android:textColor="@android:color/black" />
-            </TableRow>
+                        <TextView
+                            android:id="@+id/dialogTvTitle"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:layout_marginStart="5dp"
+                            android:layout_weight="1"
+                            android:text="@string/empty_description"
+                            android:textColor="@android:color/black"
+                            android:textSize="12sp" />
+                    </TableRow>
 
-            <TableRow tools:ignore="UselessParent">
+                    <TableRow
+                        android:paddingTop="2dp"
+                        android:paddingBottom="2dp"
+                        android:weightSum="1">
 
-                <TextView
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:paddingTop="2dp"
-                    android:paddingBottom="2dp"
-                    android:text="@string/title_total_pages"
-                    android:textAppearance="@style/Rose.TextAppearance.Normal"
-                    android:textColor="@android:color/black"
-                    android:textStyle="bold" />
+                        <TextView
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:text="@string/title_author"
+                            android:textColor="@android:color/black"
+                            android:textStyle="bold" />
 
-                <TextView
-                    android:id="@+id/tvTotalPage"
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:layout_marginStart="2dp"
-                    android:layout_weight="1"
-                    android:maxLines="2"
-                    android:paddingTop="2dp"
-                    android:paddingBottom="2dp"
-                    android:text="@string/empty_description"
-                    android:textAppearance="@style/Rose.TextAppearance.Caption"
-                    android:textColor="@android:color/black" />
-            </TableRow>
+                        <TextView
+                            android:id="@+id/dialogTvAuthor"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:layout_marginStart="5dp"
+                            android:layout_weight="1"
+                            android:text="@string/empty_description"
+                            android:textColor="@android:color/black"
+                            android:textSize="12sp" />
+                    </TableRow>
 
-            <TableRow tools:ignore="UselessParent">
+                    <TableRow
+                        android:paddingTop="2dp"
+                        android:paddingBottom="2dp"
+                        android:weightSum="1">
 
-                <TextView
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:paddingTop="2dp"
-                    android:paddingBottom="2dp"
-                    android:text="@string/title_subject"
-                    android:textAppearance="@style/Rose.TextAppearance.Normal"
-                    android:textColor="@android:color/black"
-                    android:textStyle="bold" />
+                        <TextView
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:text="@string/title_total_pages"
+                            android:textColor="@android:color/black"
+                            android:textStyle="bold" />
 
-                <TextView
-                    android:id="@+id/tvSubject"
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:layout_marginStart="2dp"
-                    android:layout_weight="1"
-                    android:maxLines="2"
-                    android:paddingTop="2dp"
-                    android:paddingBottom="2dp"
-                    android:text="@string/empty_description"
-                    android:textAppearance="@style/Rose.TextAppearance.Caption"
-                    android:textColor="@android:color/black" />
-            </TableRow>
+                        <TextView
+                            android:id="@+id/dialogTvTotalPage"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:layout_marginStart="5dp"
+                            android:layout_weight="1"
+                            android:text="@string/empty_description"
+                            android:textColor="@android:color/black"
+                            android:textSize="12sp" />
+                    </TableRow>
 
-            <TableRow tools:ignore="UselessParent">
+                    <TableRow
+                        android:paddingTop="2dp"
+                        android:paddingBottom="2dp"
+                        android:weightSum="1">
 
-                <TextView
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:paddingTop="2dp"
-                    android:paddingBottom="2dp"
-                    android:text="@string/title_keywords"
-                    android:textAppearance="@style/Rose.TextAppearance.Normal"
-                    android:textColor="@android:color/black"
-                    android:textStyle="bold" />
+                        <TextView
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:text="@string/title_subject"
+                            android:textColor="@android:color/black"
+                            android:textStyle="bold" />
 
-                <TextView
-                    android:id="@+id/tvKeywords"
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:layout_marginStart="2dp"
-                    android:layout_weight="1"
-                    android:maxLines="2"
-                    android:paddingTop="2dp"
-                    android:paddingBottom="2dp"
-                    android:text="@string/empty_description"
-                    android:textAppearance="@style/Rose.TextAppearance.Caption"
-                    android:textColor="@android:color/black" />
-            </TableRow>
+                        <TextView
+                            android:id="@+id/dialogTvSubject"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:layout_marginStart="5dp"
+                            android:layout_weight="1"
+                            android:text="@string/empty_description"
+                            android:textColor="@android:color/black"
+                            android:textSize="12sp" />
+                    </TableRow>
 
-            <TableRow tools:ignore="UselessParent">
+                    <TableRow
+                        android:paddingTop="2dp"
+                        android:paddingBottom="2dp"
+                        android:weightSum="1">
 
-                <TextView
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:paddingTop="2dp"
-                    android:paddingBottom="2dp"
-                    android:text="@string/title_creation_date"
-                    android:textAppearance="@style/Rose.TextAppearance.Normal"
-                    android:textColor="@android:color/black"
-                    android:textStyle="bold" />
+                        <TextView
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:text="@string/title_keywords"
+                            android:textColor="@android:color/black"
+                            android:textStyle="bold" />
 
-                <TextView
-                    android:id="@+id/tvCreationDate"
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:layout_marginStart="2dp"
-                    android:layout_weight="1"
-                    android:maxLines="2"
-                    android:paddingTop="2dp"
-                    android:paddingBottom="2dp"
-                    android:text="@string/empty_description"
-                    android:textAppearance="@style/Rose.TextAppearance.Caption"
-                    android:textColor="@android:color/black" />
-            </TableRow>
+                        <TextView
+                            android:id="@+id/dialogTvKeywords"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:layout_marginStart="5dp"
+                            android:layout_weight="1"
+                            android:text="@string/empty_description"
+                            android:textColor="@android:color/black"
+                            android:textSize="12sp" />
+                    </TableRow>
 
-            <TableRow tools:ignore="UselessParent">
+                    <TableRow
+                        android:paddingTop="2dp"
+                        android:paddingBottom="2dp"
+                        android:weightSum="1">
 
-                <TextView
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:paddingTop="2dp"
-                    android:paddingBottom="2dp"
-                    android:text="@string/title_modify_date"
-                    android:textAppearance="@style/Rose.TextAppearance.Normal"
-                    android:textColor="@android:color/black"
-                    android:textStyle="bold" />
+                        <TextView
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:text="@string/title_creation_date"
+                            android:textColor="@android:color/black"
+                            android:textStyle="bold" />
 
-                <TextView
-                    android:id="@+id/tvModifyDate"
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:layout_marginStart="2dp"
-                    android:layout_weight="1"
-                    android:maxLines="2"
-                    android:paddingTop="2dp"
-                    android:paddingBottom="2dp"
-                    android:text="@string/empty_description"
-                    android:textAppearance="@style/Rose.TextAppearance.Caption"
-                    android:textColor="@android:color/black" />
-            </TableRow>
+                        <TextView
+                            android:id="@+id/dialogTvCreationDate"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:layout_marginStart="5dp"
+                            android:layout_weight="1"
+                            android:text="@string/empty_description"
+                            android:textColor="@android:color/black"
+                            android:textSize="12sp" />
+                    </TableRow>
 
-            <TableRow tools:ignore="UselessParent">
+                    <TableRow
+                        android:paddingTop="2dp"
+                        android:paddingBottom="2dp"
+                        android:weightSum="1">
 
-                <TextView
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:paddingTop="2dp"
-                    android:paddingBottom="2dp"
-                    android:text="@string/title_creator_of"
-                    android:textAppearance="@style/Rose.TextAppearance.Normal"
-                    android:textColor="@android:color/black"
-                    android:textStyle="bold" />
+                        <TextView
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:text="@string/title_modify_date"
+                            android:textColor="@android:color/black"
+                            android:textStyle="bold" />
 
-                <TextView
-                    android:id="@+id/tvCreator"
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:layout_marginStart="2dp"
-                    android:layout_weight="1"
-                    android:maxLines="2"
-                    android:paddingTop="2dp"
-                    android:paddingBottom="2dp"
-                    android:singleLine="false"
-                    android:text="@string/empty_description"
-                    android:textAppearance="@style/Rose.TextAppearance.Caption"
-                    android:textColor="@android:color/black" />
-            </TableRow>
+                        <TextView
+                            android:id="@+id/dialogTvModifyDate"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:layout_marginStart="5dp"
+                            android:layout_weight="1"
+                            android:text="@string/empty_description"
+                            android:textColor="@android:color/black"
+                            android:textSize="12sp" />
+                    </TableRow>
 
-            <TableRow tools:ignore="UselessParent">
+                    <TableRow
+                        android:paddingTop="2dp"
+                        android:paddingBottom="2dp"
+                        android:weightSum="1">
 
-                <TextView
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:paddingTop="2dp"
-                    android:paddingBottom="2dp"
-                    android:text="@string/title_producer_of"
-                    android:textAppearance="@style/Rose.TextAppearance.Normal"
-                    android:textColor="@android:color/black"
-                    android:textStyle="bold" />
+                        <TextView
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:text="@string/title_creator_of"
+                            android:textColor="@android:color/black"
+                            android:textStyle="bold" />
 
-                <TextView
-                    android:id="@+id/tvProducer"
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:layout_marginStart="2dp"
-                    android:layout_weight="1"
-                    android:maxLines="2"
-                    android:paddingTop="2dp"
-                    android:paddingBottom="2dp"
-                    android:text="@string/empty_description"
-                    android:textAppearance="@style/Rose.TextAppearance.Caption"
-                    android:textColor="@android:color/black" />
-            </TableRow>
+                        <TextView
+                            android:id="@+id/dialogTvCreator"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:layout_marginStart="5dp"
+                            android:layout_weight="1"
+                            android:text="@string/empty_description"
+                            android:textColor="@android:color/black"
+                            android:textSize="12sp" />
+                    </TableRow>
 
-            <TableRow tools:ignore="UselessParent">
+                    <TableRow
+                        android:paddingTop="2dp"
+                        android:paddingBottom="2dp"
+                        android:weightSum="1">
 
-                <TextView
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:paddingTop="2dp"
-                    android:paddingBottom="2dp"
-                    android:text="@string/title_pdf_file_size"
-                    android:textAppearance="@style/Rose.TextAppearance.Normal"
-                    android:textColor="@android:color/black"
-                    android:textStyle="bold" />
+                        <TextView
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:text="@string/title_producer_of"
+                            android:textColor="@android:color/black"
+                            android:textStyle="bold" />
 
-                <TextView
-                    android:id="@+id/tvFileSize"
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:layout_marginStart="2dp"
-                    android:layout_weight="1"
-                    android:maxLines="2"
-                    android:paddingTop="2dp"
-                    android:paddingBottom="2dp"
-                    android:text="@string/empty_description"
-                    android:textAppearance="@style/Rose.TextAppearance.Caption"
-                    android:textColor="@android:color/black" />
-            </TableRow>
+                        <TextView
+                            android:id="@+id/dialogTvProducer"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:layout_marginStart="5dp"
+                            android:layout_weight="1"
+                            android:text="@string/empty_description"
+                            android:textColor="@android:color/black"
+                            android:textSize="12sp" />
+                    </TableRow>
 
-            <TableRow tools:ignore="UselessParent">
+                    <TableRow
+                        android:paddingTop="2dp"
+                        android:paddingBottom="2dp"
+                        android:weightSum="1">
 
-                <TextView
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:paddingTop="2dp"
-                    android:paddingBottom="2dp"
-                    android:text="@string/title_pdf_file_path"
-                    android:textAppearance="@style/Rose.TextAppearance.Normal"
-                    android:textColor="@android:color/black"
-                    android:textStyle="bold" />
+                        <TextView
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:text="@string/title_pdf_file_size"
+                            android:textColor="@android:color/black"
+                            android:textStyle="bold" />
 
-                <TextView
-                    android:id="@+id/tvFilePath"
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:layout_marginStart="2dp"
-                    android:layout_weight="1"
-                    android:maxLines="3"
-                    android:paddingTop="2dp"
-                    android:paddingBottom="2dp"
-                    android:text="@string/empty_description"
-                    android:textAppearance="@style/Rose.TextAppearance.Caption"
-                    android:textColor="@android:color/black" />
-            </TableRow>
+                        <TextView
+                            android:id="@+id/dialogTvFileSize"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:layout_marginStart="5dp"
+                            android:layout_weight="1"
+                            android:text="@string/empty_description"
+                            android:textColor="@android:color/black"
+                            android:textSize="12sp" />
+                    </TableRow>
 
-            <LinearLayout
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:layout_marginTop="2dp"
-                android:layout_marginBottom="4dp"
-                android:gravity="end">
+                    <TableRow
+                        android:paddingTop="2dp"
+                        android:paddingBottom="2dp"
+                        android:weightSum="1">
 
-                <Button
-                    android:id="@+id/tvOk"
-                    style="@style/Widget.Material3.Button.ElevatedButton"
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:layout_marginEnd="4dp"
-                    android:backgroundTint="@color/colorAccent"
-                    android:text="@android:string/ok"
-                    android:textAllCaps="true"
-                    android:textAppearance="@style/Rose.TextAppearance.Normal"
-                    android:textColor="@color/colorWhite"
-                    android:textStyle="bold" />
-            </LinearLayout>
-        </TableLayout>
-    </com.google.android.material.card.MaterialCardView>
-</androidx.constraintlayout.widget.ConstraintLayout>
+                        <TextView
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:text="@string/title_pdf_file_path"
+                            android:textColor="@android:color/black"
+                            android:textStyle="bold" />
+
+                        <TextView
+                            android:id="@+id/dialogTvFilePath"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:layout_marginStart="5dp"
+                            android:layout_weight="1"
+                            android:text="@string/empty_description"
+                            android:textColor="@android:color/black"
+                            android:textSize="12sp" />
+                    </TableRow>
+
+                    <LinearLayout
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:layout_marginTop="5dp"
+                        android:gravity="end">
+
+                        <Button
+                            android:id="@+id/btnOk"
+                            style="@style/Widget.Material3.Button"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:text="@android:string/ok"
+                            android:textAllCaps="true"
+                            android:textColor="@android:color/white"
+                            android:textSize="12sp"
+                            android:textStyle="bold" />
+                    </LinearLayout>
+                </TableLayout>
+            </ScrollView>
+        </com.google.android.material.card.MaterialCardView>
+    </FrameLayout>
+</layout>

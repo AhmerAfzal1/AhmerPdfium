@@ -14,15 +14,27 @@ class PdfFragmentModel @Inject constructor(private val pref: AppPreferencesManag
 
     val flow = pref.preferencesFlow
 
-    fun updatePdfPageSnap(isChecked: Boolean) {
+    fun updateAutoSpacing(isChecked: Boolean) {
         viewModelScope.launch {
-            pref.updatePdfPageSnap(isChecked)
+            pref.updateAutoSpacing(isChecked)
         }
     }
 
-    fun updatePdfViewChange(isChecked: Boolean) {
+    fun updatePageSnap(isChecked: Boolean) {
         viewModelScope.launch {
-            pref.updatePdfViewChange(isChecked)
+            pref.updatePageSnap(isChecked)
+        }
+    }
+
+    fun updateViewHorizontal(isChecked: Boolean) {
+        viewModelScope.launch {
+            pref.updateViewHorizontal(isChecked)
+        }
+    }
+
+    fun updateSpacing(int: Int) {
+        viewModelScope.launch {
+            pref.updateSpacing(int)
         }
     }
 }

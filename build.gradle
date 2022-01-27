@@ -6,9 +6,9 @@ buildscript {
         maven { url 'https://androidx.dev/snapshots/builds/8054565/artifacts/repository' }
     }
     dependencies {
-        classpath "com.android.tools.build:gradle:7.0.4"
+        classpath 'com.android.tools.build:gradle:7.1.0'
         classpath 'com.google.dagger:hilt-android-gradle-plugin:2.40.5'
-        classpath 'androidx.navigation:navigation-safe-args-gradle-plugin:2.4.0-rc01'
+        classpath 'androidx.navigation:navigation-safe-args-gradle-plugin:2.5.0-SNAPSHOT'
         classpath "org.jetbrains.kotlin:kotlin-gradle-plugin:$kotlin_version"
         classpath "io.codearte.gradle.nexus:gradle-nexus-staging-plugin:0.30.0"
     }
