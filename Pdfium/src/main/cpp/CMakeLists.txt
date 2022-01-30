@@ -34,6 +34,15 @@ target_include_directories(pdfsdk_jni PRIVATE
         ${CMAKE_SOURCE_DIR}/include
         ${CMAKE_SOURCE_DIR}/include/cppp)
 
+find_package(Threads REQUIRED)
+
+find_library( # Defines the name of the path variable that stores the
+        # location of the NDK library.
+        log-lib
+
+        # Specifies the name of the NDK library that
+        # CMake needs to locate.
+        log)
 # Specifies libraries CMake should link to your target library. You
 # can link multiple libraries, such as libraries you define in this
 # build script, prebuilt third-party libraries, or system libraries.
@@ -41,7 +50,8 @@ target_include_directories(pdfsdk_jni PRIVATE
 target_link_libraries( # Specifies the target library.
         pdfsdk_jni
         pdfsdk
+        Threads::Threads
         jnigraphics
         android
         GLESv2
-        log)
+        ${log-lib})
