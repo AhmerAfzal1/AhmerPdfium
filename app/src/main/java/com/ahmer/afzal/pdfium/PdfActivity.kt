@@ -4,7 +4,6 @@ import android.app.Dialog
 import android.app.SearchManager
 import android.content.Context
 import android.graphics.Color
-import android.os.Build
 import android.os.Bundle
 import android.text.Editable
 import android.text.TextUtils
@@ -36,6 +35,7 @@ import io.ahmer.utils.utilcode.FileUtils
 import io.ahmer.utils.utilcode.StringUtils
 import io.ahmer.utils.utilcode.ThrowableUtils
 import io.ahmer.utils.utilcode.ToastUtils
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.launch
 import java.util.*
@@ -49,11 +49,13 @@ class PdfActivity : AppCompatActivity(), OnPageChangeListener, OnLoadCompleteLis
     private lateinit var mProgressBar: ProgressBar
     private val mViewModel: PdfActivityModel by viewModels()
     private var mCurrentPage: Int = 0
+    private var mIsAutoSpacing: Boolean = true
     private var mIsNightMode: Boolean = false
     private var mIsPageSnap: Boolean = true
     private var mIsViewHorizontal: Boolean = false
     private var mPassword: String = ""
     private var mPdfFile: String? = null
+    private var mSpacing: Int = 5
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -69,20 +71,33 @@ class PdfActivity : AppCompatActivity(), OnPageChangeListener, OnLoadCompleteLis
             }
             toolbarClick(toolbar)
         }
-        lifecycleScope.launch {
+        lifecycleScope.launch(Dispatchers.Main) {
+            mIsAutoSpacing = mViewModel.flow.first().isAutoSpacing
             mIsPageSnap = mViewModel.flow.first().isPageSnap
             mIsViewHorizontal = mViewModel.flow.first().isViewHorizontal
+            mSpacing = mViewModel.flow.first().spacing
         }
+        val mMenuInfo = mMenu.findItem(R.id.menuInfo)
+        val mMenuJumpTo = mMenu.findItem(R.id.menuJumpTo)
+        val mMenuNightMode = mMenu.findItem(R.id.menuNightMode)
+        val mMenuSnapPage = mMenu.findItem(R.id.menuPageSnap)
+        val mMenuSwitchView = mMenu.findItem(R.id.menuSwitchView)
+        mMenuInfo.isEnabled = false
+        mMenuJumpTo.isEnabled = false
+        mMenuNightMode.isEnabled = false
+        mMenuSnapPage.isEnabled = false
+        mMenuSwitchView.isEnabled = false
         if (!mIsViewHorizontal) {
-            mMenu.findItem(R.id.menuSwitchView).setIcon(R.drawable.ic_baseline_swipe_horiz)
+            mMenuSwitchView.setIcon(R.drawable.ic_baseline_swipe_horiz)
+            mMenuSwitchView.title = getString(R.string.menu_pdf_view_horizontal)
         } else {
-            mMenu.findItem(R.id.menuSwitchView).setIcon(R.drawable.ic_baseline_swipe_vert)
+            mMenuSwitchView.setIcon(R.drawable.ic_baseline_swipe_vert)
+            mMenuSwitchView.title = getString(R.string.menu_pdf_view_vertical)
         }
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {
-            mMenu.findItem(R.id.menuInfo).icon.setTint(Color.WHITE)
-            mMenu.findItem(R.id.menuJumpTo).icon.setTint(Color.WHITE)
-            mMenu.findItem(R.id.menuSwitchView).icon.setTint(Color.WHITE)
-            mMenu.findItem(R.id.menuNightMode).icon.setTint(Color.WHITE)
+        if (mIsPageSnap) {
+            mMenuSnapPage.title = getString(R.string.menu_pdf_disable_snap_page)
+        } else {
+            mMenuSnapPage.title = getString(R.string.menu_pdf_enable_snap_page)
         }
         init()
     }
@@ -238,10 +253,6 @@ class PdfActivity : AppCompatActivity(), OnPageChangeListener, OnLoadCompleteLis
     }
 
     private fun displayFromAsset(pdfView: PDFView, file: String) {
-        mMenu.findItem(R.id.menuInfo).isEnabled = false
-        mMenu.findItem(R.id.menuJumpTo).isEnabled = false
-        mMenu.findItem(R.id.menuSwitchView).isEnabled = false
-        mMenu.findItem(R.id.menuNightMode).isEnabled = false
         pdfView.setBackgroundColor(Color.LTGRAY)
         pdfView.fromAsset(file)
             .defaultPage(mCurrentPage)
@@ -288,14 +299,14 @@ class PdfActivity : AppCompatActivity(), OnPageChangeListener, OnLoadCompleteLis
             .enableSwipe(true)
             .swipeHorizontal(mIsViewHorizontal)
             .pageSnap(mIsPageSnap) // snap pages to screen boundaries
-            .autoSpacing(true) // add dynamic spacing to fit each page on its own on the screen
+            .autoSpacing(mIsAutoSpacing) // add dynamic spacing to fit each page on its own on the screen
             .pageFling(false) // make a fling change only a single page like ViewPager
             .enableDoubleTap(true)
             .enableAnnotationRendering(true)
             .password(mPassword)
             .scrollHandle(DefaultScrollHandle(this))
             .enableAntialiasing(true)
-            .spacing(5)
+            .spacing(mSpacing)
             .linkHandler(DefaultLinkHandler(pdfView))
             .pageFitPolicy(FitPolicy.BOTH)
             .load()
@@ -373,19 +384,31 @@ class PdfActivity : AppCompatActivity(), OnPageChangeListener, OnLoadCompleteLis
                     showJumpToDialog(mPdfView)
                 }
                 R.id.menuPageSnap -> {
-                    mIsPageSnap = !mIsPageSnap
+                    val mPageSnap = mMenu.findItem(R.id.menuPageSnap)
+                    if (mIsPageSnap) {
+                        mIsPageSnap = false
+                        mIsAutoSpacing = false
+                        mSpacing = 10
+                        mPageSnap.title = getString(R.string.menu_pdf_enable_snap_page)
+                    } else {
+                        mIsPageSnap = true
+                        mIsAutoSpacing = true
+                        mSpacing = 5
+                        mPageSnap.title = getString(R.string.menu_pdf_disable_snap_page)
+                    }
                     mViewModel.updatePdfPageSnap(mIsPageSnap)
                     mPdfFile?.let { displayFromAsset(mPdfView, it) }
                 }
                 R.id.menuSwitchView -> {
+                    val mHorizontal = mMenu.findItem(R.id.menuSwitchView)
                     if (!mIsViewHorizontal) {
                         mIsViewHorizontal = true
-                        mMenu.findItem(R.id.menuSwitchView)
-                            .setIcon(R.drawable.ic_baseline_swipe_vert)
+                        mHorizontal.setIcon(R.drawable.ic_baseline_swipe_vert)
+                        mHorizontal.title = getString(R.string.menu_pdf_view_vertical)
                     } else {
                         mIsViewHorizontal = false
-                        mMenu.findItem(R.id.menuSwitchView)
-                            .setIcon(R.drawable.ic_baseline_swipe_horiz)
+                        mHorizontal.setIcon(R.drawable.ic_baseline_swipe_horiz)
+                        mHorizontal.title = getString(R.string.menu_pdf_view_horizontal)
                     }
                     mViewModel.updatePdfViewChange(mIsViewHorizontal)
                     mPdfFile?.let { displayFromAsset(mPdfView, it) }
