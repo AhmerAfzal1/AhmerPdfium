@@ -1,7 +1,5 @@
 package com.ahmer.pdfviewer.util
 
-import java.util.*
-
 object ArrayUtils {
 
     /**

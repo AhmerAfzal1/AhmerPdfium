@@ -1,7 +1,5 @@
 package com.ahmer.pdfium
 
-import java.util.*
-
 data class Bookmark(
     val nativePtr: Long,
     var title: String? = null,

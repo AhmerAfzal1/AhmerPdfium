@@ -8,11 +8,13 @@ import com.ahmer.pdfium.Bookmark
 import com.ahmer.pdfium.Link
 import com.ahmer.pdfium.Meta
 import com.ahmer.pdfium.PdfiumCore
+import com.ahmer.pdfium.search.TextSearchContext
 import com.ahmer.pdfium.util.Size
 import com.ahmer.pdfium.util.SizeF
 import com.ahmer.pdfviewer.exception.PageRenderingException
 import com.ahmer.pdfviewer.util.FitPolicy
 import com.ahmer.pdfviewer.util.PageSizeCalculator
+import com.ahmer.pdfviewer.util.PdfConstants
 import java.util.*
 
 class PdfFile(
@@ -42,6 +44,8 @@ class PdfFile(
      */
     private val fitEachPage: Boolean
 ) {
+    private val mOpenedPageQueue: Queue<Int> = LinkedList()
+
     /**
      * Opened pages with indicator whether opening was successful
      */
@@ -135,12 +139,12 @@ class PdfFile(
     }
 
     fun documentPage(userPage: Int): Int {
-        var documentPage = userPage
+        var mDocPage = userPage
         if (userPages.isNotEmpty()) {
-            documentPage =
+            mDocPage =
                 if (userPage < 0 || userPage >= userPages.size) return -1 else userPages[userPage]
         }
-        return if (documentPage < 0 || userPage >= pagesCount) -1 else documentPage
+        return if (mDocPage < 0 || userPage >= pagesCount) -1 else mDocPage
     }
 
     fun getBookmarks(): List<Bookmark> {
@@ -164,21 +168,21 @@ class PdfFile(
     }
 
     fun getPageAtOffset(offset: Float, zoom: Float): Int {
-        var currentPage = 0
+        var mCurrentPage = 0
         for (i in 0 until pagesCount) {
-            val off = mPageOffsets[i] * zoom - getPageSpacing(i, zoom) / 2f
-            if (off >= offset) break
-            currentPage++
+            val mOffset = mPageOffsets[i] * zoom - getPageSpacing(i, zoom) / 2f
+            if (mOffset >= offset) break
+            mCurrentPage++
         }
-        return if (--currentPage >= 0) currentPage else 0
+        return if (--mCurrentPage >= 0) mCurrentPage else 0
     }
 
     /**
      * Get the page's height if swiping vertical, or width if swiping horizontal.
      */
     fun getPageLength(pageIndex: Int, zoom: Float): Float {
-        val size: SizeF = getPageSize(pageIndex)
-        return (if (isVertical) size.height else size.width) * zoom
+        val mSize: SizeF = getPageSize(pageIndex)
+        return (if (isVertical) mSize.height else mSize.width) * zoom
     }
 
     fun getPageLinks(pageIndex: Int): List<Link> {
@@ -205,24 +209,23 @@ class PdfFile(
     }
 
     fun getPageSpacing(pageIndex: Int, zoom: Float): Float {
-        val spacing = if (autoSpacing) mPageSpacing[pageIndex] else spacingPx.toFloat()
-        return spacing * zoom
+        return (if (autoSpacing) mPageSpacing[pageIndex] else spacingPx.toFloat()) * zoom
     }
 
     fun getScaledPageSize(pageIndex: Int, zoom: Float): SizeF {
-        val size: SizeF = getPageSize(pageIndex)
-        return SizeF(size.width * zoom, size.height * zoom)
+        val mSize: SizeF = getPageSize(pageIndex)
+        return SizeF(mSize.width * zoom, mSize.height * zoom)
     }
 
     /**
      * Get secondary page offset, that is X for vertical scroll and Y for horizontal scroll
      */
     fun getSecondaryPageOffset(pageIndex: Int, zoom: Float): Float {
-        val pageSize: SizeF = getPageSize(pageIndex)
+        val mPageSize: SizeF = getPageSize(pageIndex)
         return if (isVertical) {
-            zoom * (maxPageWidth - pageSize.width) / 2 //x
+            zoom * (maxPageWidth - mPageSize.width) / 2 //x
         } else {
-            zoom * (maxPageHeight - pageSize.height) / 2 //y
+            zoom * (maxPageHeight - mPageSize.height) / 2 //y
         }
     }
 
@@ -233,22 +236,32 @@ class PdfFile(
     fun mapRectToDevice(
         pageIndex: Int, startX: Int, startY: Int, sizeX: Int, sizeY: Int, rect: RectF
     ): RectF {
-        val page = documentPage(pageIndex)
-        return pdfiumCore.mapPageCoordinateToDevice(page, startX, startY, sizeX, sizeY, 0, rect)!!
+        val mPage = documentPage(pageIndex)
+        return pdfiumCore.mapPageCoordinateToDevice(mPage, startX, startY, sizeX, sizeY, 0, rect)!!
     }
 
     @Throws(PageRenderingException::class)
     fun openPage(pageIndex: Int): Boolean {
-        val docPage = documentPage(pageIndex)
-        if (docPage < 0) return false
+        val mDocPage = documentPage(pageIndex)
+        if (mDocPage < 0) return false
         synchronized(lock) {
-            if (mOpenedPages.indexOfKey(docPage) < 0) {
+            if (mOpenedPages.indexOfKey(mDocPage) < 0) {
                 try {
-                    pdfiumCore.openPage(docPage)
-                    mOpenedPages.put(docPage, true)
+                    pdfiumCore.openPage(mDocPage)
+                    mOpenedPages.put(mDocPage, true)
+                    /*
+                     *Memory management
+                     *Fix memory leak https://github.com/barteksc/AndroidPdfViewer/issues/495
+                     */
+                    mOpenedPageQueue.add(pageIndex)
+                    if (mOpenedPageQueue.size > PdfConstants.MAX_PAGES) {
+                        val mOldPage: Int = mOpenedPageQueue.poll() ?: 0
+                        pdfiumCore.closePage(mOldPage)
+                        mOpenedPages.delete(mOldPage)
+                    }
                     return true
                 } catch (e: Exception) {
-                    mOpenedPages.put(docPage, false)
+                    mOpenedPages.put(mDocPage, false)
                     throw PageRenderingException(pageIndex, e)
                 }
             }
@@ -260,43 +273,46 @@ class PdfFile(
         return !mOpenedPages[documentPage(pageIndex), false]
     }
 
+    fun pageSearch(page: Int, query: String, matchCase: Boolean, matchWholeWord: Boolean):
+            TextSearchContext {
+        return pdfiumCore.newPageSearch(page, query, matchCase, matchWholeWord)
+    }
+
     private fun prepareAutoSpacing(viewSize: Size) {
         mPageSpacing.clear()
         for (i in 0 until pagesCount) {
-            val pageSize: SizeF = mScaledPageSizes[i]
-            var spacing: Float =
-                0f.coerceAtLeast(if (isVertical) viewSize.height - pageSize.height else viewSize.width - pageSize.width)
-            if (i < pagesCount - 1) {
-                spacing += spacingPx.toFloat()
-            }
-            mPageSpacing.add(spacing)
+            val mPageSize: SizeF = mScaledPageSizes[i]
+            var mSpacing: Float =
+                0f.coerceAtLeast(if (isVertical) viewSize.height - mPageSize.height else viewSize.width - mPageSize.width)
+            if (i < pagesCount - 1) mSpacing += spacingPx.toFloat()
+            mPageSpacing.add(mSpacing)
         }
     }
 
     private fun prepareDocLen() {
-        var length = 0f
+        var mLength = 0f
         for (i in 0 until pagesCount) {
-            val pageSize: SizeF = mScaledPageSizes[i]
-            length += if (isVertical) pageSize.height else pageSize.width
-            if (autoSpacing) length += mPageSpacing[i] else if (i < pagesCount - 1) length += spacingPx.toFloat()
+            val mPageSize: SizeF = mScaledPageSizes[i]
+            mLength += if (isVertical) mPageSize.height else mPageSize.width
+            if (autoSpacing) mLength += mPageSpacing[i] else if (i < pagesCount - 1) mLength += spacingPx.toFloat()
         }
-        mDocumentLength = length
+        mDocumentLength = mLength
     }
 
     private fun preparePagesOffset() {
         mPageOffsets.clear()
-        var offset = 0f
+        var mOffset = 0f
         for (i in 0 until pagesCount) {
-            val pageSize: SizeF = mScaledPageSizes[i]
-            val size: Float = if (isVertical) pageSize.height else pageSize.width
+            val mPageSize: SizeF = mScaledPageSizes[i]
+            val mSize: Float = if (isVertical) mPageSize.height else mPageSize.width
             if (autoSpacing) {
-                offset += mPageSpacing[i] / 2f
-                if (i == 0) offset -= spacingPx / 2f else if (i == pagesCount - 1) offset += spacingPx / 2f
-                mPageOffsets.add(offset)
-                offset += size + mPageSpacing[i] / 2f
+                mOffset += mPageSpacing[i] / 2f
+                if (i == 0) mOffset -= spacingPx / 2f else if (i == pagesCount - 1) mOffset += spacingPx / 2f
+                mPageOffsets.add(mOffset)
+                mOffset += mSize + mPageSpacing[i] / 2f
             } else {
-                mPageOffsets.add(offset)
-                offset += size + spacingPx
+                mPageOffsets.add(mOffset)
+                mOffset += mSize + spacingPx
             }
         }
     }

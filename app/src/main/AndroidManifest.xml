@@ -12,8 +12,10 @@
 
     <application
         android:name=".App"
+        android:hardwareAccelerated="true"
         android:icon="@drawable/icon_pdf"
         android:label="@string/app_name"
+        android:largeHeap="true"
         android:requestLegacyExternalStorage="true"
         android:roundIcon="@drawable/pdf_icon_round"
         android:supportsRtl="true"

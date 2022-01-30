@@ -23,7 +23,8 @@ class PageSizeCalculator(
             return SizeF(0f, 0f)
         }
         val maxWidth = if (fitEachPage) viewSize.width.toFloat() else pageSize.width * mWidthRatio
-        val maxHeight = if (fitEachPage) viewSize.height.toFloat() else pageSize.height * mHeightRatio
+        val maxHeight =
+            if (fitEachPage) viewSize.height.toFloat() else pageSize.height * mHeightRatio
         return when (fitPolicy) {
             FitPolicy.HEIGHT -> fitHeight(pageSize, maxHeight)
             FitPolicy.BOTH -> fitBoth(pageSize, maxWidth, maxHeight)
