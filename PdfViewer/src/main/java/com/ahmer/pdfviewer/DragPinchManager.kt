@@ -19,8 +19,7 @@ import kotlin.math.roundToInt
  * This Manager takes care of moving the PDFView, set its zoom track user actions.
  */
 internal class DragPinchManager(
-    private val pdfView: PDFView,
-    private val animationManager: AnimationManager
+    private val pdfView: PDFView, private val animationManager: AnimationManager
 ) : GestureDetector.OnGestureListener, OnDoubleTapListener, OnScaleGestureListener,
     OnTouchListener {
 
