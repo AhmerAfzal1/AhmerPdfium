@@ -87,7 +87,7 @@ class CacheManager {
     private fun addWithoutDuplicates(collection: MutableCollection<PagePart>, newPart: PagePart) {
         for (mPart in collection) {
             if (mPart == newPart) {
-                newPart.renderedBitmap!!.recycle()
+                newPart.renderedBitmap?.recycle()
                 return
             }
         }

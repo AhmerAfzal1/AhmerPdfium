@@ -25,9 +25,9 @@ internal class DragPinchManager(
 
     private val mGestureDetector = GestureDetector(pdfView.context, this)
     private val mScaleGestureDetector = ScaleGestureDetector(pdfView.context, this)
-    private var isEnabled = false
-    private var isScaling = false
-    private var isScrolling = false
+    private var isEnabled: Boolean = false
+    private var isScaling: Boolean = false
+    private var isScrolling: Boolean = false
 
     fun enable() {
         isEnabled = true
@@ -42,8 +42,8 @@ internal class DragPinchManager(
     }
 
     override fun onSingleTapConfirmed(e: MotionEvent): Boolean {
-        val mLinkTapped = checkLinkTapped(e.x, e.y)
-        val mOnTapHandled = pdfView.callbacks.callOnTap(e)
+        val mLinkTapped: Boolean = checkLinkTapped(e.x, e.y)
+        val mOnTapHandled: Boolean = pdfView.callbacks.callOnTap(e)
         if (!mOnTapHandled && !mLinkTapped) {
             val mScrollHandle = pdfView.getScrollHandle()
             if (mScrollHandle != null && pdfView.documentFitsView()) {
@@ -55,11 +55,11 @@ internal class DragPinchManager(
     }
 
     private fun checkLinkTapped(x: Float, y: Float): Boolean {
-        val mPdfFile = pdfView.pdfFile ?: return false
-        val mMappedX = -pdfView.getCurrentXOffset() + x
-        val mMappedY = -pdfView.getCurrentYOffset() + y
-        val mOffset = if (pdfView.isSwipeVertical()) mMappedY else mMappedX
-        val mPage = mPdfFile.getPageAtOffset(mOffset, pdfView.getZoom())
+        val mPdfFile: PdfFile = pdfView.pdfFile ?: return false
+        val mMappedX: Float = -pdfView.getCurrentXOffset() + x
+        val mMappedY: Float = -pdfView.getCurrentYOffset() + y
+        val mOffset: Float = if (pdfView.isSwipeVertical()) mMappedY else mMappedX
+        val mPage: Int = mPdfFile.getPageAtOffset(mOffset, pdfView.getZoom())
         val mPageSize: SizeF = mPdfFile.getScaledPageSize(mPage, pdfView.getZoom())
         val mPageX: Int
         val mPageY: Int
@@ -89,9 +89,7 @@ internal class DragPinchManager(
     private fun startPageFling(
         downEvent: MotionEvent, ev: MotionEvent, velocityX: Float, velocityY: Float
     ) {
-        if (!checkDoPageFling(velocityX, velocityY)) {
-            return
-        }
+        if (!checkDoPageFling(velocityX, velocityY)) return
         val mDirection: Int = if (pdfView.isSwipeVertical()) {
             if (velocityY > 0) -1 else 1
         } else {
@@ -110,9 +108,7 @@ internal class DragPinchManager(
     }
 
     override fun onDoubleTap(e: MotionEvent): Boolean {
-        if (!pdfView.isDoubleTapEnabled()) {
-            return false
-        }
+        if (!pdfView.isDoubleTapEnabled()) return false
         when {
             pdfView.getZoom() < pdfView.getMidZoom() -> {
                 pdfView.zoomWithAnimation(e.x, e.y, pdfView.getMidZoom())
@@ -147,18 +143,14 @@ internal class DragPinchManager(
         if (pdfView.isZooming() || pdfView.isSwipeEnabled()) {
             pdfView.moveRelativeTo(-distanceX, -distanceY)
         }
-        if (!isScaling || pdfView.isRenderDuringScale()) {
-            pdfView.loadPageByOffset()
-        }
+        if (!isScaling || pdfView.isRenderDuringScale()) pdfView.loadPageByOffset()
         return true
     }
 
     private fun onScrollEnd(event: MotionEvent) {
         pdfView.loadPages()
         hideHandle()
-        if (!animationManager.isFlinging()) {
-            pdfView.performPageSnap()
-        }
+        if (!animationManager.isFlinging()) pdfView.performPageSnap()
     }
 
     override fun onLongPress(e: MotionEvent) {
@@ -167,9 +159,7 @@ internal class DragPinchManager(
 
     override fun onFling(e1: MotionEvent, e2: MotionEvent, velocityX: Float, velocityY: Float):
             Boolean {
-        if (!pdfView.isSwipeEnabled()) {
-            return false
-        }
+        if (!pdfView.isSwipeEnabled()) return false
         if (pdfView.isPageFlingEnabled()) {
             if (pdfView.pageFillsScreen()) {
                 onBoundedFling(velocityX, velocityY)
@@ -181,8 +171,8 @@ internal class DragPinchManager(
 
         val mMinX: Float
         val mMinY: Float
-        val mOffsetX = pdfView.getCurrentXOffset().toInt()
-        val mOffsetY = pdfView.getCurrentYOffset().toInt()
+        val mOffsetX: Int = pdfView.getCurrentXOffset().toInt()
+        val mOffsetY: Int = pdfView.getCurrentYOffset().toInt()
         val mPdfFile = pdfView.pdfFile
 
         if (pdfView.isSwipeVertical()) {
@@ -205,8 +195,8 @@ internal class DragPinchManager(
         val mMaxY: Float
         val mMinX: Float
         val mMinY: Float
-        val mOffsetX = pdfView.getCurrentXOffset().toInt()
-        val mOffsetY = pdfView.getCurrentYOffset().toInt()
+        val mOffsetX: Int = pdfView.getCurrentXOffset().toInt()
+        val mOffsetY: Int = pdfView.getCurrentYOffset().toInt()
         val mPdfFile = pdfView.pdfFile
         val mPageStart = -mPdfFile!!.getPageOffset(pdfView.getCurrentPage(), pdfView.getZoom())
         val mPageEnd =
@@ -230,10 +220,10 @@ internal class DragPinchManager(
     }
 
     override fun onScale(detector: ScaleGestureDetector): Boolean {
-        var mDetector = detector.scaleFactor
-        val mMaxZoom = MAXIMUM_ZOOM.coerceAtMost(pdfView.getMaxZoom())
-        val mMinZoom = MINIMUM_ZOOM.coerceAtMost(pdfView.getMinZoom())
-        val mWantedZoom = pdfView.getZoom() * mDetector
+        var mDetector: Float = detector.scaleFactor
+        val mMaxZoom: Float = MAXIMUM_ZOOM.coerceAtMost(pdfView.getMaxZoom())
+        val mMinZoom: Float = MINIMUM_ZOOM.coerceAtMost(pdfView.getMinZoom())
+        val mWantedZoom: Float = pdfView.getZoom() * mDetector
         if (mWantedZoom < mMinZoom) {
             mDetector = mMinZoom / pdfView.getZoom()
         } else if (mWantedZoom > mMaxZoom) {
@@ -255,9 +245,7 @@ internal class DragPinchManager(
     }
 
     override fun onTouch(v: View, event: MotionEvent): Boolean {
-        if (!isEnabled) {
-            return false
-        }
+        if (!isEnabled) return false
         var mScaleGesture = mScaleGestureDetector.onTouchEvent(event)
         mScaleGesture = mGestureDetector.onTouchEvent(event) || mScaleGesture
         if (event.action == MotionEvent.ACTION_UP) {
@@ -277,8 +265,8 @@ internal class DragPinchManager(
     }
 
     private fun checkDoPageFling(velocityX: Float, velocityY: Float): Boolean {
-        val mAbsX = abs(velocityX)
-        val mAbsY = abs(velocityY)
+        val mAbsX: Float = abs(velocityX)
+        val mAbsY: Float = abs(velocityY)
         return if (pdfView.isSwipeVertical()) mAbsY > mAbsX else mAbsX > mAbsY
     }
 

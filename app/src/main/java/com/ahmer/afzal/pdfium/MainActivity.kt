@@ -16,7 +16,7 @@ class MainActivity : AppCompatActivity() {
         setContentView(mBinding.root)
         mBinding.apply {
             toolbar.title = getString(R.string.app_name)
-            toolbar.setOnClickListener { v ->
+            toolbar.setOnClickListener {
                 finish()
                 overridePendingTransition(R.anim.left_to_right, R.anim.right_to_left)
             }

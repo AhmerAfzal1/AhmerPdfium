@@ -22,9 +22,8 @@ internal class DecodingTask(
 
     fun execute() {
         mExecutor.execute {
-            val mPdfiumCore = docSource.createDocument(pdfView.context, password)
             val mPdfFile = PdfFile(
-                pdfiumCore = mPdfiumCore,
+                pdfiumCore = docSource.createDocument(pdfView.context, password),
                 fitPolicy = pdfView.getPageFitPolicy(),
                 viewSize = getViewSize(pdfView),
                 userPages = userPages ?: intArrayOf(),

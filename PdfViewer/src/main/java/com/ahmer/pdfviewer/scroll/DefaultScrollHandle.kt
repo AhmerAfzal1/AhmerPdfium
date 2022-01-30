@@ -16,10 +16,8 @@ import java.lang.Float.isInfinite
 import java.lang.Float.isNaN
 
 class DefaultScrollHandle @JvmOverloads constructor(
-    context: Context,
-    private val inverted: Boolean = false
+    context: Context, private val inverted: Boolean = false
 ) : RelativeLayout(context), ScrollHandle {
-
     private val mHidePageScroller = Runnable { hide() }
     private var mCurrentPosition = 0f
     private var mHandlerMiddle = 0f
@@ -35,11 +33,11 @@ class DefaultScrollHandle @JvmOverloads constructor(
         if (pdfView.isSwipeVertical()) {
             mWidth = HANDLE_LONG
             mHeight = HANDLE_SHORT
-            if (inverted) { // left
+            if (inverted) { // Left
                 mAlign = ALIGN_PARENT_LEFT
                 mBackground =
                     ContextCompat.getDrawable(context, R.drawable.default_scroll_handle_left)
-            } else { // right
+            } else { // Right
                 mAlign = ALIGN_PARENT_RIGHT
                 mBackground =
                     ContextCompat.getDrawable(context, R.drawable.default_scroll_handle_right)
@@ -47,11 +45,11 @@ class DefaultScrollHandle @JvmOverloads constructor(
         } else {
             mWidth = HANDLE_SHORT
             mHeight = HANDLE_LONG
-            if (inverted) { // top
+            if (inverted) { // Top
                 mAlign = ALIGN_PARENT_TOP
                 mBackground =
                     ContextCompat.getDrawable(context, R.drawable.default_scroll_handle_top)
-            } else { // bottom
+            } else { // Bottom
                 mAlign = ALIGN_PARENT_BOTTOM
                 mBackground =
                     ContextCompat.getDrawable(context, R.drawable.default_scroll_handle_bottom)
@@ -83,9 +81,7 @@ class DefaultScrollHandle @JvmOverloads constructor(
 
     private fun setPosition(position: Float) {
         var mPosition: Float = position
-        if (isInfinite(mPosition) || isNaN(mPosition)) {
-            return
-        }
+        if (isInfinite(mPosition) || isNaN(mPosition)) return
         val pdfViewSize: Float = if (mPdfView!!.isSwipeVertical()) {
             mPdfView!!.height.toFloat()
         } else {
@@ -123,10 +119,8 @@ class DefaultScrollHandle @JvmOverloads constructor(
     }
 
     override fun setPageNumber(pageNumber: Int) {
-        val mPageNumber = pageNumber.toString()
-        if (mTextView.text != mPageNumber) {
-            mTextView.text = mPageNumber
-        }
+        val mPageNumber: String = pageNumber.toString()
+        if (mTextView.text != mPageNumber) mTextView.text = mPageNumber
     }
 
     override fun shown(): Boolean {
@@ -156,12 +150,10 @@ class DefaultScrollHandle @JvmOverloads constructor(
         get() = mPdfView != null && mPdfView!!.getPageCount() > 0 && mPdfView!!.documentFitsView()
 
     override fun onTouchEvent(event: MotionEvent): Boolean {
-        if (!isPDFViewReady) {
-            return super.onTouchEvent(event)
-        }
+        if (!isPDFViewReady) return super.onTouchEvent(event)
         when (event.action) {
             MotionEvent.ACTION_DOWN, MotionEvent.ACTION_POINTER_DOWN -> {
-                mPdfView!!.stopFling()
+                mPdfView?.stopFling()
                 handler.removeCallbacks(mHidePageScroller)
                 mCurrentPosition = if (mPdfView!!.isSwipeVertical()) {
                     event.rawY - y
@@ -170,26 +162,26 @@ class DefaultScrollHandle @JvmOverloads constructor(
                 }
                 if (mPdfView!!.isSwipeVertical()) {
                     setPosition(event.rawY - mCurrentPosition + mHandlerMiddle)
-                    mPdfView!!.setPositionOffset(mHandlerMiddle / height.toFloat(), false)
+                    mPdfView?.setPositionOffset(mHandlerMiddle / height.toFloat(), false)
                 } else {
                     setPosition(event.rawX - mCurrentPosition + mHandlerMiddle)
-                    mPdfView!!.setPositionOffset(mHandlerMiddle / width.toFloat(), false)
+                    mPdfView?.setPositionOffset(mHandlerMiddle / width.toFloat(), false)
                 }
                 return true
             }
             MotionEvent.ACTION_MOVE -> {
                 if (mPdfView!!.isSwipeVertical()) {
                     setPosition(event.rawY - mCurrentPosition + mHandlerMiddle)
-                    mPdfView!!.setPositionOffset(mHandlerMiddle / height.toFloat(), false)
+                    mPdfView?.setPositionOffset(mHandlerMiddle / height.toFloat(), false)
                 } else {
                     setPosition(event.rawX - mCurrentPosition + mHandlerMiddle)
-                    mPdfView!!.setPositionOffset(mHandlerMiddle / width.toFloat(), false)
+                    mPdfView?.setPositionOffset(mHandlerMiddle / width.toFloat(), false)
                 }
                 return true
             }
             MotionEvent.ACTION_CANCEL, MotionEvent.ACTION_UP, MotionEvent.ACTION_POINTER_UP -> {
                 hideDelayed()
-                mPdfView!!.performPageSnap()
+                mPdfView?.performPageSnap()
                 return true
             }
         }

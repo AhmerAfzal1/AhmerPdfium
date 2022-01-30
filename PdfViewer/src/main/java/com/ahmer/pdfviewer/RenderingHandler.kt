@@ -13,10 +13,10 @@ import kotlin.math.abs
 import kotlin.math.roundToInt
 
 class RenderingHandler(looper: Looper, private val pdfView: PDFView) : Handler(looper) {
-    private val mBounds = RectF()
-    private val mRenderMatrix = Matrix()
-    private val mRoundedBounds = Rect()
-    private var isRunning = false
+    private val mBounds: RectF = RectF()
+    private val mRenderMatrix: Matrix = Matrix()
+    private val mRoundedBounds: Rect = Rect()
+    private var isRunning: Boolean = false
 
     fun addRenderingTask(
         page: Int, width: Float, height: Float, bounds: RectF, isThumbnail: Boolean,

@@ -81,13 +81,13 @@ internal class PagesLoader(private val pdfView: PDFView) {
                     }
                 }
             } else if (mPage == mPageLast) {
-                val pageOffset = pdfView.pdfFile!!.getPageOffset(mPage, mZoom)
+                val mPageOffset = pdfView.pdfFile!!.getPageOffset(mPage, mZoom)
                 if (pdfView.isSwipeVertical()) {
                     mPageFirstXOffset = mFixedFirstXOffset
-                    mPageFirstYOffset = pageOffset
+                    mPageFirstYOffset = mPageOffset
                 } else {
                     mPageFirstYOffset = mFixedFirstYOffset
-                    mPageFirstXOffset = pageOffset
+                    mPageFirstXOffset = mPageOffset
                 }
                 mPageLastXOffset = mFixedLastXOffset
                 mPageLastYOffset = mFixedLastYOffset
@@ -163,11 +163,11 @@ internal class PagesLoader(private val pdfView: PDFView) {
     }
 
     private fun loadVisible(searchQuery: String) {
-        val mScaledPreloadOffset = mPreLoadOffset.toFloat()
-        val mFirstOffsetX = -mOffsetX + mScaledPreloadOffset
-        val mFirstOffsetY = -mOffsetY + mScaledPreloadOffset
-        val mLastOffsetX = -mOffsetX - pdfView.width - mScaledPreloadOffset
-        val mLastOffsetY = -mOffsetY - pdfView.height - mScaledPreloadOffset
+        val mScaledPreloadOffset: Float = mPreLoadOffset.toFloat()
+        val mFirstOffsetX: Float = -mOffsetX + mScaledPreloadOffset
+        val mFirstOffsetY: Float = -mOffsetY + mScaledPreloadOffset
+        val mLastOffsetX: Float = -mOffsetX - pdfView.width - mScaledPreloadOffset
+        val mLastOffsetY: Float = -mOffsetY - pdfView.height - mScaledPreloadOffset
         val mRangeList =
             getRenderRangeList(mFirstOffsetX, mFirstOffsetY, mLastOffsetX, mLastOffsetY)
         var mParts = 0
@@ -180,9 +180,7 @@ internal class PagesLoader(private val pdfView: PDFView) {
                 mRange.page, mRange.leftTop.row, mRange.rightBottom.row, mRange.leftTop.column,
                 mRange.rightBottom.column, Cache.CACHE_SIZE - mParts, searchQuery
             )
-            if (mParts >= Cache.CACHE_SIZE) {
-                break
-            }
+            if (mParts >= Cache.CACHE_SIZE) break
         }
     }
 
@@ -210,12 +208,12 @@ internal class PagesLoader(private val pdfView: PDFView) {
         page: Int, row: Int, col: Int, pageRelativePartWidth: Float, pageRelativePartHeight: Float,
         search: String
     ): Boolean {
-        val mRelX = pageRelativePartWidth * col
-        val mRelY = pageRelativePartHeight * row
-        var mRelHeight = pageRelativePartHeight
-        var mRelWidth = pageRelativePartWidth
-        var mRenderHeight = mPartRenderHeight
-        var mRenderWidth = mPartRenderWidth
+        val mRelX: Float = pageRelativePartWidth * col
+        val mRelY: Float = pageRelativePartHeight * row
+        var mRelHeight: Float = pageRelativePartHeight
+        var mRelWidth: Float = pageRelativePartWidth
+        var mRenderHeight: Float = mPartRenderHeight
+        var mRenderWidth: Float = mPartRenderWidth
 
         if (mRelX + mRelWidth > 1) mRelWidth = 1 - mRelX
         if (mRelY + mRelHeight > 1) mRelHeight = 1 - mRelY

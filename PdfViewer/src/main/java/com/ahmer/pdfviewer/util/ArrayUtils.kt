@@ -14,9 +14,7 @@ object ArrayUtils {
             mLastInt = mCurrentInt
         }
         val mArrayResult = IntArray(mResult.size)
-        for (i in mResult.indices) {
-            mArrayResult[i] = mResult[i]
-        }
+        for (i in mResult.indices) mArrayResult[i] = mResult[i]
         return mArrayResult
     }
 

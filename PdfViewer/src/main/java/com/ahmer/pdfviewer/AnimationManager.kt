@@ -13,7 +13,6 @@ import android.widget.OverScroller
  * API 11 to start an animation, and call moveTo() on the PDFView as a result of each animation update.
  */
 internal class AnimationManager(private val pdfView: PDFView) {
-
     private val mFlingDuration: Long = 400
     private val mOverScroller: OverScroller = OverScroller(pdfView.context)
     private var isFlinging = false
@@ -22,11 +21,11 @@ internal class AnimationManager(private val pdfView: PDFView) {
 
     fun startXAnimation(xFrom: Float, xTo: Float) {
         stopAll()
-        val xAnimation = XAnimation()
+        val mXAnimation = XAnimation()
         mAnimation = ValueAnimator.ofFloat(xFrom, xTo).apply {
             interpolator = DecelerateInterpolator()
-            addUpdateListener(xAnimation)
-            addListener(xAnimation)
+            addUpdateListener(mXAnimation)
+            addListener(mXAnimation)
             duration = mFlingDuration
             start()
         }
@@ -34,11 +33,11 @@ internal class AnimationManager(private val pdfView: PDFView) {
 
     fun startYAnimation(yFrom: Float, yTo: Float) {
         stopAll()
-        val yAnimation = YAnimation()
+        val mYAnimation = YAnimation()
         mAnimation = ValueAnimator.ofFloat(yFrom, yTo).apply {
             interpolator = DecelerateInterpolator()
-            addUpdateListener(yAnimation)
-            addListener(yAnimation)
+            addUpdateListener(mYAnimation)
+            addListener(mYAnimation)
             duration = mFlingDuration
             start()
         }
@@ -46,11 +45,11 @@ internal class AnimationManager(private val pdfView: PDFView) {
 
     fun startZoomAnimation(centerX: Float, centerY: Float, zoomFrom: Float, zoomTo: Float) {
         stopAll()
-        val zoomAnimation = ZoomAnimation(centerX, centerY)
+        val mZoomAnimation = ZoomAnimation(centerX, centerY)
         mAnimation = ValueAnimator.ofFloat(zoomFrom, zoomTo).apply {
             interpolator = DecelerateInterpolator()
-            addUpdateListener(zoomAnimation)
-            addListener(zoomAnimation)
+            addUpdateListener(mZoomAnimation)
+            addListener(mZoomAnimation)
             duration = mFlingDuration
             start()
         }
@@ -130,8 +129,8 @@ internal class AnimationManager(private val pdfView: PDFView) {
     internal inner class YAnimation : AnimatorListenerAdapter(), AnimatorUpdateListener {
 
         override fun onAnimationUpdate(animation: ValueAnimator) {
-            val offset = animation.animatedValue as Float
-            pdfView.moveTo(pdfView.getCurrentXOffset(), offset)
+            val mOffset = animation.animatedValue as Float
+            pdfView.moveTo(pdfView.getCurrentXOffset(), mOffset)
             pdfView.loadPageByOffset()
         }
 
@@ -152,8 +151,8 @@ internal class AnimationManager(private val pdfView: PDFView) {
         AnimatorUpdateListener, Animator.AnimatorListener {
 
         override fun onAnimationUpdate(animation: ValueAnimator) {
-            val zoom = animation.animatedValue as Float
-            pdfView.zoomCenteredTo(zoom, PointF(centerX, centerY))
+            val mZoom = animation.animatedValue as Float
+            pdfView.zoomCenteredTo(mZoom, PointF(centerX, centerY))
         }
 
         override fun onAnimationCancel(animation: Animator) {

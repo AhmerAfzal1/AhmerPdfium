@@ -19,9 +19,7 @@ class PageSizeCalculator(
     private var mWidthRatio = 0f
 
     fun calculate(pageSize: Size): SizeF {
-        if (pageSize.width <= 0 || pageSize.height <= 0) {
-            return SizeF(0f, 0f)
-        }
+        if (pageSize.width <= 0 || pageSize.height <= 0) return SizeF(0f, 0f)
         val maxWidth = if (fitEachPage) viewSize.width.toFloat() else pageSize.width * mWidthRatio
         val maxHeight =
             if (fitEachPage) viewSize.height.toFloat() else pageSize.height * mHeightRatio
@@ -68,7 +66,7 @@ class PageSizeCalculator(
     private fun fitWidth(pageSize: Size, maxWidth: Float): SizeF {
         var mHeight: Float = pageSize.height.toFloat()
         var mWidth: Float = pageSize.width.toFloat()
-        val mRatio = mWidth / mHeight
+        val mRatio: Float = mWidth / mHeight
         mWidth = maxWidth
         mHeight = floor((maxWidth / mRatio).toDouble()).toFloat()
         return SizeF(mWidth, mHeight)
@@ -77,7 +75,7 @@ class PageSizeCalculator(
     private fun fitHeight(pageSize: Size, maxHeight: Float): SizeF {
         var mHeight: Float = pageSize.height.toFloat()
         var mWidth: Float = pageSize.width.toFloat()
-        val mRatio = mHeight / mWidth
+        val mRatio: Float = mHeight / mWidth
         mHeight = maxHeight
         mWidth = floor((maxHeight / mRatio).toDouble()).toFloat()
         return SizeF(mWidth, mHeight)
@@ -86,7 +84,7 @@ class PageSizeCalculator(
     private fun fitBoth(pageSize: Size, maxWidth: Float, maxHeight: Float): SizeF {
         var mHeight: Float = pageSize.height.toFloat()
         var mWidth: Float = pageSize.width.toFloat()
-        val mRatio = mWidth / mHeight
+        val mRatio: Float = mWidth / mHeight
         mWidth = maxWidth
         mHeight = floor((maxWidth / mRatio).toDouble()).toFloat()
         if (mHeight > maxHeight) {
