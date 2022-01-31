@@ -52,14 +52,8 @@ class PdfiumCore(context: Context, file: File, pdfPassword: String? = null) {
     private external fun nativeClosePage(pagePtr: Long)
     private external fun nativeClosePages(pagesPtr: LongArray)
     private external fun nativeDeviceCoordinateToPage(
-        pagePtr: Long,
-        startX: Int,
-        startY: Int,
-        sizeX: Int,
-        sizeY: Int,
-        rotate: Int,
-        deviceX: Int,
-        deviceY: Int
+        pagePtr: Long, startX: Int, startY: Int, sizeX: Int, sizeY: Int,
+        rotate: Int, deviceX: Int, deviceY: Int
     ): PointF
 
     private external fun nativeGetBookmarkDestIndex(docPtr: Long, bookmarkPtr: Long): Long
@@ -83,34 +77,18 @@ class PdfiumCore(context: Context, file: File, pdfPassword: String? = null) {
     private external fun nativeOpenDocument(fd: Int, password: String?): Long
     private external fun nativeOpenMemDocument(data: ByteArray, password: String): Long
     private external fun nativePageCoordinateToDevice(
-        pagePtr: Long,
-        startX: Int,
-        startY: Int,
-        sizeX: Int,
-        sizeY: Int,
-        rotate: Int,
-        pageX: Double,
-        pageY: Double
+        pagePtr: Long, startX: Int, startY: Int, sizeX: Int, sizeY: Int,
+        rotate: Int, pageX: Double, pageY: Double
     ): Point
 
     private external fun nativeRenderPage(
-        pagePtr: Long,
-        surface: Surface,
-        startX: Int,
-        startY: Int,
-        drawSizeHor: Int,
-        drawSizeVer: Int,
-        renderAnnot: Boolean
+        pagePtr: Long, surface: Surface, startX: Int, startY: Int,
+        drawSizeHor: Int, drawSizeVer: Int, renderAnnotation: Boolean
     )
 
     private external fun nativeRenderPageBitmap(
-        pagePtr: Long,
-        bitmap: Bitmap,
-        startX: Int,
-        startY: Int,
-        drawSizeHor: Int,
-        drawSizeVer: Int,
-        renderAnnot: Boolean
+        pagePtr: Long, bitmap: Bitmap, startX: Int, startY: Int,
+        drawSizeHor: Int, drawSizeVer: Int, renderAnnotation: Boolean
     )
 
     ///////////////////////////////////////
@@ -123,37 +101,21 @@ class PdfiumCore(context: Context, file: File, pdfPassword: String? = null) {
     private external fun nativeTextCountChars(textPagePtr: Long): Int
     private external fun nativeTextCountRects(textPagePtr: Long, start: Int, count: Int): Int
     private external fun nativeTextGetBoundedText(
-        textPagePtr: Long,
-        left: Double,
-        top: Double,
-        right: Double,
-        bottom: Double,
-        arr: ShortArray
+        textPagePtr: Long, left: Double, top: Double, right: Double, bottom: Double, arr: ShortArray
     ): Int
 
     private external fun nativeTextGetBoundedTextLength(
-        textPagePtr: Long,
-        left: Double,
-        top: Double,
-        right: Double,
-        bottom: Double
+        textPagePtr: Long, left: Double, top: Double, right: Double, bottom: Double
     ): Int
 
     private external fun nativeTextGetCharBox(textPagePtr: Long, index: Int): DoubleArray
     private external fun nativeTextGetCharIndexAtPos(
-        textPagePtr: Long,
-        x: Double,
-        y: Double,
-        xTolerance: Double,
-        yTolerance: Double
+        textPagePtr: Long, x: Double, y: Double, xTolerance: Double, yTolerance: Double
     ): Int
 
     private external fun nativeTextGetRect(textPagePtr: Long, rect_index: Int): DoubleArray
     private external fun nativeTextGetText(
-        textPagePtr: Long,
-        start: Int,
-        count: Int,
-        result: ShortArray
+        textPagePtr: Long, start: Int, count: Int, result: ShortArray
     ): Int
 
     private external fun nativeTextGetUnicode(textPagePtr: Long, index: Int): Int
@@ -166,10 +128,7 @@ class PdfiumCore(context: Context, file: File, pdfPassword: String? = null) {
     private external fun nativeSearchNext(searchHandlePtr: Long): Boolean
     private external fun nativeSearchPrev(searchHandlePtr: Long): Boolean
     private external fun nativeSearchStart(
-        textPagePtr: Long,
-        query: String,
-        matchCase: Boolean,
-        matchWholeWord: Boolean
+        textPagePtr: Long, query: String, matchCase: Boolean, matchWholeWord: Boolean
     ): Long
 
     private external fun nativeSearchStop(searchHandlePtr: Long)
@@ -178,11 +137,7 @@ class PdfiumCore(context: Context, file: File, pdfPassword: String? = null) {
     // PDF Annotation API
     ///////////////////////////////////////
     private external fun nativeAddTextAnnotation(
-        docPtr: Long,
-        pageIndex: Int,
-        text: String,
-        color: IntArray,
-        bound: IntArray
+        docPtr: Long, pageIndex: Int, text: String, color: IntArray, bound: IntArray
     ): Long
 
     ///////////////////////////////////////
