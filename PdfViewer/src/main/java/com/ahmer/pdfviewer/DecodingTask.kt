@@ -21,7 +21,7 @@ internal class DecodingTask(
     }
 
     fun execute() {
-        mExecutor.execute {
+        try {
             val mPdfFile = PdfFile(
                 pdfiumCore = docSource.createDocument(pdfView.context, password),
                 fitPolicy = pdfView.getPageFitPolicy(),
@@ -32,13 +32,13 @@ internal class DecodingTask(
                 autoSpacing = pdfView.isAutoSpacingEnabled(),
                 fitEachPage = pdfView.isFitEachPage()
             )
-            mHandler.post {
-                try {
+            mExecutor.execute {
+                mHandler.post {
                     pdfView.loadComplete(mPdfFile)
-                } catch (t: Throwable) {
-                    pdfView.loadError(t)
                 }
             }
+        } catch (t: Throwable) {
+            pdfView.loadError(t)
         }
     }
 

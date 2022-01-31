@@ -137,6 +137,7 @@ class PdfFragment : Fragment(R.layout.fragment_pdf), OnPageChangeListener, OnLoa
             cancel.setOnClickListener {
                 AppServices.hideKeyboard()
                 dialog.dismiss()
+                super.requireActivity().onBackPressed()
             }
             inputPass.addTextChangedListener(object : TextWatcher {
                 override fun beforeTextChanged(s: CharSequence, srt: Int, count: Int, after: Int) {}

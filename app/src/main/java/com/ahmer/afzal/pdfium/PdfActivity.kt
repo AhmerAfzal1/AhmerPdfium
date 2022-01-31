@@ -141,6 +141,7 @@ class PdfActivity : AppCompatActivity(), OnPageChangeListener, OnLoadCompleteLis
             cancel.setOnClickListener {
                 AppServices.hideKeyboard()
                 dialog.dismiss()
+                super.onBackPressed()
             }
             inputPass.addTextChangedListener(object : TextWatcher {
                 override fun beforeTextChanged(s: CharSequence, srt: Int, count: Int, after: Int) {}
