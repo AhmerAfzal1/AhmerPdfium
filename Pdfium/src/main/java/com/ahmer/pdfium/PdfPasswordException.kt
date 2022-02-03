@@ -1,6 +1,3 @@
 package com.ahmer.pdfium
 
-class PdfPasswordException : RuntimeException {
-    constructor() {}
-    constructor(message: String?) : super(message) {}
-}
+class PdfPasswordException(message: String?) : RuntimeException(message)

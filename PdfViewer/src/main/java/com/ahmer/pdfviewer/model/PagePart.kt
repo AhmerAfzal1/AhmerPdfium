@@ -8,15 +8,13 @@ class PagePart(
     val renderedBitmap: Bitmap?,
     val pageRelativeBounds: RectF,
     val isThumbnail: Boolean,
-    var cacheOrder: Int,
-    var searchQuery: String
+    var cacheOrder: Int
 ) {
     override fun equals(other: Any?): Boolean {
         if (other !is PagePart) {
             return false
         }
-        return (other.page == page && other.searchQuery.equals(searchQuery, ignoreCase = true)
-                && other.pageRelativeBounds.left == pageRelativeBounds.left
+        return (other.page == page && other.pageRelativeBounds.left == pageRelativeBounds.left
                 && other.pageRelativeBounds.right == pageRelativeBounds.right
                 && other.pageRelativeBounds.top == pageRelativeBounds.top
                 && other.pageRelativeBounds.bottom == pageRelativeBounds.bottom)

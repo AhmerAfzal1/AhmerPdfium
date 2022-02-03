@@ -162,7 +162,7 @@ internal class PagesLoader(private val pdfView: PDFView) {
         return mRenderRanges
     }
 
-    private fun loadVisible(searchQuery: String) {
+    private fun loadVisible() {
         val mScaledPreloadOffset: Float = mPreLoadOffset.toFloat()
         val mFirstOffsetX: Float = -mOffsetX + mScaledPreloadOffset
         val mFirstOffsetY: Float = -mOffsetY + mScaledPreloadOffset
@@ -172,13 +172,13 @@ internal class PagesLoader(private val pdfView: PDFView) {
             getRenderRangeList(mFirstOffsetX, mFirstOffsetY, mLastOffsetX, mLastOffsetY)
         var mParts = 0
         for (mRange in mRangeList) {
-            loadThumbnail(mRange.page, searchQuery)
+            loadThumbnail(mRange.page)
         }
         for (mRange in mRangeList) {
             calculatePartSize(mRange.gridSize)
             mParts += loadPage(
                 mRange.page, mRange.leftTop.row, mRange.rightBottom.row, mRange.leftTop.column,
-                mRange.rightBottom.column, Cache.CACHE_SIZE - mParts, searchQuery
+                mRange.rightBottom.column, Cache.CACHE_SIZE - mParts
             )
             if (mParts >= Cache.CACHE_SIZE) break
         }
@@ -186,14 +186,13 @@ internal class PagesLoader(private val pdfView: PDFView) {
 
     private fun loadPage(
         page: Int, firstRow: Int, lastRow: Int, firstColumn: Int, lastColumn: Int,
-        nbOfPartsLoadable: Int, searchQuery: String
+        nbOfPartsLoadable: Int
     ): Int {
         var mLoaded = 0
         for (mRow in firstRow..lastRow) {
             for (mColumn in firstColumn..lastColumn) {
                 if (loadCell(
-                        page, mRow, mColumn, mPageRelativePartWidth, mPageRelativePartHeight,
-                        searchQuery
+                        page, mRow, mColumn, mPageRelativePartWidth, mPageRelativePartHeight
                     )
                 ) {
                     mLoaded++
@@ -205,8 +204,7 @@ internal class PagesLoader(private val pdfView: PDFView) {
     }
 
     private fun loadCell(
-        page: Int, row: Int, col: Int, pageRelativePartWidth: Float, pageRelativePartHeight: Float,
-        search: String
+        page: Int, row: Int, col: Int, pageRelativePartWidth: Float, pageRelativePartHeight: Float
     ): Boolean {
         val mRelX: Float = pageRelativePartWidth * col
         val mRelY: Float = pageRelativePartHeight * row
@@ -221,10 +219,10 @@ internal class PagesLoader(private val pdfView: PDFView) {
         mRenderWidth *= mRelWidth
         val bounds = RectF(mRelX, mRelY, mRelX + mRelWidth, mRelY + mRelHeight)
         if (mRenderWidth > 0 && mRenderHeight > 0) {
-            if (!pdfView.cacheManager?.upPartIfContained(page, bounds, mCacheOrder, search)!!) {
+            if (!pdfView.cacheManager?.upPartIfContained(page, bounds, mCacheOrder)!!) {
                 pdfView.renderingHandler?.addRenderingTask(
                     page, mRenderWidth, mRenderHeight, bounds, false, mCacheOrder,
-                    pdfView.isBestQuality(), pdfView.isAnnotationRendering(), search
+                    pdfView.isBestQuality(), pdfView.isAnnotationRendering()
                 )
             }
             mCacheOrder++
@@ -233,23 +231,23 @@ internal class PagesLoader(private val pdfView: PDFView) {
         return false
     }
 
-    private fun loadThumbnail(page: Int, searchQuery: String) {
+    private fun loadThumbnail(page: Int) {
         val mPageSize: SizeF = pdfView.pdfFile!!.getPageSize(page)
         val mThumbnailHeight: Float = mPageSize.height * PdfConstants.THUMBNAIL_RATIO
         val mThumbnailWidth: Float = mPageSize.width * PdfConstants.THUMBNAIL_RATIO
-        if (!pdfView.cacheManager?.containsThumbnail(page, mThumbnailRect, searchQuery)!!) {
+        if (!pdfView.cacheManager?.containsThumbnail(page, mThumbnailRect)!!) {
             pdfView.renderingHandler?.addRenderingTask(
                 page, mThumbnailWidth, mThumbnailHeight, mThumbnailRect, true, 0,
-                pdfView.isBestQuality(), pdfView.isAnnotationRendering(), searchQuery
+                pdfView.isBestQuality(), pdfView.isAnnotationRendering()
             )
         }
     }
 
-    fun loadPages(searchQuery: String) {
+    fun loadPages() {
         mCacheOrder = 1
         mOffsetX = -MathUtils.max(pdfView.getCurrentXOffset(), 0f)
         mOffsetY = -MathUtils.max(pdfView.getCurrentYOffset(), 0f)
-        loadVisible(searchQuery)
+        loadVisible()
     }
 
     private class Holder {

@@ -3,34 +3,22 @@ package com.ahmer.pdfium
 import android.content.Context
 import android.graphics.*
 import android.os.ParcelFileDescriptor
-import android.text.Spannable
-import android.text.SpannableString
-import android.text.style.StyleSpan
 import android.util.ArrayMap
 import android.util.Log
 import android.view.Surface
-import com.ahmer.pdfium.search.FPDFTextSearchContext
-import com.ahmer.pdfium.search.SearchData
-import com.ahmer.pdfium.search.TextSearchContext
+import com.ahmer.pdfium.bookmark.BookMarkNode
 import com.ahmer.pdfium.util.Size
 import java.io.File
 import java.io.IOException
-import java.nio.ByteBuffer
-import java.nio.ByteOrder
 
 class PdfiumCore(context: Context, file: File, pdfPassword: String? = null) {
     companion object {
-        private var mCurrentDpi = 0
-        private val mNativePagesPtr: MutableMap<Int, Long> = ArrayMap()
-        private val mNativeTextPagesPtr: MutableMap<Int, Long> = ArrayMap()
-        private val mNativeSearchHandlePtr: MutableMap<Int, Long> = ArrayMap()
-        private var mNativeDocPtr: Long = 0
-        private var mFileDescriptor: ParcelFileDescriptor? = null
         private val TAG = PdfiumCore::class.java.name
-
-        private fun validPtr(ptr: Long?): Boolean {
-            return ptr != null && ptr != -1L
-        }
+        private var mCurrentDpi = 0
+        private var mFileDescriptor: ParcelFileDescriptor? = null
+        val mNativePagesPtr: MutableMap<Int, Long> = ArrayMap()
+        val mNativeTextPagesPtr: MutableMap<Int, Long> = ArrayMap()
+        var mNativeDocPtr: Long = 0L
 
         init {
             System.loadLibrary("pdfsdk")
@@ -48,9 +36,94 @@ class PdfiumCore(context: Context, file: File, pdfPassword: String? = null) {
         Log.d(TAG, "Starting AhmerPdfium...")
     }
 
+    external fun nativeAppendAnnotPoints(
+        pagePtr: Long, annotPtr: Long, left: Double, top: Double, right: Double,
+        bottom: Double, width: Double, height: Double
+    )
+
+    external fun nativeBuildBookMarkTree(docPtr: Long, rootNode: BookMarkNode?): Int
+    external fun nativeCloseAnnot(annotPtr: Long)
+    external fun nativeCountAnnot(pagePtr: Long): Int
+    external fun nativeCountAttachmentPoints(annotPtr: Long): Int
+    external fun nativeCountRects(textPtr: Long, st: Int, ed: Int): Int
+    external fun nativeCreateAnnot(pagePtr: Long, type: Int): Long
+    external fun nativeFindAll(
+        mNativeDocPtr: Long, pages: Int, key: String?, flag: Int, arr: ArrayList<SearchRecord?>?
+    )
+
+    external fun nativeFindPage(
+        mNativeDocPtr: Long, key: String?, pageIdx: Int, flag: Int
+    ): SearchRecord?
+
+    external fun nativeFindTextPage(pagePtr: Long, key: String?, flag: Int): Int
+    external fun nativeFindTextPageEnd(searchPtr: Long)
+    external fun nativeFindTextPageNext(searchPtr: Long): Boolean
+    external fun nativeFindTextPageStart(
+        textPtr: Long, keyStr: Long, flag: Int, startIdx: Int
+    ): Long
+
+    external fun nativeGetAnnot(pagePtr: Long, index: Int): Long
+    external fun nativeGetAnnotRect(pagePtr: Long, index: Int, width: Int, height: Int): RectF?
+    external fun nativeGetAttachmentPoints(
+        pagePtr: Long, annotPtr: Long, idx: Int, width: Int, height: Int,
+        p1: PointF?, p2: PointF?, p3: PointF?, p4: PointF?
+    ): Boolean
+
+    external fun nativeGetCharIndexAtCoord(
+        pagePtr: Long, width: Double, height: Double, textPtr: Long,
+        posX: Double, posY: Double, tolX: Double, tolY: Double
+    ): Int
+
+    external fun nativeGetCharIndexAtPos(
+        textPtr: Long, posX: Double, posY: Double, tolX: Double, tolY: Double
+    ): Int
+
+    external fun nativeGetCharPos(
+        pagePtr: Long, offsetY: Int, offsetX: Int, width: Int, height: Int, pt: RectF?,
+        tid: Long, index: Int, loose: Boolean
+    ): Int
+
+    external fun nativeGetFindIdx(searchPtr: Long): Int
+    external fun nativeGetFindLength(searchPtr: Long): Int
+    external fun nativeGetLinkAtCoord(
+        pagePtr: Long, width: Double, height: Double, posX: Double, posY: Double
+    ): Long
+
+    external fun nativeGetLinkRect(linkPtr: Long): RectF?
+    external fun nativeGetLinkTarget(docPtr: Long, linkPtr: Long): String?
+    external fun nativeGetMixedLooseCharPos(
+        pagePtr: Long, offsetY: Int, offsetX: Int, width: Int, height: Int, pt: RectF?,
+        tid: Long, index: Int, loose: Boolean
+    ): Int
+
+    external fun nativeGetRect(
+        pagePtr: Long, offsetY: Int, offsetX: Int, width: Int,
+        height: Int, textPtr: Long, rect: RectF?, idx: Int
+    ): Boolean
+
+    external fun nativeGetStringChars(key: String?): Long
+    external fun nativeGetText(textPtr: Long): String?
+    external fun nativeOpenAnnot(page: Long, idx: Int): Long
+    external fun nativeReleaseStringChars(key: String?, keyStr: Long)
+    external fun nativeSetAnnotColor(annotPtr: Long, R: Int, G: Int, B: Int, A: Int)
+    external fun nativeSetAnnotRect(
+        pagePtr: Long, annotPtr: Long, left: Float, top: Float, right: Float,
+        bottom: Float, width: Double, height: Double
+    )
+
+    external fun nativeTestAdd(t: Int): Int
+    external fun nativeTestCallSetFields(rect: RectF?): Boolean
+    external fun nativeTestLoopAdd(arr: ArrayList<Int?>?, size: Int)
+    external fun nativeTestSetFields(rect: RectF?): Boolean
     private external fun nativeCloseDocument(docPtr: Long)
     private external fun nativeClosePage(pagePtr: Long)
+    private external fun nativeClosePageAndText(pagePtr: Long, textPtr: Long)
     private external fun nativeClosePages(pagesPtr: LongArray)
+    private external fun nativeCountAndGetRects(
+        pagePtr: Long, offsetY: Int, offsetX: Int, width: Int, height: Int,
+        arr: ArrayList<RectF>, tid: Long, selSt: Int, selEd: Int
+    ): Int
+
     private external fun nativeDeviceCoordinateToPage(
         pagePtr: Long, startX: Int, startY: Int, sizeX: Int, sizeY: Int,
         rotate: Int, deviceX: Int, deviceY: Int
@@ -61,21 +134,21 @@ class PdfiumCore(context: Context, file: File, pdfPassword: String? = null) {
     private external fun nativeGetDestPageIndex(docPtr: Long, linkPtr: Long): Int?
     private external fun nativeGetDocumentMetaText(docPtr: Long, tag: String): String?
     private external fun nativeGetFirstChildBookmark(docPtr: Long, bookmarkPtr: Long?): Long?
-    private external fun nativeGetLinkRect(linkPtr: Long): RectF?
     private external fun nativeGetLinkURI(docPtr: Long, linkPtr: Long): String?
     private external fun nativeGetPageCount(docPtr: Long): Int
     private external fun nativeGetPageHeightPixel(pagePtr: Long, dpi: Int): Int
     private external fun nativeGetPageHeightPoint(pagePtr: Long): Int
-    private external fun nativeGetPageLinks(pagePtr: Long): LongArray
-    private external fun nativeGetPageRotation(pagePtr: Long): Int
+    private external fun nativeGetPageLinks(pagePtr: Long): LongArray?
     private external fun nativeGetPageSizeByIndex(docPtr: Long, pageIndex: Int, dpi: Int): Size
     private external fun nativeGetPageWidthPixel(pagePtr: Long, dpi: Int): Int
     private external fun nativeGetPageWidthPoint(pagePtr: Long): Int
+    private external fun nativeGetPageRotation(pagePtr: Long): Int
     private external fun nativeGetSiblingBookmark(docPtr: Long, bookmarkPtr: Long): Long?
     private external fun nativeLoadPage(docPtr: Long, pageIndex: Int): Long
     private external fun nativeLoadPages(docPtr: Long, fromIndex: Int, toIndex: Int): LongArray
+    private external fun nativeLoadTextPage(pagePtr: Long): Long
     private external fun nativeOpenDocument(fd: Int, password: String?): Long
-    private external fun nativeOpenMemDocument(data: ByteArray, password: String): Long
+    private external fun nativeOpenMemDocument(data: ByteArray, password: String?): Long
     private external fun nativePageCoordinateToDevice(
         pagePtr: Long, startX: Int, startY: Int, sizeX: Int, sizeY: Int,
         rotate: Int, pageX: Double, pageY: Double
@@ -83,69 +156,13 @@ class PdfiumCore(context: Context, file: File, pdfPassword: String? = null) {
 
     private external fun nativeRenderPage(
         pagePtr: Long, surface: Surface, startX: Int, startY: Int,
-        drawSizeHor: Int, drawSizeVer: Int, renderAnnotation: Boolean
+        drawSizeHor: Int, drawSizeVer: Int, annotation: Boolean
     )
 
     private external fun nativeRenderPageBitmap(
-        pagePtr: Long, bitmap: Bitmap, startX: Int, startY: Int,
-        drawSizeHor: Int, drawSizeVer: Int, renderAnnotation: Boolean
+        pagePtr: Long, bitmap: Bitmap, startX: Int, startY: Int, drawSizeHor: Int,
+        drawSizeVer: Int, annotation: Boolean
     )
-
-    ///////////////////////////////////////
-    // PDF TextPage api
-    ///////////////////////////////////////
-    private external fun nativeCloseTextPage(pagePtr: Long)
-    private external fun nativeCloseTextPages(pagesPtr: LongArray)
-    private external fun nativeLoadTextPage(docPtr: Long, pageIndex: Int): Long
-    private external fun nativeLoadTextPages(docPtr: Long, fromIndex: Int, toIndex: Int): LongArray
-    private external fun nativeTextCountChars(textPagePtr: Long): Int
-    private external fun nativeTextCountRects(textPagePtr: Long, start: Int, count: Int): Int
-    private external fun nativeTextGetBoundedText(
-        textPagePtr: Long, left: Double, top: Double, right: Double, bottom: Double, arr: ShortArray
-    ): Int
-
-    private external fun nativeTextGetBoundedTextLength(
-        textPagePtr: Long, left: Double, top: Double, right: Double, bottom: Double
-    ): Int
-
-    private external fun nativeTextGetCharBox(textPagePtr: Long, index: Int): DoubleArray
-    private external fun nativeTextGetCharIndexAtPos(
-        textPagePtr: Long, x: Double, y: Double, xTolerance: Double, yTolerance: Double
-    ): Int
-
-    private external fun nativeTextGetRect(textPagePtr: Long, rect_index: Int): DoubleArray
-    private external fun nativeTextGetText(
-        textPagePtr: Long, start: Int, count: Int, result: ShortArray
-    ): Int
-
-    private external fun nativeTextGetUnicode(textPagePtr: Long, index: Int): Int
-
-    ///////////////////////////////////////
-    // PDF Search API
-    ///////////////////////////////////////
-    private external fun nativeCountSearchResult(searchHandlePtr: Long): Int
-    private external fun nativeGetCharIndexOfSearchResult(searchHandlePtr: Long): Int
-    private external fun nativeSearchNext(searchHandlePtr: Long): Boolean
-    private external fun nativeSearchPrev(searchHandlePtr: Long): Boolean
-    private external fun nativeSearchStart(
-        textPagePtr: Long, query: String, matchCase: Boolean, matchWholeWord: Boolean
-    ): Long
-
-    private external fun nativeSearchStop(searchHandlePtr: Long)
-
-    ///////////////////////////////////////
-    // PDF Annotation API
-    ///////////////////////////////////////
-    private external fun nativeAddTextAnnotation(
-        docPtr: Long, pageIndex: Int, text: String, color: IntArray, bound: IntArray
-    ): Long
-
-    ///////////////////////////////////////
-    // PDF Native Callbacks
-    ///////////////////////////////////////
-    fun onAnnotationAdded(pageIndex: Int, pageNewPtr: Long) {}
-    fun onAnnotationRemoved(pageIndex: Int, pageNewPtr: Long) {}
-    fun onAnnotationUpdated(pageIndex: Int, pageNewPtr: Long) {}
 
     /**
      * Create new document from file with password
@@ -172,7 +189,6 @@ class PdfiumCore(context: Context, file: File, pdfPassword: String? = null) {
     fun openPage(pageIndex: Int): Long {
         val pagePtr: Long = nativeLoadPage(mNativeDocPtr, pageIndex)
         mNativePagesPtr[pageIndex] = pagePtr
-        prepareTextInfo(pageIndex)
         return pagePtr
     }
 
@@ -186,7 +202,6 @@ class PdfiumCore(context: Context, file: File, pdfPassword: String? = null) {
             if (pageIndex > toIndex) break
             mNativePagesPtr[pageIndex] = page
             pageIndex++
-            prepareTextInfo(pageIndex)
         }
         return pagesPtr
     }
@@ -200,6 +215,10 @@ class PdfiumCore(context: Context, file: File, pdfPassword: String? = null) {
             nativeClosePage(pagePtr)
             mNativePagesPtr.remove(pageIndex)
         }
+    }
+
+    fun closePageAndText(pagePtr: Long, textPtr: Long) {
+        nativeClosePageAndText(pagePtr, textPtr)
     }
 
     /**
@@ -304,7 +323,6 @@ class PdfiumCore(context: Context, file: File, pdfPassword: String? = null) {
         renderAnnot: Boolean = true
     ) {
         try {
-            prepareTextInfo(pageIndex = pageIndex)
             mNativePagesPtr[pageIndex]?.let { i ->
                 nativeRenderPageBitmap(i, bitmap, startX, startY, drawSizeX, drawSizeY, renderAnnot)
             }
@@ -321,13 +339,16 @@ class PdfiumCore(context: Context, file: File, pdfPassword: String? = null) {
      * Release native resources and opened file
      */
     fun closeDocument() {
+        var pageIndex = 0L
+        var textPageIndex = 0L
         for (index in mNativePagesPtr.keys) {
-            mNativePagesPtr[index]?.let { nativeClosePage(it) }
+            pageIndex = mNativePagesPtr[index]!!
         }
-        mNativePagesPtr.clear()
         for (ptr in mNativeTextPagesPtr.keys) {
-            mNativeTextPagesPtr[ptr]?.let { nativeCloseTextPage(it) }
+            textPageIndex = mNativeTextPagesPtr[ptr]!!
         }
+        closePageAndText(pageIndex, textPageIndex)
+        mNativePagesPtr.clear()
         mNativeTextPagesPtr.clear()
         nativeCloseDocument(mNativeDocPtr)
         if (mFileDescriptor != null) {
@@ -394,11 +415,13 @@ class PdfiumCore(context: Context, file: File, pdfPassword: String? = null) {
         val links: MutableList<Link> = ArrayList()
         val nativePagePtr = mNativePagesPtr[pageIndex] ?: return links
         val linkPtrs = nativeGetPageLinks(nativePagePtr)
-        for (linkPtr in linkPtrs) {
-            val uri = nativeGetLinkURI(mNativeDocPtr, linkPtr)
-            nativeGetLinkRect(linkPtr)?.let { rect ->
-                nativeGetDestPageIndex(mNativeDocPtr, linkPtr)?.let { index ->
-                    links.add(Link(rect, index, uri))
+        if (linkPtrs != null) {
+            for (linkPtr in linkPtrs) {
+                val uri = nativeGetLinkURI(mNativeDocPtr, linkPtr)
+                nativeGetLinkRect(linkPtr)?.let { rect ->
+                    nativeGetDestPageIndex(mNativeDocPtr, linkPtr)?.let { index ->
+                        links.add(Link(rect, index, uri))
+                    }
                 }
             }
         }
@@ -501,492 +524,11 @@ class PdfiumCore(context: Context, file: File, pdfPassword: String? = null) {
         }
     }
 
-    ///////////////////////////////////////
-    // FPDF_TEXTPAGE api
-    ///////////////////////////////////////
-
-    /**
-     * Prepare information about all characters in a page.
-     * Application must call FPDFText_ClosePage to release the text page information.
-     *
-     * @param pageIndex index of page.
-     * @return A handle to the text page information structure. NULL if something goes wrong.
-     */
-    fun prepareTextInfo(pageIndex: Int): Long {
-        val textPagePtr: Long = nativeLoadTextPage(
-            mNativeDocPtr,
-            pageIndex
-        )
-        if (validPtr(textPagePtr)) {
-            mNativeTextPagesPtr[pageIndex] = textPagePtr
-        }
-        return textPagePtr
-    }
-
-    /**
-     * Release all resources allocated for a text page information structure.
-     *
-     * @param pageIndex index of page.
-     */
-    fun releaseTextInfo(pageIndex: Int) {
-        val textPagePtr: Long = mNativeTextPagesPtr[pageIndex] ?: -1L
-        if (validPtr(textPagePtr)) {
-            nativeCloseTextPage(textPagePtr)
-        }
-    }
-
-    /**
-     * Prepare information about all characters in a range of pages.
-     * Application must call FPDFText_ClosePage to release the text page information.
-     *
-     * @param fromIndex start index of page.
-     * @param toIndex   end index of page.
-     * @return list of handles to the text page information structure. NULL if something goes wrong.
-     */
-    fun prepareTextInfo(fromIndex: Int, toIndex: Int): LongArray {
-        val textPagesPtr: LongArray = nativeLoadTextPages(mNativeDocPtr, fromIndex, toIndex)
-        var pageIndex = fromIndex
-        for (page in textPagesPtr) {
-            if (pageIndex > toIndex) break
-            if (validPtr(page)) {
-                mNativeTextPagesPtr[pageIndex] = page
-            }
-            pageIndex++
-        }
-        return textPagesPtr
-    }
-
-    /**
-     * Release all resources allocated for a text page information structure.
-     *
-     * @param fromIndex start index of page.
-     * @param toIndex   end index of page.
-     */
-    fun releaseTextInfo(fromIndex: Int, toIndex: Int) {
-        var textPagesPtr: Long
-        for (i in fromIndex until toIndex + 1) {
-            textPagesPtr = mNativeTextPagesPtr[i] ?: -1L
-            if (validPtr(textPagesPtr)) {
-                nativeCloseTextPage(textPagesPtr)
-            }
-        }
-    }
-
-    fun ensureTextPage(pageIndex: Int): Long? {
-        val ptr = mNativeTextPagesPtr[pageIndex]
-        return if (!validPtr(ptr)) {
-            prepareTextInfo(pageIndex)
-        } else ptr
-    }
-
-    fun countCharactersOnPage(pageIndex: Int): Int {
-        return try {
-            val ptr = ensureTextPage(pageIndex)
-            if (ptr != null && validPtr(ptr)) nativeTextCountChars(ptr) else 0
-        } catch (e: Exception) {
-            0
-        }
-    }
-
-    /**
-     * Extract unicode text string from the page.
-     *
-     * @param pageIndex  index of page.
-     * @param startIndex Index for the start characters.
-     * @param length     Number of characters to be extracted.
-     * @return Number of characters written into the result buffer, including the trailing terminator.
-     */
-    fun extractCharacters(pageIndex: Int, startIndex: Int, length: Int): String? {
-        return try {
-            val ptr = ensureTextPage(pageIndex)
-            if (!validPtr(ptr)) {
-                return null
-            }
-            val buf = ShortArray(length + 1)
-            val r = ptr?.let {
-                nativeTextGetText(it, startIndex, length, buf)
-            } ?: 0
-            if (r > 1) {
-                val bytes = ByteArray((r - 1) * 2)
-                val bb = ByteBuffer.wrap(bytes)
-                bb.order(ByteOrder.LITTLE_ENDIAN)
-                for (i in 0 until r - 1) {
-                    val s = buf[i]
-                    bb.putShort(s)
-                }
-                String(bytes, Charsets.UTF_16LE)
-            } else null
-        } catch (e: Exception) {
-            e.printStackTrace(System.err)
-            null
-        }
-    }
-
-    /**
-     * Get Unicode of a character in a page.
-     *
-     * @param pageIndex index of page.
-     * @param index     Zero-based index of the character.
-     * @return The Unicode of the particular character. If a character is not encoded in Unicode, the return value will be zero.
-     */
-    fun extractCharacter(pageIndex: Int, index: Int): Char {
-        return try {
-            val ptr = ensureTextPage(pageIndex)
-            if (ptr != null && validPtr(ptr)) nativeTextGetUnicode(
-                ptr,
-                index
-            ).toChar() else 0.toChar()
-        } catch (e: Exception) {
-            0.toChar()
-        }
-    }
-
-    /**
-     * Get bounding box of a particular character.
-     *
-     * @param pageIndex index of page.
-     * @param index     Zero-based index of the character.
-     * @return the character position measured in PDF "user space".
-     */
-    fun measureCharacterBox(pageIndex: Int, index: Int): RectF? {
-        return try {
-            val ptr = ensureTextPage(pageIndex)
-            if (ptr == null || !validPtr(ptr)) {
-                return null
-            }
-            val o = nativeTextGetCharBox(ptr, index)
-            val r = RectF()
-            r.left = o[0].toFloat()
-            r.right = o[1].toFloat()
-            r.bottom = o[2].toFloat()
-            r.top = o[3].toFloat()
-            r
-        } catch (e: Exception) {
-            null
-        }
-    }
-
-    /**
-     * Get the index of a character at or nearby a certain position on the page
-     *
-     * @param pageIndex  index of page.
-     * @param x          X position in PDF "user space".
-     * @param y          Y position in PDF "user space".
-     * @param xTolerance An x-axis tolerance value for character hit detection, in point unit.
-     * @param yTolerance A y-axis tolerance value for character hit detection, in point unit.
-     * @return The zero-based index of the character at, or nearby the point (x,y). If there is no character at or nearby the point, return value will be -1. If an error occurs, -3 will be returned.
-     */
-    fun getCharacterIndex(
-        pageIndex: Int, x: Double, y: Double, xTolerance: Double, yTolerance: Double
-    ): Int {
-        return try {
-            val ptr = ensureTextPage(pageIndex)
-            if (validPtr(ptr)) ptr?.let {
-                nativeTextGetCharIndexAtPos(it, x, y, xTolerance, yTolerance)
-            } ?: -1 else -1
-        } catch (e: Exception) {
-            -1
-        }
-    }
-
-    /**
-     * Count number of rectangular areas occupied by a segment of texts.
-     *
-     *
-     * This function, along with FPDFText_GetRect can be used by applications to detect the position
-     * on the page for a text segment, so proper areas can be highlighted or something.
-     * FPDFTEXT will automatically merge small character boxes into bigger one if those characters
-     * are on the same line and use same font settings.
-     *
-     * @param pageIndex index of page.
-     * @param charIndex Index for the start characters.
-     * @param count     Number of characters.
-     * @return texts areas count.
-     */
-    fun countTextRect(pageIndex: Int, charIndex: Int, count: Int): Int {
-        return try {
-            val ptr = ensureTextPage(pageIndex)
-            if (ptr != null && validPtr(ptr)) nativeTextCountRects(ptr, charIndex, count) else -1
-        } catch (e: Exception) {
-            e.printStackTrace()
-            -1
-        }
-    }
-
-    /**
-     * Get a rectangular area from the result generated by FPDFText_CountRects.
-     *
-     * @param pageIndex index of page.
-     * @param rectIndex Zero-based index for the rectangle.
-     * @return the text rectangle.
-     */
-    fun getTextRect(pageIndex: Int, rectIndex: Int): RectF? {
-        return try {
-            val ptr = ensureTextPage(pageIndex)
-            if (!validPtr(ptr)) {
-                return null
-            }
-            val o = ptr?.let {
-                nativeTextGetRect(it, rectIndex)
-            }
-            val r = RectF()
-            if (o != null) {
-                r.left = o[0].toFloat()
-                r.top = o[1].toFloat()
-                r.right = o[2].toFloat()
-                r.bottom = o[3].toFloat()
-                r
-            } else null
-        } catch (e: Exception) {
-            null
-        }
-    }
-
-    /**
-     * Extract unicode text within a rectangular boundary on the page.
-     * If the buffer is too small, as much text as will fit is copied into it.
-     *
-     * @param pageIndex index of page.
-     * @param rect      the text rectangle to extract.
-     * @return If buffer is NULL or buflen is zero, return number of characters (not bytes) of text
-     * present within the rectangle, excluding a terminating NUL.
-     *
-     *
-     * Generally you should pass a buffer at least one larger than this if you want a terminating NUL,
-     * which will be provided if space is available. Otherwise, return number of characters copied
-     * into the buffer, including the terminating NUL  when space for it is available.
-     */
-    fun extractText(pageIndex: Int, rect: RectF): String? {
-        return try {
-            val ptr = ensureTextPage(pageIndex)
-            if (ptr == null || !validPtr(ptr)) {
-                return null
-            }
-            val length = nativeTextGetBoundedTextLength(
-                ptr,
-                rect.left.toDouble(),
-                rect.top.toDouble(),
-                rect.right.toDouble(),
-                rect.bottom.toDouble()
-            )
-            if (length <= 0) {
-                return null
-            }
-            val buf = ShortArray(length + 1)
-            val r = nativeTextGetBoundedText(
-                ptr,
-                rect.left.toDouble(),
-                rect.top.toDouble(),
-                rect.right.toDouble(),
-                rect.bottom.toDouble(),
-                buf
-            )
-            val bytes = ByteArray((r - 1) * 2)
-            val bb = ByteBuffer.wrap(bytes)
-            bb.order(ByteOrder.LITTLE_ENDIAN)
-            for (i in 0 until r - 1) {
-                val s = buf[i]
-                bb.putShort(s)
-            }
-            String(bytes, Charsets.UTF_16LE)
-        } catch (e: Exception) {
-            null
-        }
-    }
-
-    /**
-     * A handle class for the search context. stopSearch must be called to release this handle.
-     *
-     * @param pageIndex      index of page.
-     * @param query          A unicode match pattern.
-     * @param matchCase      match case
-     * @param matchWholeWord match the whole word
-     * @return A handle for the search context.
-     */
-    fun newPageSearch(pageIndex: Int, query: String, matchCase: Boolean, matchWholeWord: Boolean):
-            TextSearchContext {
-        return object : FPDFTextSearchContext(pageIndex, query, matchCase, matchWholeWord) {
-            private var mSearchHandlePtr: Long? = null
-            override fun prepareSearch() {
-                val textPage = prepareTextInfo(pageIndex)
-                if (hasSearchHandle(pageIndex)) {
-                    val sPtr = mNativeSearchHandlePtr[pageIndex]
-                    sPtr?.let { nativeSearchStop(it) }
-                }
-                mSearchHandlePtr = nativeSearchStart(textPage, query, isMatchCase, isMatchWholeWord)
-            }
-
-            override fun countResult(): Int {
-                return if (validPtr(mSearchHandlePtr)) {
-                    mSearchHandlePtr?.let { nativeCountSearchResult(it) } ?: -1
-                } else -1
-            }
-
-            override fun searchNext(): RectF? {
-                if (validPtr(mSearchHandlePtr)) {
-                    mHasNext = mSearchHandlePtr?.let { nativeSearchNext(it) } == true
-                    if (mHasNext) {
-                        val index =
-                            mSearchHandlePtr?.let { nativeGetCharIndexOfSearchResult(it) } ?: -1
-                        if (index > -1) {
-                            return measureCharacterBox(this.pageIndex, index)
-                        }
-                    }
-                }
-                mHasNext = false
-                return null
-            }
-
-            override fun searchPrev(): RectF? {
-                if (validPtr(mSearchHandlePtr)) {
-                    mHasPrev = mSearchHandlePtr?.let { nativeSearchPrev(it) } == true
-                    if (mHasPrev) {
-                        val index =
-                            mSearchHandlePtr?.let { nativeGetCharIndexOfSearchResult(it) } ?: -1
-                        if (index > -1) {
-                            return measureCharacterBox(this.pageIndex, index)
-                        }
-                    }
-                }
-                mHasPrev = false
-                return null
-            }
-
-            override fun stopSearch() {
-                super.stopSearch()
-                if (validPtr(mSearchHandlePtr)) {
-                    mSearchHandlePtr?.let { nativeSearchStop(it) }
-                    mNativeSearchHandlePtr.remove(pageIndex)
-                }
-            }
-        }
-    }
-
     fun hasPage(index: Int): Boolean {
         return mNativePagesPtr.containsKey(index)
     }
 
     fun hasTextPage(index: Int): Boolean {
         return mNativeTextPagesPtr.containsKey(index)
-    }
-
-    fun hasSearchHandle(index: Int): Boolean {
-        return mNativeSearchHandlePtr.containsKey(index)
-    }
-
-    private fun List<Bookmark>.getFlattenChapters(level: Int = 0): List<Bookmark> {
-        val flatten = mutableListOf<Bookmark>()
-        this.forEach {
-            flatten.add(it.also { it.level = level })
-            if (it.children.isNotEmpty()) {
-                val children = it.children.getFlattenChapters(level = level + 1)
-                flatten.addAll(children)
-            }
-        }
-        return flatten
-    }
-
-    fun getAllChaptersOneLevel(): List<Bookmark> {
-        return bookmarks.getFlattenChapters()
-    }
-
-    private fun getChapter(byPageIndex: Long): Bookmark? {
-        val chapters = bookmarks
-        val fir = chapters.firstOrNull { it.pageIdx == byPageIndex }
-        if (fir != null) {
-            return fir
-        } else {
-            val chaptersFlatten = chapters.getFlattenChapters()
-            val first1 = chaptersFlatten.firstOrNull { it.pageIdx == byPageIndex }
-            when {
-                first1 != null -> {
-                    return first1
-                }
-                chaptersFlatten.size >= 2 -> {
-                    val fff = chaptersFlatten.toMutableList().zipWithNext { a, b -> a to b }
-                    for (element in fff) {
-                        val first = element.first
-                        val second = element.second
-                        val ind = if (first.pageIdx > 0L) first.pageIdx - 1L
-                        else first.pageIdx
-                        if (byPageIndex in ind..second.pageIdx) {
-                            return first
-                        }
-                    }
-                    return chaptersFlatten.lastOrNull()
-                }
-                else -> return null
-            }
-        }
-    }
-
-    private data class SearchKey(
-        val fileDescriptor: ParcelFileDescriptor,
-        val query: String
-    )
-
-    private val searchCache: MutableMap<SearchKey, List<SearchData>> = mutableMapOf()
-
-    fun search(searchStr: String, ignoreCase: Boolean = true): List<SearchData> {
-        if (mFileDescriptor == null || mFileDescriptor?.fd ?: -1 <= 0) {
-            return emptyList()
-        }
-        val key = mFileDescriptor?.let {
-            SearchKey(fileDescriptor = it, query = searchStr)
-        }
-        val cacheItem = searchCache[key]
-        if (!cacheItem.isNullOrEmpty()) {
-            return cacheItem
-        }
-        return try {
-            val rList = ArrayList<SearchData>()
-            for (i in 0 until totalPagesCount) {
-                openPage(i)
-                extractCharacters(
-                    i, 0, countCharactersOnPage(pageIndex = i)
-                )?.let { chars ->
-                    if (chars.contains(other = searchStr, ignoreCase = ignoreCase)) {
-                        val sentences: List<String> = chars.split(".").filter {
-                            it.contains(other = searchStr, ignoreCase = ignoreCase)
-                        }
-                        if (sentences.isNotEmpty()) {
-                            val chapter = getChapter(byPageIndex = i.toLong())
-                            sentences.forEach { s ->
-                                val spannable = SpannableString(
-                                    s.trim().replace("\n", " ")
-                                )
-                                spannable.setSpan(
-                                    StyleSpan(Typeface.NORMAL), 0, spannable.length,
-                                    Spannable.SPAN_EXCLUSIVE_EXCLUSIVE
-                                )
-                                val fInd =
-                                    spannable.indexOf(string = searchStr, ignoreCase = ignoreCase)
-                                if (fInd > -1) {
-                                    val lInd = fInd + searchStr.length
-                                    if (lInd < spannable.length) {
-                                        spannable.setSpan(
-                                            StyleSpan(Typeface.BOLD),
-                                            fInd,
-                                            lInd,
-                                            Spannable.SPAN_EXCLUSIVE_EXCLUSIVE
-                                        )
-                                    }
-                                }
-                                rList += SearchData(chapter, i, spannable)
-                            }
-                        }
-                    }
-                }
-            }
-            if (rList.isNotEmpty()) {
-                val searchKey = mFileDescriptor?.let {
-                    SearchKey(fileDescriptor = it, query = searchStr)
-                }
-                searchKey?.let { searchCache[it] = rList }
-            }
-            rList
-        } catch (e: Exception) {
-            emptyList()
-        }
     }
 }

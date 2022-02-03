@@ -1,9 +1,11 @@
 [![License](https://img.shields.io/badge/License-Apache%202.0-blue.svg)](https://opensource.org/licenses/Apache-2.0)
 
 # AhmerPdfium
+
 Ahmer Pdfium library fork [barteksc/PdfiumAndroid](https://github.com/barteksc/PdfiumAndroid)
 
 ## Sample usage:
+
 ``` java
 PdfiumCore core = ...;
 PdfDocument document = ...;
@@ -24,6 +26,7 @@ for (PdfDocument.Link link : links) {
 ```
 
 ## Simple example
+
 ``` java
 void openPdf() {
     ImageView iv = (ImageView) findViewById(R.id.imageView);

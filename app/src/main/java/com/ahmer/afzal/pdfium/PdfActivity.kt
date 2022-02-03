@@ -315,7 +315,6 @@ class PdfActivity : AppCompatActivity(), OnPageChangeListener, OnLoadCompleteLis
         pdfView.setMinZoom(1f)
         pdfView.setMidZoom(2.5f)
         pdfView.setMaxZoom(4.0f)
-        pdfView.setTextHighlightColor(Color.RED)
     }
 
     override fun onPageChanged(page: Int, pageCount: Int) {
@@ -360,7 +359,7 @@ class PdfActivity : AppCompatActivity(), OnPageChangeListener, OnLoadCompleteLis
             }
 
             override fun onQueryTextChange(query: String?): Boolean {
-                mPdfView.setSearchQuery(query.orEmpty())
+                //mPdfView.setSearchQuery(query.orEmpty())
                 return true
             }
         })

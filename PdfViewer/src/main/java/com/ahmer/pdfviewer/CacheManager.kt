@@ -51,9 +51,9 @@ class CacheManager {
         }
     }
 
-    fun upPartIfContained(page: Int, pageRelativeBounds: RectF, toOrder: Int, searchQuery: String?):
+    fun upPartIfContained(page: Int, pageRelativeBounds: RectF, toOrder: Int):
             Boolean {
-        val mFakePart = PagePart(page, null, pageRelativeBounds, false, 0, searchQuery ?: "")
+        val mFakePart = PagePart(page, null, pageRelativeBounds, false, 0)
         var mFound: PagePart? = null
         synchronized(mPassiveActiveLock) {
             if (find(mPassiveCache, mFakePart)?.also { mFound = it } != null) {
@@ -69,8 +69,8 @@ class CacheManager {
     /**
      * Return true if already contains the described PagePart
      */
-    fun containsThumbnail(page: Int, pageRelativeBounds: RectF, searchQuery: String?): Boolean {
-        val mFakePart = PagePart(page, null, pageRelativeBounds, true, 0, searchQuery ?: "")
+    fun containsThumbnail(page: Int, pageRelativeBounds: RectF): Boolean {
+        val mFakePart = PagePart(page, null, pageRelativeBounds, true, 0,)
         synchronized(mThumbnails) {
             for (mPart in mThumbnails) {
                 if (mPart == mFakePart) {

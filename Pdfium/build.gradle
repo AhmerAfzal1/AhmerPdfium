@@ -73,6 +73,7 @@ dependencies {
     implementation 'androidx.collection:collection-ktx:1.2.0'
     implementation 'org.jetbrains:annotations:23.0.0'
     implementation 'androidx.core:core-ktx:1.7.0'
+    implementation 'androidx.recyclerview:recyclerview:1.2.1'
 }
 
 tasks.withType(Javadoc).all {

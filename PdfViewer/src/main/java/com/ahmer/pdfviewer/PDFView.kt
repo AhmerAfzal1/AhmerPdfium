@@ -7,7 +7,6 @@ import android.os.HandlerThread
 import android.util.AttributeSet
 import android.util.Log
 import android.widget.RelativeLayout
-import androidx.annotation.ColorInt
 import com.ahmer.pdfium.Bookmark
 import com.ahmer.pdfium.Link
 import com.ahmer.pdfium.Meta
@@ -164,7 +163,6 @@ class PDFView(context: Context?, set: AttributeSet?) : RelativeLayout(context, s
     private var mRenderingHandlerThread: HandlerThread? = null
     private var mScrollDir = ScrollDir.NONE
     private var mScrollHandle: ScrollHandle? = null
-    private var mSearchQuery: String = ""
 
     /**
      * Spacing between pages, in px
@@ -175,9 +173,6 @@ class PDFView(context: Context?, set: AttributeSet?) : RelativeLayout(context, s
      * Current state of the view
      */
     private var mState: State = State.DEFAULT
-
-    @ColorInt
-    private var mTextHighlightColor: Int = Color.WHITE
 
     /**
      * Holds last used Configurator that should be loaded when view has size
@@ -420,10 +415,6 @@ class PDFView(context: Context?, set: AttributeSet?) : RelativeLayout(context, s
         return mScrollHandle
     }
 
-    fun getSearchQuery(): String {
-        return mSearchQuery
-    }
-
     fun getSpacingPx(): Int {
         return mSpacingPx
     }
@@ -433,10 +424,6 @@ class PDFView(context: Context?, set: AttributeSet?) : RelativeLayout(context, s
      */
     fun getTableOfContents(): List<Bookmark> {
         return pdfFile?.getBookmarks() ?: emptyList()
-    }
-
-    fun getTextHighlightColor(): Int {
-        return mTextHighlightColor
     }
 
     fun getTotalPagesCount(): Int {
@@ -596,7 +583,7 @@ class PDFView(context: Context?, set: AttributeSet?) : RelativeLayout(context, s
         // Cancel all current tasks
         renderingHandler?.removeMessages(RenderingHandler.MSG_RENDER_PART_TASK)
         cacheManager?.makeANewSet()
-        mPagesLoader?.loadPages(mSearchQuery)
+        mPagesLoader?.loadPages()
         reDraw()
     }
 
@@ -877,11 +864,6 @@ class PDFView(context: Context?, set: AttributeSet?) : RelativeLayout(context, s
         this.mScrollHandle = scrollHandle
     }
 
-    fun setSearchQuery(searchQuery: String) {
-        this.mSearchQuery = searchQuery
-        loadPages()
-    }
-
     fun setSpacing(spacingDp: Int) {
         mSpacingPx = PdfUtils.getDP(context, spacingDp)
     }
@@ -892,11 +874,6 @@ class PDFView(context: Context?, set: AttributeSet?) : RelativeLayout(context, s
 
     fun setSwipeVertical(swipeVertical: Boolean) {
         this.isSwipeVertical = swipeVertical
-    }
-
-    fun setTextHighlightColor(textHighlightColor: Int) {
-        this.mTextHighlightColor = textHighlightColor
-        loadPages()
     }
 
     fun showPage(pageNumber: Int) {

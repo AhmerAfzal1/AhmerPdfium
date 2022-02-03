@@ -312,7 +312,6 @@ class PdfFragment : Fragment(R.layout.fragment_pdf), OnPageChangeListener, OnLoa
         pdfView.setMinZoom(1f)
         pdfView.setMidZoom(2.5f)
         pdfView.setMaxZoom(4.0f)
-        pdfView.setTextHighlightColor(Color.RED)
     }
 
     private fun printBookmarksTree(tree: List<Bookmark>, sep: String) {
@@ -355,7 +354,7 @@ class PdfFragment : Fragment(R.layout.fragment_pdf), OnPageChangeListener, OnLoa
         }
         mSearchView.onQueryTextChanged {
             mViewModel.searchDescription.value = it
-            mPdfView.setSearchQuery(it)
+            //mPdfView.setSearchQuery(it)
             Log.v(Constants.LOG_TAG, "Search query: $it")
         }
     }

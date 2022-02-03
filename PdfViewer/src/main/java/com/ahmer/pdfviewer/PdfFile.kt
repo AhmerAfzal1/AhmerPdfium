@@ -8,7 +8,6 @@ import com.ahmer.pdfium.Bookmark
 import com.ahmer.pdfium.Link
 import com.ahmer.pdfium.Meta
 import com.ahmer.pdfium.PdfiumCore
-import com.ahmer.pdfium.search.TextSearchContext
 import com.ahmer.pdfium.util.Size
 import com.ahmer.pdfium.util.SizeF
 import com.ahmer.pdfviewer.exception.PageRenderingException
@@ -151,16 +150,8 @@ class PdfFile(
         return pdfiumCore.bookmarks
     }
 
-    fun getCountCharactersOnPage(pageNumber: Int): Int {
-        return pdfiumCore.countCharactersOnPage(pageNumber)
-    }
-
     fun getDocLen(zoom: Float): Float {
         return mDocumentLength * zoom
-    }
-
-    fun getExtractCharacters(pageIndex: Int, startIndex: Int, length: Int): String? {
-        return pdfiumCore.extractCharacters(pageIndex, startIndex, length)
     }
 
     fun getMetaData(): Meta {
@@ -271,11 +262,6 @@ class PdfFile(
 
     fun pageHasError(pageIndex: Int): Boolean {
         return !mOpenedPages[documentPage(pageIndex), false]
-    }
-
-    fun pageSearch(page: Int, query: String, matchCase: Boolean, matchWholeWord: Boolean):
-            TextSearchContext {
-        return pdfiumCore.newPageSearch(page, query, matchCase, matchWholeWord)
     }
 
     private fun prepareAutoSpacing(viewSize: Size) {
