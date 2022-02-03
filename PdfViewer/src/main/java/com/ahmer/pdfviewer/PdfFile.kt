@@ -1,7 +1,6 @@
 package com.ahmer.pdfviewer
 
 import android.graphics.Bitmap
-import android.graphics.PointF
 import android.graphics.Rect
 import android.graphics.RectF
 import android.util.SparseBooleanArray
@@ -17,11 +16,10 @@ import com.ahmer.pdfviewer.util.PageSizeCalculator
 import com.ahmer.pdfviewer.util.PdfConstants
 import java.util.*
 
-
 class PdfFile(
     private val pdfiumCore: PdfiumCore,
     private val fitPolicy: FitPolicy,
-    val viewSize: Size,
+    val size: Size,
     /**
      * The pages the user want to display in order
      * (ex: 0, 2, 2, 8, 8, 1, 1, 1)
@@ -156,7 +154,7 @@ class PdfFile(
         return mDocumentLength * zoom
     }
 
-    fun getLinkAtPos(currentPage: Int, posX: Float, posY: Float, size: SizeF): Long {
+    fun getLinkAtPos(currentPage: Int, posX: Float, posY: Float): Long {
         return pdfiumCore.nativeGetLinkAtCoord(
             PdfiumCore.mNativePagesPtr[currentPage]!!, size.width.toDouble(),
             size.height.toDouble(), posX.toDouble(), posY.toDouble()
@@ -355,18 +353,11 @@ class PdfFile(
         recalculatePageSizes(viewSize)
     }
 
-    internal class QuadShape {
-        var p1 = PointF()
-        var p2 = PointF()
-        var p3 = PointF()
-        var p4 = PointF()
-    }
-
     companion object {
         private val lock = Any()
     }
 
     init {
-        setup(viewSize)
+        setup(size)
     }
 }

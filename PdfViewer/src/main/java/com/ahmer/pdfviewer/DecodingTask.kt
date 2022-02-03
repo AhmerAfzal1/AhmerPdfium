@@ -25,7 +25,7 @@ internal class DecodingTask(
             val mPdfFile = PdfFile(
                 pdfiumCore = docSource.createDocument(pdfView.context, password),
                 fitPolicy = pdfView.getPageFitPolicy(),
-                viewSize = getViewSize(pdfView),
+                size = getViewSize(pdfView),
                 userPages = userPages ?: intArrayOf(),
                 isVertical = pdfView.isSwipeVertical(),
                 spacingPx = pdfView.getSpacingPx(),
