@@ -990,9 +990,7 @@ class PDFView(context: Context?, set: AttributeSet?) : RelativeLayout(context, s
      */
     override fun computeScroll() {
         super.computeScroll()
-        if (isInEditMode) {
-            return
-        }
+        if (isInEditMode) return
         mAnimationManager?.computeFling()
     }
 
@@ -1006,9 +1004,7 @@ class PDFView(context: Context?, set: AttributeSet?) : RelativeLayout(context, s
     }
 
     override fun onDraw(canvas: Canvas) {
-        if (isInEditMode) {
-            return
-        }
+        if (isInEditMode) return
         // As I said in this class javadoc, we can think of this canvas as a huge strip on which
         // we draw all the images. We actually only draw the rendered parts, of course, but we
         // render them in the place they belong in this huge strip.
@@ -1034,18 +1030,14 @@ class PDFView(context: Context?, set: AttributeSet?) : RelativeLayout(context, s
         // screen position when rendering the parts.
 
         // Draws background
-        if (isEnableAntialiasing) {
-            canvas.drawFilter = mAntialiasFilter
-        }
+        if (isEnableAntialiasing) canvas.drawFilter = mAntialiasFilter
         val mBackground = background
         if (mBackground == null) {
             canvas.drawColor(if (isNightMode) Color.BLACK else Color.WHITE)
         } else {
             mBackground.draw(canvas)
         }
-        if (isRecycled || mState != State.SHOWN) {
-            return
-        }
+        if (isRecycled || mState != State.SHOWN) return
         // Moves the canvas before drawing any element
         val mCurrentOffsetX = mCurrentOffsetX
         val mCurrentOffsetY = mCurrentOffsetY
