@@ -100,7 +100,7 @@ class PdfFile(
      *
      * @return size of page
      */
-    val maxPageSize: SizeF
+    private val maxPageSize: SizeF
         get() = if (isVertical) mMaxWidthPageSize else mMaxHeightPageSize
 
     val maxPageHeight: Float
@@ -154,15 +154,12 @@ class PdfFile(
         return mDocumentLength * zoom
     }
 
-    fun getLinkAtPos(currentPage: Int, posX: Float, posY: Float): Long {
-        return pdfiumCore.nativeGetLinkAtCoord(
-            PdfiumCore.mNativePagesPtr[currentPage]!!, size.width.toDouble(),
-            size.height.toDouble(), posX.toDouble(), posY.toDouble()
-        )
+    fun getLinkAtPos(currentPage: Int, posX: Float, posY: Float): Long? {
+        return pdfiumCore.getLinkAtCoordinate(currentPage, size, posX, posY)
     }
 
     fun getLinkTarget(lnkPtr: Long): String? {
-        return pdfiumCore.nativeGetLinkTarget(PdfiumCore.mNativeDocPtr, lnkPtr)
+        return pdfiumCore.getLinkTarget(lnkPtr)
     }
 
     fun getMetaData(): Meta {

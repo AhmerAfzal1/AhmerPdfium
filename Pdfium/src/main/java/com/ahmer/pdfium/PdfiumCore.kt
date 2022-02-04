@@ -11,6 +11,7 @@ import com.ahmer.pdfium.util.Size
 import java.io.File
 import java.io.IOException
 
+
 class PdfiumCore(context: Context, file: File, pdfPassword: String? = null) {
     companion object {
         private val TAG = PdfiumCore::class.java.name
@@ -85,12 +86,7 @@ class PdfiumCore(context: Context, file: File, pdfPassword: String? = null) {
 
     external fun nativeGetFindIdx(searchPtr: Long): Int
     external fun nativeGetFindLength(searchPtr: Long): Int
-    external fun nativeGetLinkAtCoord(
-        pagePtr: Long, width: Double, height: Double, posX: Double, posY: Double
-    ): Long
-
     external fun nativeGetLinkRect(linkPtr: Long): RectF?
-    external fun nativeGetLinkTarget(docPtr: Long, linkPtr: Long): String?
     external fun nativeGetMixedLooseCharPos(
         pagePtr: Long, offsetY: Int, offsetX: Int, width: Int, height: Int, pt: RectF?,
         tid: Long, index: Int, loose: Boolean
@@ -121,7 +117,7 @@ class PdfiumCore(context: Context, file: File, pdfPassword: String? = null) {
     private external fun nativeClosePages(pagesPtr: LongArray)
     private external fun nativeCountAndGetRects(
         pagePtr: Long, offsetY: Int, offsetX: Int, width: Int, height: Int,
-        arr: ArrayList<RectF>, tid: Long, selSt: Int, selEd: Int
+        arr: ArrayList<RectF?>?, tid: Long, selSt: Int, selEd: Int
     ): Int
 
     private external fun nativeDeviceCoordinateToPage(
@@ -134,6 +130,11 @@ class PdfiumCore(context: Context, file: File, pdfPassword: String? = null) {
     private external fun nativeGetDestPageIndex(docPtr: Long, linkPtr: Long): Int?
     private external fun nativeGetDocumentMetaText(docPtr: Long, tag: String): String?
     private external fun nativeGetFirstChildBookmark(docPtr: Long, bookmarkPtr: Long?): Long?
+    private external fun nativeGetLinkAtCoord(
+        pagePtr: Long, width: Double, height: Double, posX: Double, posY: Double
+    ): Long
+
+    private external fun nativeGetLinkTarget(docPtr: Long, linkPtr: Long): String?
     private external fun nativeGetLinkURI(docPtr: Long, linkPtr: Long): String?
     private external fun nativeGetPageCount(docPtr: Long): Int
     private external fun nativeGetPageHeightPixel(pagePtr: Long, dpi: Int): Int
@@ -204,6 +205,19 @@ class PdfiumCore(context: Context, file: File, pdfPassword: String? = null) {
             pageIndex++
         }
         return pagesPtr
+    }
+
+    fun openText(pagePtr: Long): Long {
+        return nativeLoadTextPage(pagePtr)
+    }
+
+    fun getTextRects(
+        pagePtr: Long, offsetY: Int, offsetX: Int, size: Size, arr: ArrayList<RectF?>?,
+        textPtr: Long, selSt: Int, selEd: Int
+    ): Int {
+        return nativeCountAndGetRects(
+            pagePtr, offsetY, offsetX, size.width, size.height, arr, textPtr, selSt, selEd
+        )
     }
 
     /**
@@ -428,6 +442,17 @@ class PdfiumCore(context: Context, file: File, pdfPassword: String? = null) {
         return links
     }
 
+    fun getLinkAtCoordinate(pageIndex: Int, size: Size, posX: Float, posY: Float): Long? {
+        return mNativePagesPtr[pageIndex]?.let {
+            nativeGetLinkAtCoord(
+                it, size.width.toDouble(), size.height.toDouble(), posX.toDouble(), posY.toDouble()
+            )
+        }
+    }
+
+    fun getLinkTarget(lnkPtr: Long): String? {
+        return nativeGetLinkTarget(mNativeDocPtr, lnkPtr)
+    }
 
     /**
      * Map page coordinates to device screen coordinates
