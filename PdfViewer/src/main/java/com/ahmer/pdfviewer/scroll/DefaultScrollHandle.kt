@@ -150,7 +150,7 @@ class DefaultScrollHandle @JvmOverloads constructor(
     }
 
     private val isPDFViewReady: Boolean
-        get() = mPdfView != null && mPdfView!!.getPageCount() > 0 && mPdfView!!.documentFitsView()
+        get() = mPdfView != null && mPdfView!!.getPageCount() > 0 && !mPdfView!!.documentFitsView()
 
     override fun onTouchEvent(event: MotionEvent): Boolean {
         if (!isPDFViewReady) return super.onTouchEvent(event)

@@ -70,7 +70,7 @@ class CacheManager {
      * Return true if already contains the described PagePart
      */
     fun containsThumbnail(page: Int, pageRelativeBounds: RectF): Boolean {
-        val mFakePart = PagePart(page, null, pageRelativeBounds, true, 0,)
+        val mFakePart = PagePart(page, null, pageRelativeBounds, true, 0)
         synchronized(mThumbnails) {
             for (mPart in mThumbnails) {
                 if (mPart == mFakePart) {

@@ -13,7 +13,6 @@ import com.ahmer.pdfviewer.model.LinkTapEvent
 import com.ahmer.pdfviewer.util.PdfConstants.Pinch.MAXIMUM_ZOOM
 import com.ahmer.pdfviewer.util.PdfConstants.Pinch.MINIMUM_ZOOM
 import kotlin.math.abs
-import kotlin.math.roundToInt
 
 /**
  * This Manager takes care of moving the PDFView, set its zoom track user actions.
@@ -46,7 +45,7 @@ internal class DragPinchManager(
         val mOnTapHandled: Boolean = pdfView.callbacks.callOnTap(e)
         if (!mOnTapHandled && !mLinkTapped) {
             val mScrollHandle = pdfView.getScrollHandle()
-            if (mScrollHandle != null && pdfView.documentFitsView()) {
+            if (mScrollHandle != null && !pdfView.documentFitsView()) {
                 if (!mScrollHandle.shown()) mScrollHandle.show() else mScrollHandle.hide()
             }
         }
@@ -173,7 +172,7 @@ internal class DragPinchManager(
         val mMinY: Float
         val mOffsetX: Int = pdfView.getCurrentXOffset().toInt()
         val mOffsetY: Int = pdfView.getCurrentYOffset().toInt()
-        val mPdfFile = pdfView.pdfFile
+        val mPdfFile: PdfFile? = pdfView.pdfFile
 
         if (pdfView.isSwipeVertical()) {
             mMinX = -(pdfView.toCurrentScale(mPdfFile!!.maxPageWidth) - pdfView.width)
@@ -184,8 +183,7 @@ internal class DragPinchManager(
         }
         animationManager.startFlingAnimation(
             mOffsetX, mOffsetY, velocityX.toInt(), velocityY.toInt(), mMinX.toInt(), 0,
-            mMinY.toInt() - pdfView.toCurrentScale(pdfView.defaultOffset).roundToInt(),
-            pdfView.toCurrentScale(pdfView.defaultOffset).roundToInt()
+            mMinY.toInt(), 0
         )
         return true
     }
@@ -197,7 +195,7 @@ internal class DragPinchManager(
         val mMinY: Float
         val mOffsetX: Int = pdfView.getCurrentXOffset().toInt()
         val mOffsetY: Int = pdfView.getCurrentYOffset().toInt()
-        val mPdfFile = pdfView.pdfFile
+        val mPdfFile: PdfFile? = pdfView.pdfFile
         val mPageStart = -mPdfFile!!.getPageOffset(pdfView.getCurrentPage(), pdfView.getZoom())
         val mPageEnd =
             mPageStart - mPdfFile.getPageLength(pdfView.getCurrentPage(), pdfView.getZoom())
@@ -246,7 +244,7 @@ internal class DragPinchManager(
 
     override fun onTouch(v: View, event: MotionEvent): Boolean {
         if (!isEnabled) return false
-        var mScaleGesture = mScaleGestureDetector.onTouchEvent(event)
+        var mScaleGesture: Boolean = mScaleGestureDetector.onTouchEvent(event)
         mScaleGesture = mGestureDetector.onTouchEvent(event) || mScaleGesture
         if (event.action == MotionEvent.ACTION_UP) {
             if (isScrolling) {

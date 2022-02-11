@@ -7,9 +7,8 @@ import android.os.HandlerThread
 import android.util.AttributeSet
 import android.util.Log
 import android.widget.RelativeLayout
-import com.ahmer.pdfium.Bookmark
-import com.ahmer.pdfium.Link
-import com.ahmer.pdfium.Meta
+import com.ahmer.pdfium.PdfDocument
+import com.ahmer.pdfium.PdfiumCore
 import com.ahmer.pdfium.util.Size
 import com.ahmer.pdfium.util.SizeF
 import com.ahmer.pdfviewer.exception.PageRenderingException
@@ -18,12 +17,10 @@ import com.ahmer.pdfviewer.link.LinkHandler
 import com.ahmer.pdfviewer.listener.*
 import com.ahmer.pdfviewer.model.PagePart
 import com.ahmer.pdfviewer.scroll.ScrollHandle
-import com.ahmer.pdfviewer.source.AssetSource
-import com.ahmer.pdfviewer.source.DocumentSource
-import com.ahmer.pdfviewer.source.FileSource
-import com.ahmer.pdfviewer.source.UriSource
+import com.ahmer.pdfviewer.source.*
 import com.ahmer.pdfviewer.util.*
 import java.io.File
+import java.io.InputStream
 
 /**
  * It supports animations, zoom, cache, and swipe.
@@ -155,7 +152,7 @@ class PDFView(context: Context?, set: AttributeSet?) : RelativeLayout(context, s
      * Paint object for drawing
      */
     private var mPaint: Paint? = null
-    private var mParseListener: OnTextParseListener? = null
+    private var mPdfiumCore: PdfiumCore? = null
 
     /**
      * The thread [.renderingHandler] will run on
@@ -189,7 +186,6 @@ class PDFView(context: Context?, set: AttributeSet?) : RelativeLayout(context, s
      */
     var cacheManager: CacheManager? = null
     var callbacks: Callbacks = Callbacks()
-    var defaultOffset: Float = 0f
     var pdfFile: PdfFile? = null
 
     /**
@@ -198,20 +194,12 @@ class PDFView(context: Context?, set: AttributeSet?) : RelativeLayout(context, s
     var renderingHandler: RenderingHandler? = null
 
     /**
-     * Invoke on changing view height to calculate new default offset
-     */
-    fun calculateDefaultOffset() {
-        val mScaledPageHeight = toCurrentScale(pdfFile!!.maxPageHeight)
-        if (mScaledPageHeight < height) defaultOffset = height / 2.0f - mScaledPageHeight / 2
-    }
-
-    /**
      * Checks if whole document can be displayed on screen, doesn't include zoom
      * @return true if whole document can displayed at once, false otherwise
      */
     fun documentFitsView(): Boolean {
         val mLength: Float = pdfFile!!.getDocLen(1f)
-        return if (isSwipeVertical) mLength >= height else mLength >= width
+        return if (isSwipeVertical) mLength < height else mLength < width
     }
 
     /**
@@ -321,7 +309,7 @@ class PDFView(context: Context?, set: AttributeSet?) : RelativeLayout(context, s
 
     fun fitToWidth(page: Int) {
         if (mState != State.SHOWN) {
-            Log.e(TAG, "Cannot fit, document not rendered yet")
+            Log.e(PdfConstants.TAG, "Cannot fit, document not rendered yet")
             return
         }
         zoomTo(width / pdfFile!!.getPageSize(page).width)
@@ -343,14 +331,14 @@ class PDFView(context: Context?, set: AttributeSet?) : RelativeLayout(context, s
     /**
      * Returns null if document is not loaded
      */
-    fun getDocumentMeta(): Meta? {
+    fun getDocumentMeta(): PdfDocument.Meta? {
         return pdfFile?.getMetaData()
     }
 
     /**
      * Will be empty until document is loaded
      */
-    fun getLinks(page: Int): List<Link> {
+    fun getLinks(page: Int): List<PdfDocument.Link> {
         return pdfFile?.getPageLinks(page) ?: emptyList()
     }
 
@@ -422,7 +410,7 @@ class PDFView(context: Context?, set: AttributeSet?) : RelativeLayout(context, s
     /**
      * Will be empty until document is loaded
      */
-    fun getTableOfContents(): List<Bookmark> {
+    fun getTableOfContents(): List<PdfDocument.Bookmark> {
         return pdfFile?.getBookmarks() ?: emptyList()
     }
 
@@ -521,7 +509,7 @@ class PDFView(context: Context?, set: AttributeSet?) : RelativeLayout(context, s
         check(isRecycled) { "Don't call load on a PDF View without recycling it first." }
         isRecycled = false
         // Start decoding document
-        mDecodingTask = DecodingTask(docSource, password, userPages, this)
+        mDecodingTask = mPdfiumCore?.let { DecodingTask(docSource, it, password, userPages, this) }
         mDecodingTask?.execute()
     }
 
@@ -551,7 +539,7 @@ class PDFView(context: Context?, set: AttributeSet?) : RelativeLayout(context, s
         val onErrorListener = callbacks.onError
         recycle()
         invalidate()
-        onErrorListener?.onError(t) ?: Log.e(TAG, "Load PDF error: ", t)
+        onErrorListener?.onError(t) ?: Log.e(PdfConstants.TAG, "Load PDF error: ", t)
     }
 
     fun loadPageByOffset() {
@@ -644,16 +632,13 @@ class PDFView(context: Context?, set: AttributeSet?) : RelativeLayout(context, s
         } else {
             // Check Y offset
             val mScaledPageHeight = toCurrentScale(pdfFile!!.maxPageHeight)
-            if (mScaledPageHeight < height && defaultOffset == 0.0f) {
+            if (mScaledPageHeight < height) {
                 mOffsetY = height / 2f - mScaledPageHeight / 2
-                if (defaultOffset == 0.0f && mCurrentOffsetY == 0.0f) {
-                    defaultOffset = mOffsetY
-                }
             } else {
-                if (mOffsetY - toCurrentScale(defaultOffset) > 0) {
-                    mOffsetY = toCurrentScale(defaultOffset)
-                } else if (mOffsetY + (mScaledPageHeight + toCurrentScale(defaultOffset)) < height) {
-                    mOffsetY = height - mScaledPageHeight - toCurrentScale(defaultOffset)
+                if (mOffsetY > 0) {
+                    mOffsetY = 0f
+                } else if (mOffsetY + mScaledPageHeight < height) {
+                    mOffsetY = height - mScaledPageHeight
                 }
             }
 
@@ -676,7 +661,7 @@ class PDFView(context: Context?, set: AttributeSet?) : RelativeLayout(context, s
         }
         mCurrentOffsetX = mOffsetX
         mCurrentOffsetY = mOffsetY
-        if (moveHandle && mScrollHandle != null && documentFitsView()) {
+        if (moveHandle && mScrollHandle != null && !documentFitsView()) {
             mScrollHandle?.setScroll(mPositionOffset)
         }
         callbacks.callOnPageScroll(getCurrentPage(), mPositionOffset)
@@ -703,7 +688,7 @@ class PDFView(context: Context?, set: AttributeSet?) : RelativeLayout(context, s
 
     fun onPageError(ex: PageRenderingException) {
         if (!callbacks.callOnPageError(ex.page, ex.cause)) {
-            Log.e(TAG, "Cannot open page: " + ex.page + " due to: " + ex.cause)
+            Log.e(PdfConstants.TAG, "Cannot open page: " + ex.page + " due to: " + ex.cause)
         }
     }
 
@@ -718,12 +703,6 @@ class PDFView(context: Context?, set: AttributeSet?) : RelativeLayout(context, s
         } else {
             mStart > mCurrentOffsetX && mEnd < mCurrentOffsetX - width
         }
-    }
-
-    fun parseText(listener: OnTextParseListener) {
-        if (pdfFile == null || renderingHandler == null) return
-        mParseListener = listener
-        reDraw()
     }
 
     /**
@@ -883,7 +862,7 @@ class PDFView(context: Context?, set: AttributeSet?) : RelativeLayout(context, s
         mPageNumber = pdfFile!!.determineValidPageNumberFrom(mPageNumber)
         mCurrentPage = mPageNumber
         loadPages()
-        if (mScrollHandle != null && documentFitsView()) {
+        if (mScrollHandle != null && !documentFitsView()) {
             mScrollHandle?.setPageNumber(mCurrentPage + 1)
         }
         callbacks.callOnPageChange(mCurrentPage, pdfFile!!.pagesCount)
@@ -1039,8 +1018,10 @@ class PDFView(context: Context?, set: AttributeSet?) : RelativeLayout(context, s
         }
         if (isRecycled || mState != State.SHOWN) return
         // Moves the canvas before drawing any element
-        val mCurrentOffsetX = mCurrentOffsetX
-        val mCurrentOffsetY = mCurrentOffsetY
+
+        //val mCurrentOffsetX = mCurrentOffsetX
+        //val mCurrentOffsetY = mCurrentOffsetY
+
         canvas.translate(mCurrentOffsetX, mCurrentOffsetY)
         // Draws thumbnails
         for (mPart in cacheManager!!.getThumbnails()) {
@@ -1074,8 +1055,7 @@ class PDFView(context: Context?, set: AttributeSet?) : RelativeLayout(context, s
             mRelativeCenterPointOffsetY = mCenterPointOffsetY / pdfFile!!.getDocLen(mZoom)
         } else {
             mRelativeCenterPointOffsetX = mCenterPointOffsetX / pdfFile!!.getDocLen(mZoom)
-            mRelativeCenterPointOffsetY =
-                mCenterPointOffsetY / pdfFile!!.getPageSize(mCurrentPage).height
+            mRelativeCenterPointOffsetY = mCenterPointOffsetY / pdfFile!!.maxPageHeight
         }
         mAnimationManager?.stopAll()
         pdfFile?.recalculatePageSizes(Size(w, h))
@@ -1084,8 +1064,7 @@ class PDFView(context: Context?, set: AttributeSet?) : RelativeLayout(context, s
             mCurrentOffsetY = -mRelativeCenterPointOffsetY * pdfFile!!.getDocLen(mZoom) + h * 0.5f
         } else {
             mCurrentOffsetX = -mRelativeCenterPointOffsetX * pdfFile!!.getDocLen(mZoom) + w * 0.5f
-            mCurrentOffsetY =
-                -mRelativeCenterPointOffsetY * pdfFile!!.getPageSize(mCurrentPage).height + h * 0.5f
+            mCurrentOffsetY = -mRelativeCenterPointOffsetY * pdfFile!!.maxPageHeight + h * 0.5f
         }
         moveTo(mCurrentOffsetX, mCurrentOffsetY)
         loadPageByOffset()
@@ -1096,6 +1075,13 @@ class PDFView(context: Context?, set: AttributeSet?) : RelativeLayout(context, s
      */
     fun fromAsset(assetName: String?): Configurator {
         return Configurator(AssetSource(assetName!!))
+    }
+
+    /**
+     * Use bytearray as the pdf source, documents is not saved
+     */
+    fun fromBytes(bytes: ByteArray?): Configurator {
+        return Configurator(ByteArraySource(bytes!!))
     }
 
     /**
@@ -1110,6 +1096,14 @@ class PDFView(context: Context?, set: AttributeSet?) : RelativeLayout(context, s
      */
     fun fromSource(docSource: DocumentSource): Configurator {
         return Configurator(docSource)
+    }
+
+    /**
+     * Use stream as the pdf source. Stream will be written to bytearray,
+     * because native code does not support Java Streams
+     */
+    fun fromStream(stream: InputStream): Configurator {
+        return Configurator(InputStreamSource(stream))
     }
 
     /**
@@ -1331,12 +1325,12 @@ class PDFView(context: Context?, set: AttributeSet?) : RelativeLayout(context, s
         const val DEFAULT_MAX_SCALE = 3.0f
         const val DEFAULT_MID_SCALE = 1.75f
         const val DEFAULT_MIN_SCALE = 1.0f
-        private val TAG = PDFView::class.java.simpleName
     }
 
     private fun initPDFView() {
         mRenderingHandlerThread = HandlerThread("PDF renderer")
         if (isInEditMode) return
+        mPdfiumCore = PdfiumCore(context)
         cacheManager = CacheManager()
         mAnimationManager = AnimationManager(this)
         mDragPinchManager = DragPinchManager(this, mAnimationManager!!)

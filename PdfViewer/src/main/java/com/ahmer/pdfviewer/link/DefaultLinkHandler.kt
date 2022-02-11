@@ -6,6 +6,7 @@ import android.net.Uri
 import android.util.Log
 import com.ahmer.pdfviewer.PDFView
 import com.ahmer.pdfviewer.model.LinkTapEvent
+import com.ahmer.pdfviewer.util.PdfConstants
 import io.ahmer.utils.utilcode.ToastUtils
 
 class DefaultLinkHandler(private val pdfView: PDFView) : LinkHandler {
@@ -26,16 +27,12 @@ class DefaultLinkHandler(private val pdfView: PDFView) : LinkHandler {
             pdfView.context.startActivity(Intent.createChooser(mIntent, mTitle))
         } catch (e: ActivityNotFoundException) {
             // Define what your app should do if no activity can handle the intent.
-            Log.e(TAG, e.message ?: "NULL")
+            Log.e(PdfConstants.TAG, e.message ?: "NULL")
             ToastUtils.showLong("No apps can open for this link")
         }
     }
 
     private fun handlePage(page: Int) {
         pdfView.jumpTo(page)
-    }
-
-    companion object {
-        private val TAG = DefaultLinkHandler::class.java.simpleName
     }
 }

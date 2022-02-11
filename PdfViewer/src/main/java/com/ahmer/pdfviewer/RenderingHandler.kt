@@ -7,9 +7,7 @@ import android.os.Message
 import android.util.Log
 import com.ahmer.pdfviewer.exception.PageRenderingException
 import com.ahmer.pdfviewer.model.PagePart
-import com.ahmer.pdfviewer.util.MathUtils.max
-import com.ahmer.pdfviewer.util.MathUtils.min
-import kotlin.math.abs
+import com.ahmer.pdfviewer.util.PdfConstants
 import kotlin.math.roundToInt
 
 class RenderingHandler(looper: Looper, private val pdfView: PDFView) : Handler(looper) {
@@ -86,7 +84,7 @@ class RenderingHandler(looper: Looper, private val pdfView: PDFView) : Handler(l
         mBitmap = try {
             Bitmap.createBitmap(mWidth, mHeight, mQuality)
         } catch (e: IllegalArgumentException) {
-            Log.e(TAG, "Cannot create bitmap", e)
+            Log.e(PdfConstants.TAG, "Cannot create bitmap", e)
             return null
         }
         calculateBounds(mWidth, mHeight, task.bounds)
@@ -127,6 +125,5 @@ class RenderingHandler(looper: Looper, private val pdfView: PDFView) : Handler(l
 
     companion object {
         const val MSG_RENDER_PART_TASK = 1
-        private val TAG = RenderingHandler::class.java.name
     }
 }

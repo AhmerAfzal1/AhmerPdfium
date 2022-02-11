@@ -20,8 +20,7 @@ import androidx.appcompat.app.AppCompatActivity
 import androidx.appcompat.widget.SearchView
 import androidx.lifecycle.lifecycleScope
 import com.ahmer.afzal.pdfium.databinding.ActivityPdfBinding
-import com.ahmer.pdfium.Bookmark
-import com.ahmer.pdfium.Meta
+import com.ahmer.pdfium.PdfDocument
 import com.ahmer.pdfium.PdfPasswordException
 import com.ahmer.pdfviewer.PDFView
 import com.ahmer.pdfviewer.link.DefaultLinkHandler
@@ -31,10 +30,7 @@ import com.ahmer.pdfviewer.util.FitPolicy
 import com.ahmer.pdfviewer.util.PdfFileUtils
 import com.google.android.material.appbar.MaterialToolbar
 import dagger.hilt.android.AndroidEntryPoint
-import io.ahmer.utils.utilcode.FileUtils
-import io.ahmer.utils.utilcode.StringUtils
-import io.ahmer.utils.utilcode.ThrowableUtils
-import io.ahmer.utils.utilcode.ToastUtils
+import io.ahmer.utils.utilcode.*
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.launch
@@ -139,7 +135,7 @@ class PdfActivity : AppCompatActivity(), OnPageChangeListener, OnLoadCompleteLis
             }
             val cancel = dialog.findViewById<TextView>(R.id.btnCancel)
             cancel.setOnClickListener {
-                AppServices.hideKeyboard()
+                KeyboardUtils.hideSoftInput(it)
                 dialog.dismiss()
                 super.onBackPressed()
             }
@@ -185,7 +181,7 @@ class PdfActivity : AppCompatActivity(), OnPageChangeListener, OnLoadCompleteLis
                         ToastUtils.showShort(getString(R.string.no_page))
                     }
                     else -> {
-                        AppServices.hideKeyboard()
+                        KeyboardUtils.hideSoftInput(it)
                         pdfView.jumpTo(number - 1, true)
                         dialog.dismiss()
                     }
@@ -193,7 +189,7 @@ class PdfActivity : AppCompatActivity(), OnPageChangeListener, OnLoadCompleteLis
             }
             val cancel = dialog.findViewById<Button>(R.id.btnCancel)
             cancel.setOnClickListener {
-                AppServices.hideKeyboard()
+                KeyboardUtils.hideSoftInput(it)
                 dialog.dismiss()
             }
             inputPageNo.addTextChangedListener(object : TextWatcher {
@@ -231,7 +227,7 @@ class PdfActivity : AppCompatActivity(), OnPageChangeListener, OnLoadCompleteLis
             val tvFileSize = dialog.findViewById<TextView>(R.id.dialogTvFileSize)
             val tvFilePath = dialog.findViewById<TextView>(R.id.dialogTvFilePath)
             val tvOk = dialog.findViewById<TextView>(R.id.btnOk)
-            val meta: Meta? = pdfView.getDocumentMeta()
+            val meta: PdfDocument.Meta? = pdfView.getDocumentMeta()
             tvTitle.text = meta!!.title
             tvAuthor.text = meta.author
             tvTotalPage.text = String.format(Locale.getDefault(), "%d", meta.totalPages)
@@ -332,7 +328,7 @@ class PdfActivity : AppCompatActivity(), OnPageChangeListener, OnLoadCompleteLis
         mMenu.findItem(R.id.menuNightMode).isEnabled = true
     }
 
-    private fun printBookmarksTree(tree: List<Bookmark>, sep: String) {
+    private fun printBookmarksTree(tree: List<PdfDocument.Bookmark>, sep: String) {
         for (bookmark in tree) {
             Log.v(
                 Constants.LOG_TAG, String.format(

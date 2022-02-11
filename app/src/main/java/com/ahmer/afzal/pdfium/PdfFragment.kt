@@ -2,7 +2,6 @@ package com.ahmer.afzal.pdfium
 
 import android.app.Dialog
 import android.graphics.Color
-import android.os.Build
 import android.os.Bundle
 import android.text.Editable
 import android.text.TextUtils
@@ -17,8 +16,7 @@ import androidx.fragment.app.Fragment
 import androidx.fragment.app.viewModels
 import androidx.lifecycle.lifecycleScope
 import com.ahmer.afzal.pdfium.databinding.FragmentPdfBinding
-import com.ahmer.pdfium.Bookmark
-import com.ahmer.pdfium.Meta
+import com.ahmer.pdfium.PdfDocument
 import com.ahmer.pdfium.PdfPasswordException
 import com.ahmer.pdfviewer.PDFView
 import com.ahmer.pdfviewer.link.DefaultLinkHandler
@@ -27,10 +25,7 @@ import com.ahmer.pdfviewer.scroll.DefaultScrollHandle
 import com.ahmer.pdfviewer.util.FitPolicy
 import com.ahmer.pdfviewer.util.PdfFileUtils
 import dagger.hilt.android.AndroidEntryPoint
-import io.ahmer.utils.utilcode.FileUtils
-import io.ahmer.utils.utilcode.StringUtils
-import io.ahmer.utils.utilcode.ThrowableUtils
-import io.ahmer.utils.utilcode.ToastUtils
+import io.ahmer.utils.utilcode.*
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.launch
 import java.util.*
@@ -135,7 +130,7 @@ class PdfFragment : Fragment(R.layout.fragment_pdf), OnPageChangeListener, OnLoa
             }
             val cancel = dialog.findViewById<TextView>(R.id.btnCancel)
             cancel.setOnClickListener {
-                AppServices.hideKeyboard()
+                KeyboardUtils.hideSoftInput(it)
                 dialog.dismiss()
                 super.requireActivity().onBackPressed()
             }
@@ -182,7 +177,7 @@ class PdfFragment : Fragment(R.layout.fragment_pdf), OnPageChangeListener, OnLoa
                         ToastUtils.showShort(getString(R.string.no_page))
                     }
                     else -> {
-                        AppServices.hideKeyboard()
+                        KeyboardUtils.hideSoftInput(it)
                         pdfView.jumpTo(number - 1, true)
                         dialog.dismiss()
                     }
@@ -190,7 +185,7 @@ class PdfFragment : Fragment(R.layout.fragment_pdf), OnPageChangeListener, OnLoa
             }
             val cancel = dialog.findViewById<Button>(R.id.btnCancel)
             cancel.setOnClickListener {
-                AppServices.hideKeyboard()
+                KeyboardUtils.hideSoftInput(it)
                 dialog.dismiss()
             }
             inputPageNo.addTextChangedListener(object : TextWatcher {
@@ -228,7 +223,7 @@ class PdfFragment : Fragment(R.layout.fragment_pdf), OnPageChangeListener, OnLoa
             val tvFileSize = dialog.findViewById<TextView>(R.id.dialogTvFileSize)
             val tvFilePath = dialog.findViewById<TextView>(R.id.dialogTvFilePath)
             val tvOk = dialog.findViewById<TextView>(R.id.btnOk)
-            val meta: Meta? = pdfView.getDocumentMeta()
+            val meta: PdfDocument.Meta? = pdfView.getDocumentMeta()
             tvTitle.text = meta!!.title
             tvAuthor.text = meta.author
             tvTotalPage.text = String.format(Locale.getDefault(), "%d", meta.totalPages)
@@ -314,7 +309,7 @@ class PdfFragment : Fragment(R.layout.fragment_pdf), OnPageChangeListener, OnLoa
         pdfView.setMaxZoom(4.0f)
     }
 
-    private fun printBookmarksTree(tree: List<Bookmark>, sep: String) {
+    private fun printBookmarksTree(tree: List<PdfDocument.Bookmark>, sep: String) {
         for (b in tree) {
             Log.v(
                 Constants.LOG_TAG,
