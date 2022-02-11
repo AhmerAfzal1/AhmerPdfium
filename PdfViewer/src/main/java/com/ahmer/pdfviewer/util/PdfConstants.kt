@@ -1,6 +1,7 @@
 package com.ahmer.pdfviewer.util
 
 object PdfConstants {
+    const val TAG = "AhmerPdfium"
     const val DEBUG_MODE = false
 
     /**

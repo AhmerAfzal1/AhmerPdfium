@@ -12,7 +12,7 @@ import android.widget.OverScroller
  * This manager is used by the PDFView to launch animations. It uses the ValueAnimator appeared in
  * API 11 to start an animation, and call moveTo() on the PDFView as a result of each animation update.
  */
-internal class AnimationManager(private val pdfView: PDFView) {
+class AnimationManager(private val pdfView: PDFView) {
     private val mFlingDuration: Long = 400
     private val mOverScroller: OverScroller = OverScroller(pdfView.context)
     private var isFlinging = false

@@ -1,6 +1,8 @@
 package com.ahmer.pdfviewer.source
 
 import android.content.Context
+import android.os.ParcelFileDescriptor
+import com.ahmer.pdfium.PdfDocument
 import com.ahmer.pdfium.PdfiumCore
 import java.io.File
 import java.io.IOException
@@ -8,7 +10,8 @@ import java.io.IOException
 class FileSource(private val file: File) : DocumentSource {
 
     @Throws(IOException::class)
-    override fun createDocument(context: Context, password: String?): PdfiumCore {
-        return PdfiumCore(context, file, password)
+    override fun createDocument(context: Context, core: PdfiumCore, password: String?): PdfDocument {
+        val pfd = ParcelFileDescriptor.open(file, ParcelFileDescriptor.MODE_READ_ONLY)
+        return core.newDocument(pfd, password)
     }
 }

@@ -2,7 +2,6 @@ package com.ahmer.afzal.pdfium
 
 import android.app.Dialog
 import android.graphics.Color
-import android.os.Build
 import android.os.Bundle
 import android.text.Editable
 import android.text.TextUtils
@@ -13,12 +12,12 @@ import android.view.inputmethod.InputMethodManager
 import android.widget.*
 import androidx.appcompat.app.AppCompatActivity
 import androidx.appcompat.widget.SearchView
+import androidx.core.content.ContextCompat
 import androidx.fragment.app.Fragment
 import androidx.fragment.app.viewModels
 import androidx.lifecycle.lifecycleScope
 import com.ahmer.afzal.pdfium.databinding.FragmentPdfBinding
-import com.ahmer.pdfium.Bookmark
-import com.ahmer.pdfium.Meta
+import com.ahmer.pdfium.PdfDocument
 import com.ahmer.pdfium.PdfPasswordException
 import com.ahmer.pdfviewer.PDFView
 import com.ahmer.pdfviewer.link.DefaultLinkHandler
@@ -52,6 +51,7 @@ class PdfFragment : Fragment(R.layout.fragment_pdf), OnPageChangeListener, OnLoa
     private var mPassword: String = ""
     private var mPdfFile: String? = null
     private var mSpacing: Int = 5
+    var searchPage = -1
 
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
@@ -95,6 +95,28 @@ class PdfFragment : Fragment(R.layout.fragment_pdf), OnPageChangeListener, OnLoa
             mMenuSnapPage.title = getString(R.string.menu_pdf_enable_snap_page)
         }
         init()
+        mBinding.pdfView.setSelectionPaintViews(mBinding.pdfViewSelection)
+        mBinding.pdfView.setOnSelections(object : OnSelection{
+            override fun onSelection(hasSelection: Boolean) {
+                if (hasSelection) {
+                    mBinding.toolbar.title = "Select Text"
+                    mBinding.toolbar.setTitleTextColor(ContextCompat.getColor(requireContext(), android.R.color.holo_blue_bright))
+                } else {
+                    mBinding.toolbar.title = mPdfFile
+                    mBinding.toolbar.setTitleTextColor(ContextCompat.getColor(requireContext(),android.R.color.white))
+                }
+            }
+        })
+    }
+
+    fun getNext(myList: List<Any>): Int {
+        val idx = myList.indexOf(searchPage)
+        return if (idx < 0 || idx + 1 == myList.size) 0 else myList[idx + 1] as Int
+    }
+
+    fun getPrevious(myList: List<Any>): Int {
+        val idx = myList.indexOf(searchPage)
+        return if (idx <= 0) 0 else myList[idx - 1] as Int
     }
 
     private fun showPasswordDialog() {
@@ -228,7 +250,7 @@ class PdfFragment : Fragment(R.layout.fragment_pdf), OnPageChangeListener, OnLoa
             val tvFileSize = dialog.findViewById<TextView>(R.id.dialogTvFileSize)
             val tvFilePath = dialog.findViewById<TextView>(R.id.dialogTvFilePath)
             val tvOk = dialog.findViewById<TextView>(R.id.btnOk)
-            val meta: Meta? = pdfView.getDocumentMeta()
+            val meta: PdfDocument.Meta? = pdfView.getDocumentMeta()
             tvTitle.text = meta!!.title
             tvAuthor.text = meta.author
             tvTotalPage.text = String.format(Locale.getDefault(), "%d", meta.totalPages)
@@ -314,7 +336,7 @@ class PdfFragment : Fragment(R.layout.fragment_pdf), OnPageChangeListener, OnLoa
         pdfView.setMaxZoom(4.0f)
     }
 
-    private fun printBookmarksTree(tree: List<Bookmark>, sep: String) {
+    private fun printBookmarksTree(tree: List<PdfDocument.Bookmark>, sep: String) {
         for (b in tree) {
             Log.v(
                 Constants.LOG_TAG,
@@ -354,7 +376,7 @@ class PdfFragment : Fragment(R.layout.fragment_pdf), OnPageChangeListener, OnLoa
         }
         mSearchView.onQueryTextChanged {
             mViewModel.searchDescription.value = it
-            //mPdfView.setSearchQuery(it)
+            mBinding.pdfView.search(it)
             Log.v(Constants.LOG_TAG, "Search query: $it")
         }
     }

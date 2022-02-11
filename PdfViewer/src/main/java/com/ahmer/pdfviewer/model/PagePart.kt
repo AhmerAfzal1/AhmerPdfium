@@ -14,9 +14,10 @@ class PagePart(
         if (other !is PagePart) {
             return false
         }
-        return (other.page == page && other.pageRelativeBounds.left == pageRelativeBounds.left
+        return other.page == page
+                && other.pageRelativeBounds.left == pageRelativeBounds.left
                 && other.pageRelativeBounds.right == pageRelativeBounds.right
                 && other.pageRelativeBounds.top == pageRelativeBounds.top
-                && other.pageRelativeBounds.bottom == pageRelativeBounds.bottom)
+                && other.pageRelativeBounds.bottom == pageRelativeBounds.bottom
     }
 }

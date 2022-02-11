@@ -1,7 +1,7 @@
 package com.ahmer.pdfviewer.model
 
 import android.graphics.RectF
-import com.ahmer.pdfium.Link
+import com.ahmer.pdfium.PdfDocument
 
 class LinkTapEvent(
     val originalX: Float,
@@ -9,5 +9,5 @@ class LinkTapEvent(
     val documentX: Float,
     val documentY: Float,
     val mappedLinkRect: RectF,
-    val link: Link
+    val link: PdfDocument.Link
 )
