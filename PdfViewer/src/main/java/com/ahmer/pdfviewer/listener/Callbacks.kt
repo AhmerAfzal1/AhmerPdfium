@@ -57,7 +57,7 @@ class Callbacks {
      */
     var onError: OnErrorListener? = null
 
-    fun callLinkHandler(event: LinkTapEvent?) {
+    fun callLinkHandler(event: LinkTapEvent) {
         if (linkHandler != null) {
             linkHandler?.handleLinkEvent(event)
         }

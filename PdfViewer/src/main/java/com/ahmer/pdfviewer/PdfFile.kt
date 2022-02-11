@@ -4,20 +4,17 @@ import android.graphics.Bitmap
 import android.graphics.Rect
 import android.graphics.RectF
 import android.util.SparseBooleanArray
-import com.ahmer.pdfium.Bookmark
-import com.ahmer.pdfium.Link
-import com.ahmer.pdfium.Meta
+import com.ahmer.pdfium.PdfDocument
 import com.ahmer.pdfium.PdfiumCore
 import com.ahmer.pdfium.util.Size
 import com.ahmer.pdfium.util.SizeF
 import com.ahmer.pdfviewer.exception.PageRenderingException
 import com.ahmer.pdfviewer.util.FitPolicy
 import com.ahmer.pdfviewer.util.PageSizeCalculator
-import com.ahmer.pdfviewer.util.PdfConstants
-import java.util.*
 
 class PdfFile(
-    private val pdfiumCore: PdfiumCore,
+    val pdfiumCore: PdfiumCore,
+    val pdfDocument: PdfDocument,
     private val fitPolicy: FitPolicy,
     val size: Size,
     /**
@@ -41,9 +38,16 @@ class PdfFile(
      * True if every page should fit separately according to the FitPolicy,
      * else the largest page fits and other pages scale relatively
      */
-    private val fitEachPage: Boolean
+    private val fitEachPage: Boolean,
+    /**
+     * Fixed spacing in top of first page
+     */
+    private val spacingTopPx: Int,
+    /**
+     * Fixed spacing in bottom of first page
+     */
+    private val spacingBottomPx: Int
 ) {
-    private val mOpenedPageQueue: Queue<Int> = LinkedList()
 
     /**
      * Opened pages with indicator whether opening was successful
@@ -133,7 +137,7 @@ class PdfFile(
     }
 
     fun dispose() {
-        pdfiumCore.closeDocument()
+        pdfiumCore.closeDocument(pdfDocument)
         userPages = intArrayOf()
     }
 
@@ -146,24 +150,27 @@ class PdfFile(
         return if (mDocPage < 0 || userPage >= pagesCount) -1 else mDocPage
     }
 
-    fun getBookmarks(): List<Bookmark> {
-        return pdfiumCore.bookmarks
+    fun getBookmarks(): List<PdfDocument.Bookmark> {
+        return pdfiumCore.getTableOfContents(pdfDocument)
     }
 
     fun getDocLen(zoom: Float): Float {
         return mDocumentLength * zoom
     }
 
-    fun getLinkAtPos(currentPage: Int, posX: Float, posY: Float): Long? {
-        return pdfiumCore.getLinkAtCoordinate(currentPage, size, posX, posY)
+    fun getLinkAtPos(currentPage: Int, posX: Float, posY: Float): Long {
+        return pdfiumCore.nativeGetLinkAtCoord(
+            pdfDocument.mNativePagesPtr[currentPage]!!, size.width.toDouble(),
+            size.height.toDouble(), posX.toDouble(), posY.toDouble()
+        )
     }
 
     fun getLinkTarget(lnkPtr: Long): String? {
-        return pdfiumCore.getLinkTarget(lnkPtr)
+        return pdfiumCore.nativeGetLinkTarget(pdfDocument.mNativeDocPtr, lnkPtr)
     }
 
-    fun getMetaData(): Meta {
-        return pdfiumCore.metaData
+    fun getMetaData(): PdfDocument.Meta {
+        return pdfiumCore.getDocumentMeta(pdfDocument)
     }
 
     fun getPageAtOffset(offset: Float, zoom: Float): Int {
@@ -184,8 +191,8 @@ class PdfFile(
         return (if (isVertical) mSize.height else mSize.width) * zoom
     }
 
-    fun getPageLinks(pageIndex: Int): List<Link> {
-        return pdfiumCore.getPageLinks(documentPage(pageIndex))
+    fun getPageLinks(pageIndex: Int): List<PdfDocument.Link> {
+        return pdfiumCore.getPageLinks(pdfDocument, documentPage(pageIndex))
     }
 
     /**
@@ -204,7 +211,7 @@ class PdfFile(
     }
 
     fun getPageSizeNative(index: Int): Size {
-        return pdfiumCore.getPageSize(index)
+        return pdfiumCore.getPageSize(pdfDocument, index)
     }
 
     fun getPageSpacing(pageIndex: Int, zoom: Float): Float {
@@ -229,14 +236,14 @@ class PdfFile(
     }
 
     fun getTotalPagesCount(): Int {
-        return pdfiumCore.totalPagesCount
+        return pdfiumCore.getPageCount(pdfDocument)
     }
 
     fun mapRectToDevice(
         pageIndex: Int, startX: Int, startY: Int, sizeX: Int, sizeY: Int, rect: RectF
     ): RectF {
         val mPage = documentPage(pageIndex)
-        return pdfiumCore.mapPageCoordinateToDevice(mPage, startX, startY, sizeX, sizeY, 0, rect)!!
+        return pdfiumCore.mapRectToDevice(pdfDocument, mPage, startX, startY, sizeX, sizeY, 0, rect)
     }
 
     @Throws(PageRenderingException::class)
@@ -246,18 +253,8 @@ class PdfFile(
         synchronized(lock) {
             if (mOpenedPages.indexOfKey(mDocPage) < 0) {
                 try {
-                    pdfiumCore.openPage(mDocPage)
+                    pdfiumCore.openPage(pdfDocument, mDocPage)
                     mOpenedPages.put(mDocPage, true)
-                    /*
-                     *Memory management
-                     *Fix memory leak https://github.com/barteksc/AndroidPdfViewer/issues/495
-                     */
-                    mOpenedPageQueue.add(pageIndex)
-                    if (mOpenedPageQueue.size > PdfConstants.MAX_PAGES) {
-                        val mOldPage: Int = mOpenedPageQueue.poll() ?: 0
-                        pdfiumCore.closePage(mOldPage)
-                        mOpenedPages.delete(mOldPage)
-                    }
                     return true
                 } catch (e: Exception) {
                     mOpenedPages.put(mDocPage, false)
@@ -288,14 +285,15 @@ class PdfFile(
         for (i in 0 until pagesCount) {
             val mPageSize: SizeF = mScaledPageSizes[i]
             mLength += if (isVertical) mPageSize.height else mPageSize.width
-            if (autoSpacing) mLength += mPageSpacing[i] else if (i < pagesCount - 1) mLength += spacingPx.toFloat()
+            //if (autoSpacing) mLength += mPageSpacing[i] else if (i < pagesCount - 1) mLength += spacingPx.toFloat()
         }
-        mDocumentLength = mLength
+        val mSpacing: Int = spacingPx * (mScaledPageSizes.size - 1) + spacingTopPx + spacingBottomPx
+        mDocumentLength = mLength + mSpacing
     }
 
     private fun preparePagesOffset() {
         mPageOffsets.clear()
-        var mOffset = 0f
+        var mOffset = spacingTopPx.toFloat()
         for (i in 0 until pagesCount) {
             val mPageSize: SizeF = mScaledPageSizes[i]
             val mSize: Float = if (isVertical) mPageSize.height else mPageSize.width
@@ -331,14 +329,15 @@ class PdfFile(
     fun renderPageBitmap(bitmap: Bitmap, pageIndex: Int, bounds: Rect, annotation: Boolean) {
         val docPage = documentPage(pageIndex)
         pdfiumCore.renderPageBitmap(
-            bitmap, docPage, bounds.left, bounds.top, bounds.width(), bounds.height(), annotation
+            pdfDocument, bitmap, docPage, bounds.left, bounds.top, bounds.width(),
+            bounds.height(), annotation
         )
     }
 
     private fun setup(viewSize: Size) {
         pagesCount = if (userPages.isNotEmpty()) userPages.size else getTotalPagesCount()
         for (i in 0 until pagesCount) {
-            val pageSize: Size = pdfiumCore.getPageSize(documentPage(i))
+            val pageSize: Size = pdfiumCore.getPageSize(pdfDocument, documentPage(i))
             if (pageSize.width > mOriginalMaxWidthPageSize.width) {
                 mOriginalMaxWidthPageSize = pageSize
             }

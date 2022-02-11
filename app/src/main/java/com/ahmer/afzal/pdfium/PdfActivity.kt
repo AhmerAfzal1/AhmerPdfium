@@ -20,8 +20,7 @@ import androidx.appcompat.app.AppCompatActivity
 import androidx.appcompat.widget.SearchView
 import androidx.lifecycle.lifecycleScope
 import com.ahmer.afzal.pdfium.databinding.ActivityPdfBinding
-import com.ahmer.pdfium.Bookmark
-import com.ahmer.pdfium.Meta
+import com.ahmer.pdfium.PdfDocument
 import com.ahmer.pdfium.PdfPasswordException
 import com.ahmer.pdfviewer.PDFView
 import com.ahmer.pdfviewer.link.DefaultLinkHandler
@@ -231,7 +230,7 @@ class PdfActivity : AppCompatActivity(), OnPageChangeListener, OnLoadCompleteLis
             val tvFileSize = dialog.findViewById<TextView>(R.id.dialogTvFileSize)
             val tvFilePath = dialog.findViewById<TextView>(R.id.dialogTvFilePath)
             val tvOk = dialog.findViewById<TextView>(R.id.btnOk)
-            val meta: Meta? = pdfView.getDocumentMeta()
+            val meta: PdfDocument.Meta? = pdfView.getDocumentMeta()
             tvTitle.text = meta!!.title
             tvAuthor.text = meta.author
             tvTotalPage.text = String.format(Locale.getDefault(), "%d", meta.totalPages)
@@ -332,7 +331,7 @@ class PdfActivity : AppCompatActivity(), OnPageChangeListener, OnLoadCompleteLis
         mMenu.findItem(R.id.menuNightMode).isEnabled = true
     }
 
-    private fun printBookmarksTree(tree: List<Bookmark>, sep: String) {
+    private fun printBookmarksTree(tree: List<PdfDocument.Bookmark>, sep: String) {
         for (bookmark in tree) {
             Log.v(
                 Constants.LOG_TAG, String.format(

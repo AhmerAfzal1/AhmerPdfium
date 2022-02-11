@@ -1,6 +1,9 @@
 package com.ahmer.pdfviewer
 
 import android.graphics.PointF
+import android.graphics.RectF
+import android.graphics.drawable.Drawable
+import android.util.Log
 import android.view.GestureDetector
 import android.view.GestureDetector.OnDoubleTapListener
 import android.view.MotionEvent
@@ -8,20 +11,37 @@ import android.view.ScaleGestureDetector
 import android.view.ScaleGestureDetector.OnScaleGestureListener
 import android.view.View
 import android.view.View.OnTouchListener
+import com.ahmer.pdfium.util.Size
 import com.ahmer.pdfium.util.SizeF
+import com.ahmer.pdfviewer.exception.PageRenderingException
 import com.ahmer.pdfviewer.model.LinkTapEvent
+import com.ahmer.pdfviewer.util.PdfConstants
 import com.ahmer.pdfviewer.util.PdfConstants.Pinch.MAXIMUM_ZOOM
 import com.ahmer.pdfviewer.util.PdfConstants.Pinch.MINIMUM_ZOOM
 import kotlin.math.abs
-import kotlin.math.roundToInt
 
 /**
  * This Manager takes care of moving the PDFView, set its zoom track user actions.
  */
-internal class DragPinchManager(
+class DragPinchManager(
     private val pdfView: PDFView, private val animationManager: AnimationManager
 ) : GestureDetector.OnGestureListener, OnDoubleTapListener, OnScaleGestureListener,
     OnTouchListener {
+
+    private val lock = Any()
+    var currentTextPtr: Long = 0
+    var lastX = 0f
+    var lastY = 0f
+    var orgX = 0f
+    var orgY = 0f
+    var draggingHandle: Drawable? = null
+    var lineHeight = 0f
+    var viewPagerToGuardLastX = 0f
+    var viewPagerToGuardLastY = 0f
+    var sCursorPosStart = PointF()
+    var pageBreakIterator: BreakIteratorHelper? = null
+    var allText: String? = null
+    var scrollValue = 0f
 
     private val mGestureDetector = GestureDetector(pdfView.context, this)
     private val mScaleGestureDetector = ScaleGestureDetector(pdfView.context, this)
@@ -42,16 +62,211 @@ internal class DragPinchManager(
     }
 
     override fun onSingleTapConfirmed(e: MotionEvent): Boolean {
+        var mOnTapHandled = false
+
+        if (pdfView.hasSelection) {
+            pdfView.clearSelection()
+        } else {
+            mOnTapHandled = pdfView.callbacks.callOnTap(e)
+        }
         val mLinkTapped: Boolean = checkLinkTapped(e.x, e.y)
-        val mOnTapHandled: Boolean = pdfView.callbacks.callOnTap(e)
         if (!mOnTapHandled && !mLinkTapped) {
             val mScrollHandle = pdfView.getScrollHandle()
-            if (mScrollHandle != null && pdfView.documentFitsView()) {
+            if (mScrollHandle != null && !pdfView.documentFitsView()) {
                 if (!mScrollHandle.shown()) mScrollHandle.show() else mScrollHandle.hide()
             }
         }
         pdfView.performClick()
         return true
+    }
+
+    fun getCharIdxAtPos(x: Float, y: Float, tolFactor: Int): Int {
+        val pdfFile = pdfView.pdfFile ?: return -1
+        val mappedX = -pdfView.getCurrentXOffset() + x
+        val mappedY = -pdfView.getCurrentYOffset() + y
+        val page = pdfFile.getPageAtOffset(
+            if (pdfView.isSwipeVertical()) mappedY else mappedX,
+            pdfView.getZoom()
+        )
+        val pageSize = pdfFile.getScaledPageSize(page, pdfView.getZoom())
+        val pageIndex = pdfFile.documentPage(page)
+        val pagePtr: Long? = pdfFile.pdfDocument.mNativePagesPtr[pageIndex]
+        Log.e("pageIndex", pageIndex.toString())
+        val tid: Long = prepareText()
+        if (pdfView.isNotCurrentPage(tid)) {
+            return -1
+        }
+        if (tid != 0L) {
+            //int charIdx = pdfiumCore.nativeGetCharIndexAtPos(tid, posX, posY, 10.0, 10.0);
+            val pageX = pdfFile.getSecondaryPageOffset(page, pdfView.getZoom()).toInt()
+            val pageY = pdfFile.getPageOffset(page, pdfView.getZoom()).toInt()
+            return pdfFile.pdfiumCore.nativeGetCharIndexAtCoord(
+                pagePtr!!, pageSize.width.toDouble(), pageSize.height.toDouble(), tid,
+                abs(mappedX - pageX).toDouble(), abs(mappedY - pageY).toDouble(),
+                10.0 * tolFactor, 10.0 * tolFactor
+            )
+        }
+        return -1
+    }
+
+    fun getCharIdxAt(x: Float, y: Float, tolFactor: Int): Int {
+        val pdfFile = pdfView.pdfFile ?: return -1
+        val page: Int = pdfView.getCurrentPage()
+        val pageSize = pdfFile.getPageSize(page)
+        val pageIndex = pdfFile.documentPage(page)
+        val pagePtr: Long? = pdfFile.pdfDocument.mNativePagesPtr[pageIndex]
+        Log.e("pageIndex", pageIndex.toString())
+        val tid: Long = prepareText()
+        if (pdfView.isNotCurrentPage(tid)) {
+            return -1
+        }
+        if (tid != 0L) {
+            //int charIdx = pdfiumCore.nativeGetCharIndexAtPos(tid, posX, posY, 10.0, 10.0);
+            val pageX = pdfFile.getSecondaryPageOffset(page, pdfView.getZoom()).toInt()
+            val pageY = pdfFile.getPageOffset(page, pdfView.getZoom()).toInt()
+            return pdfFile.pdfiumCore.nativeGetCharIndexAtCoord(
+                pagePtr!!, pageSize.width.toDouble(), pageSize.height.toDouble(), tid,
+                x.toDouble(), y.toDouble(), 10.0 * tolFactor, 10.0 * tolFactor
+            )
+        }
+        return -1
+    }
+
+    private fun wordTapped(x: Float, y: Float, tolFactor: Float): Boolean {
+        val pdfFile = pdfView.pdfFile ?: return false
+        val mappedX = -pdfView.getCurrentXOffset() + x
+        val mappedY = -pdfView.getCurrentYOffset() + y
+        val page = pdfFile.getPageAtOffset(
+            if (pdfView.isSwipeVertical()) mappedY else mappedX,
+            pdfView.getZoom()
+        )
+        val pageSize = pdfFile.getScaledPageSize(page, pdfView.getZoom())
+        val pageIndex = pdfFile.documentPage(page)
+        val pagePtr: Long? = pdfFile.pdfDocument.mNativePagesPtr[pageIndex]
+        val tid: Long = prepareText()
+        currentTextPtr = tid
+        if (tid != 0L) {
+            //int charIdx = pdfiumCore.nativeGetCharIndexAtPos(tid, posX, posY, 10.0, 10.0);
+            val pageX = pdfFile.getSecondaryPageOffset(page, pdfView.getZoom()).toInt()
+            val pageY = pdfFile.getPageOffset(page, pdfView.getZoom()).toInt()
+            val charIdx = pdfFile.pdfiumCore.nativeGetCharIndexAtCoord(
+                pagePtr!!, pageSize.width.toDouble(), pageSize.height.toDouble(), tid,
+                abs(mappedX - pageX).toDouble(), abs(mappedY - pageY).toDouble(),
+                10.0 * tolFactor, 10.0 * tolFactor
+            )
+            var ret: String? = null
+            if (charIdx >= 0) {
+                val ed = pageBreakIterator!!.following(charIdx)
+                val st = pageBreakIterator!!.previous()
+                try {
+                    ret = allText!!.substring(st, ed)
+                    pdfView.setSelectionAtPage(pageIndex, st, ed)
+                    //Toast.makeText(pdfView.getContext(), String.valueOf(ret), Toast.LENGTH_SHORT).show();
+                    return true
+                } catch (e: Exception) {
+                    e.printStackTrace()
+                }
+            }
+        }
+        return false
+    }
+
+    fun getSelRects(rectPagePool: ArrayList<RectF>, selSt: Int, selEd: Int) {
+        var selectionStart = selSt
+        var selectionEnd = selEd
+        val mappedX = -pdfView.getCurrentXOffset() + lastX
+        val mappedY = -pdfView.getCurrentYOffset() + lastY
+        val page = pdfView.pdfFile!!.getPageAtOffset(
+            if (pdfView.isSwipeVertical()) mappedY else mappedX,
+            pdfView.getZoom()
+        )
+        val tid: Long = prepareText()
+        if (pdfView.isNotCurrentPage(tid)) {
+            return
+        }
+        rectPagePool.clear()
+        if (tid != 0L) {
+            if (selectionEnd == -1) {
+                selectionEnd = allText!!.length
+            }
+            if (selectionEnd < selectionStart) {
+                val tmp = selectionStart
+                selectionStart = selectionEnd
+                selectionEnd = tmp
+            }
+            selectionEnd -= selectionStart
+            if (selectionEnd > 0) {
+                val pagePtr: Long? = pdfView.pdfFile!!.pdfDocument.mNativePagesPtr[page]
+                val pageX =
+                    pdfView.pdfFile!!.getSecondaryPageOffset(page, pdfView.getZoom()).toInt()
+                val pageY = pdfView.pdfFile!!.getPageOffset(page, pdfView.getZoom()).toInt()
+                pdfView.pdfiumCore?.getPageSize(pdfView.pdfFile!!.pdfDocument, page)
+                val size = pdfView.pdfFile!!.getPageSize(page)
+                val rectCount: Int? = pdfView.pdfiumCore?.getTextRects(
+                    pagePtr!!, 0, 0, Size(size.width.toInt(), size.height.toInt()),
+                    rectPagePool, tid, selectionStart, selectionEnd
+                )
+                Log.v(
+                    PdfConstants.TAG, "getTextRects: $selectionStart$$selectionEnd$$rectCount$$rectPagePool"
+                 )
+                if (rectCount != null) {
+                    if (rectCount >= 0 && rectPagePool.size > rectCount) {
+                        rectPagePool.subList(rectCount, rectPagePool.size).clear()
+                    }
+                }
+            }
+        }
+    }
+
+    fun prepareText(): Long {
+        val mappedX = -pdfView.getCurrentXOffset() + lastX
+        val mappedY = -pdfView.getCurrentYOffset() + lastY
+        val page = pdfView.pdfFile!!.getPageAtOffset(
+            if (pdfView.isSwipeVertical()) mappedY else mappedX,
+            pdfView.getZoom()
+        )
+        return prepareText(page)
+    }
+
+    fun prepareText(page: Int): Long {
+        val tid = loadText(page)
+        if (tid != -1L) {
+            allText = pdfView.pdfiumCore!!.nativeGetText(tid!!)
+            if (pageBreakIterator == null) {
+                pageBreakIterator = BreakIteratorHelper()
+            }
+            pageBreakIterator!!.setText(allText)
+        }
+        return tid
+    }
+
+    fun loadText(): Long? {
+        val mappedX = -pdfView.getCurrentXOffset() + lastX
+        val mappedY = -pdfView.getCurrentYOffset() + lastY
+        if (pdfView.pdfFile == null) return 0L
+        val page = pdfView.pdfFile!!.getPageAtOffset(
+            if (pdfView.isSwipeVertical()) mappedY else mappedX,
+            pdfView.getZoom()
+        )
+        return loadText(page)
+    }
+
+    fun loadText(page: Int): Long? {
+        synchronized(lock) {
+            if (!pdfView.pdfFile!!.pdfDocument.hasPage(page)) {
+                try {
+                    pdfView.pdfFile!!.openPage(page)
+                } catch (e: PageRenderingException) {
+                    e.printStackTrace()
+                }
+            }
+            val pagePtr: Long? = pdfView.pdfFile!!.pdfDocument.mNativePagesPtr[page]
+            if (!pdfView.pdfFile!!.pdfDocument.hasText(page)) {
+                val openTextPtr: Long = pdfView.pdfiumCore!!.openText(pagePtr!!)
+                pdfView.pdfFile!!.pdfDocument.mNativeTextPtr[page] = openTextPtr
+            }
+        }
+        return pdfView.pdfFile!!.pdfDocument.mNativeTextPtr[page]
     }
 
     private fun checkLinkTapped(x: Float, y: Float): Boolean {
@@ -139,11 +354,14 @@ internal class DragPinchManager(
 
     override fun onScroll(e1: MotionEvent, e2: MotionEvent, distanceX: Float, distanceY: Float):
             Boolean {
+        if (pdfView.startInDrag) return true
         isScrolling = true
         if (pdfView.isZooming() || pdfView.isSwipeEnabled()) {
             pdfView.moveRelativeTo(-distanceX, -distanceY)
         }
         if (!isScaling || pdfView.isRenderDuringScale()) pdfView.loadPageByOffset()
+        scrollValue = distanceY
+        Log.e(PdfConstants.TAG, "ScrollY: $distanceY")
         return true
     }
 
@@ -151,9 +369,21 @@ internal class DragPinchManager(
         pdfView.loadPages()
         hideHandle()
         if (!animationManager.isFlinging()) pdfView.performPageSnap()
+        if (scrollValue <= -10 && pdfView.getCurrentPage() == 0) {
+            if (pdfView.hideView != null) pdfView.hideView!!.visibility = View.VISIBLE
+        }
     }
 
     override fun onLongPress(e: MotionEvent) {
+        if (pdfView.hasSelection) pdfView.clearSelection()
+        if (wordTapped(e.x, e.y, 2f)) {
+            pdfView.hasSelection = true
+            if (pdfView.onSelection != null) {
+                pdfView.onSelection!!.onSelection(true)
+            }
+            draggingHandle = pdfView.handleRight
+            sCursorPosStart.set(pdfView.handleRightPos.right, pdfView.handleRightPos.bottom)
+        }
         pdfView.callbacks.callOnLongPress(e)
     }
 
@@ -184,23 +414,26 @@ internal class DragPinchManager(
         }
         animationManager.startFlingAnimation(
             mOffsetX, mOffsetY, velocityX.toInt(), velocityY.toInt(), mMinX.toInt(), 0,
-            mMinY.toInt() - pdfView.toCurrentScale(pdfView.defaultOffset).roundToInt(),
-            pdfView.toCurrentScale(pdfView.defaultOffset).roundToInt()
+            mMinY.toInt(), 0
         )
         return true
     }
 
     private fun onBoundedFling(velocityX: Float, velocityY: Float) {
+        val mMappedX = -pdfView.getCurrentXOffset() + lastX
+        val mMappedY = -pdfView.getCurrentYOffset() + lastY
         val mMaxX: Float
         val mMaxY: Float
         val mMinX: Float
         val mMinY: Float
         val mOffsetX: Int = pdfView.getCurrentXOffset().toInt()
         val mOffsetY: Int = pdfView.getCurrentYOffset().toInt()
-        val mPdfFile = pdfView.pdfFile
-        val mPageStart = -mPdfFile!!.getPageOffset(pdfView.getCurrentPage(), pdfView.getZoom())
-        val mPageEnd =
-            mPageStart - mPdfFile.getPageLength(pdfView.getCurrentPage(), pdfView.getZoom())
+        val mPdfFile: PdfFile? = pdfView.pdfFile
+        val mPage: Int = mPdfFile!!.getPageAtOffset(
+            if (pdfView.isSwipeVertical()) mMappedY else mMappedX, pdfView.getZoom()
+        )
+        val mPageStart = -mPdfFile.getPageOffset(mPage, pdfView.getZoom())
+        val mPageEnd = mPageStart - mPdfFile.getPageLength(mPage, pdfView.getZoom())
 
         if (pdfView.isSwipeVertical()) {
             mMinX = -(pdfView.toCurrentScale(mPdfFile.maxPageWidth) - pdfView.width)
@@ -246,15 +479,83 @@ internal class DragPinchManager(
 
     override fun onTouch(v: View, event: MotionEvent): Boolean {
         if (!isEnabled) return false
-        var mScaleGesture = mScaleGestureDetector.onTouchEvent(event)
+        var mScaleGesture: Boolean = mScaleGestureDetector.onTouchEvent(event)
         mScaleGesture = mGestureDetector.onTouchEvent(event) || mScaleGesture
+        lastX = event.x
+        lastY = event.y
+        pdfView.redrawSel()
         if (event.action == MotionEvent.ACTION_UP) {
+            if (draggingHandle != null) draggingHandle = null
+            pdfView.startInDrag = false
             if (isScrolling) {
                 isScrolling = false
                 onScrollEnd(event)
             }
+        } else if (event.action == MotionEvent.ACTION_DOWN) {
+            orgX = lastX.also { viewPagerToGuardLastX = it }
+            orgY = lastY.also { viewPagerToGuardLastY = it }
+            if (pdfView.hasSelection) {
+                if (pdfView.handleLeft!!.bounds.contains(orgX.toInt(), orgY.toInt())) {
+                    draggingHandle = pdfView.handleLeft
+                    sCursorPosStart[pdfView.handleLeftPos.left] = pdfView.handleLeftPos.bottom
+                } else if (pdfView.handleRight!!.bounds.contains(orgX.toInt(), orgY.toInt())) {
+                    draggingHandle = pdfView.handleRight
+                    sCursorPosStart[pdfView.handleRightPos.right] = pdfView.handleRightPos.bottom
+                }
+            }
+        } else if (event.action == MotionEvent.ACTION_MOVE) {
+            dragHandle(event.x, event.y)
+            viewPagerToGuardLastX = lastX
+            viewPagerToGuardLastY = lastY
         }
-        return mScaleGesture
+        return true;
+    }
+
+    private fun dragHandle(x: Float, y: Float) {
+        if (draggingHandle != null) {
+            pdfView.startInDrag = true
+            lineHeight =
+                if (draggingHandle === pdfView.handleLeft) pdfView.lineHeightLeft else pdfView.lineHeightRight
+            val posX = sCursorPosStart.x + (lastX - orgX) / pdfView.getZoom()
+            val posY = sCursorPosStart.y + (lastY - orgY) / pdfView.getZoom()
+            pdfView.sCursorPos.set(posX, posY)
+            val isLeft = draggingHandle === pdfView.handleLeft
+            val mappedX = -pdfView.getCurrentXOffset() + x
+            val mappedY = -pdfView.getCurrentYOffset() + y
+            val page = pdfView.pdfFile!!.getPageAtOffset(
+                if (pdfView.isSwipeVertical()) mappedY else mappedX,
+                pdfView.getZoom()
+            )
+            val pageIndex = pdfView.pdfFile!!.documentPage(page)
+            var charIdx = -1
+            val pageI = pdfView
+            // long pagePtr = pageI.pdfFile.pdfDocument.mNativePagesPtr.get(pageI.getCurrentPage());
+            //posY -= pageI.getCurrentXOffset();
+            //posX -= pageI.getCurrentXOffset();
+            charIdx = getCharIdxAtPos(x, y - lineHeight, 10)
+            pdfView.selectionPaintView!!.supressRecalcInval = true
+            Log.e("charIdx", charIdx.toString())
+            if (charIdx >= 0) {
+                if (isLeft) {
+                    if (pageIndex != pdfView.selPageSt || charIdx != pdfView.selStart) {
+                        pdfView.selPageSt = pageIndex
+                        pdfView.selStart = charIdx
+                        pdfView.selectionPaintView!!.resetSel()
+                    }
+                } else {
+                    charIdx += 1
+                    if (pageIndex != pdfView.selPageEd || charIdx != pdfView.selEnd) {
+                        pdfView.selPageEd = pageIndex
+                        pdfView.selEnd = charIdx
+                        pdfView.selectionPaintView!!.resetSel()
+                    }
+                }
+            }
+            pdfView.redrawSel()
+            // Toast.makeText(pdfView.getContext(),   pdfView. getSelection(), Toast.LENGTH_SHORT).show();
+            //   pdfView.text.setText(pdfView.getSelection());
+            pdfView.selectionPaintView!!.supressRecalcInval = false
+        }
     }
 
     private fun hideHandle() {

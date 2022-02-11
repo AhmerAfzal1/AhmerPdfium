@@ -8,5 +8,5 @@ interface LinkHandler {
      *
      * @param event current event
      */
-    fun handleLinkEvent(event: LinkTapEvent?)
+    fun handleLinkEvent(event: LinkTapEvent)
 }

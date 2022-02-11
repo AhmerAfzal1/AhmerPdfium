@@ -1,16 +1,16 @@
 package com.ahmer.pdfviewer.source
 
 import android.content.Context
-import android.net.Uri
 import com.ahmer.pdfium.PdfDocument
 import com.ahmer.pdfium.PdfiumCore
+import com.ahmer.pdfviewer.util.PdfUtils
 import java.io.IOException
+import java.io.InputStream
 
-class UriSource(private val uri: Uri) : DocumentSource {
+class InputStreamSource(private val inputStream: InputStream) : DocumentSource {
 
     @Throws(IOException::class)
     override fun createDocument(context: Context, core: PdfiumCore, password: String?): PdfDocument {
-        val pfd = context.contentResolver.openFileDescriptor(uri, "r")
-        return core.newDocument(pfd!!, password)
+        return core.newDocument(PdfUtils.toByteArray(inputStream), password)
     }
 }

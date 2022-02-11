@@ -10,10 +10,10 @@ import io.ahmer.utils.utilcode.ToastUtils
 
 class DefaultLinkHandler(private val pdfView: PDFView) : LinkHandler {
 
-    override fun handleLinkEvent(event: LinkTapEvent?) {
-        val mUri = event?.link?.uri
-        val mPage = event?.link?.destPageIdx
-        if (!mUri.isNullOrBlank()) handleUri(mUri) else mPage?.let { handlePage(it) }
+    override fun handleLinkEvent(event: LinkTapEvent) {
+        val mUri = event.link?.uri
+        val mPage = event.link?.destPageIdx
+        if (!mUri.isNullOrBlank()) handleUri(mUri) else if (mPage != null) handlePage(mPage)
     }
 
     private fun handleUri(uri: String) {

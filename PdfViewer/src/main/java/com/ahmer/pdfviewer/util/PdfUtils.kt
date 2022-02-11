@@ -17,6 +17,16 @@ object PdfUtils {
         ).toInt()
     }
 
+    @JvmStatic
+    fun indexExists(list: List<*>, index: Int): Boolean {
+        return index >= 0 && index < list.size
+    }
+
+    @JvmStatic
+    fun indexExists(count: Int, index: Int): Boolean {
+        return index in 0 until count
+    }
+
     @Throws(IOException::class)
     @JvmStatic
     fun toByteArray(inputStream: InputStream): ByteArray {
