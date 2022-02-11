@@ -3,6 +3,8 @@ package com.ahmer.pdfviewer.scroll
 import android.content.Context
 import android.graphics.Color
 import android.graphics.drawable.Drawable
+import android.os.Handler
+import android.os.Looper
 import android.util.TypedValue
 import android.view.MotionEvent
 import android.view.ViewGroup
@@ -18,6 +20,7 @@ import java.lang.Float.isNaN
 class DefaultScrollHandle @JvmOverloads constructor(
     context: Context, private val inverted: Boolean = false
 ) : RelativeLayout(context), ScrollHandle {
+    private val mHandler = Handler(Looper.getMainLooper())
     private val mHidePageScroller = Runnable { hide() }
     private var mCurrentPosition = 0f
     private var mHandlerMiddle = 0f
@@ -72,7 +75,7 @@ class DefaultScrollHandle @JvmOverloads constructor(
     }
 
     override fun setScroll(position: Float) {
-        if (!shown()) show() else handler.removeCallbacks(mHidePageScroller)
+        if (!shown()) show() else mHandler.removeCallbacks(mHidePageScroller)
         if (mPdfView != null) {
             val mPos = if (mPdfView!!.isSwipeVertical()) mPdfView!!.height else mPdfView!!.width
             setPosition(mPos * position)
@@ -115,7 +118,7 @@ class DefaultScrollHandle @JvmOverloads constructor(
     }
 
     override fun hideDelayed() {
-        handler.postDelayed(mHidePageScroller, 1000)
+        mHandler.postDelayed(mHidePageScroller, 1000L)
     }
 
     override fun setPageNumber(pageNumber: Int) {
@@ -154,7 +157,7 @@ class DefaultScrollHandle @JvmOverloads constructor(
         when (event.action) {
             MotionEvent.ACTION_DOWN, MotionEvent.ACTION_POINTER_DOWN -> {
                 mPdfView?.stopFling()
-                handler.removeCallbacks(mHidePageScroller)
+                mHandler.removeCallbacks(mHidePageScroller)
                 mCurrentPosition = if (mPdfView!!.isSwipeVertical()) {
                     event.rawY - y
                 } else {
