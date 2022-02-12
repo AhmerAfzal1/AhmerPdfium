@@ -7,7 +7,7 @@ import android.util.ArrayMap
 class PdfDocument {
     val mNativePagesPtr: MutableMap<Int, Long> = ArrayMap()
     val mNativeTextPtr: MutableMap<Int, Long> = ArrayMap()
-    var mNativeDocPtr: Long = 0
+    var mNativeDocPtr: Long = 0L
     var parcelFileDescriptor: ParcelFileDescriptor? = null
 
     fun hasPage(index: Int): Boolean {
@@ -20,8 +20,8 @@ class PdfDocument {
 
     data class Bookmark(
         val children: MutableList<Bookmark> = ArrayList(),
-        var mNativePtr: Long = 0,
-        var pageIdx: Long = 0,
+        var mNativePtr: Long = 0L,
+        var pageIdx: Long = 0L,
         var title: String? = null
     ) {
         fun hasChildren(): Boolean {
@@ -29,17 +29,17 @@ class PdfDocument {
         }
     }
 
-    class Link(val bounds: RectF, val destPageIdx: Int, val uri: String)
+    data class Link(val bounds: RectF, val destPageIdx: Int, val uri: String)
 
-    class Meta {
-        var title: String? = null
-        var author: String? = null
-        var subject: String? = null
-        var keywords: String? = null
-        var creator: String? = null
-        var producer: String? = null
-        var creationDate: String? = null
-        var modDate: String? = null
-        var totalPages = 0
-    }
+    data class Meta(
+        var title: String? = null,
+        var author: String? = null,
+        var subject: String? = null,
+        var keywords: String? = null,
+        var creator: String? = null,
+        var producer: String? = null,
+        var creationDate: String? = null,
+        var modDate: String? = null,
+        var totalPages: Int = 0
+    )
 }

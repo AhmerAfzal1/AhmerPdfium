@@ -54,11 +54,9 @@ struct rgb {
 class DocumentFile {
 public:
     FPDF_DOCUMENT pdfDocument = nullptr;
-
     DocumentFile() {
         initLibraryIfNeed();
     }
-
     ~DocumentFile();
 };
 
@@ -110,7 +108,6 @@ static char *getErrorDescription(const long error) {
         default:
             asprintf(&description, "Unknown error.");
     }
-
     return description;
 }
 
@@ -874,7 +871,6 @@ JNI_FUNC(jint, PdfiumCore, nativeGetFindLength)(JNI_ARGS, jlong searchPtr) {
 }
 
 JNI_FUNC(jlong, PdfiumCore, nativeGetStringChars)(JNI_ARGS, jstring key) {
-//LOGE("fatal nativeGetStringChars %ld", (long)key);
     return (long) env->GetStringChars(key, 0);
 }
 
@@ -885,9 +881,7 @@ JNI_FUNC(jint, PdfiumCore, nativeFindTextPage)(JNI_ARGS, jlong textPtr, jstring 
     if (text) {
         FPDF_SCHHANDLE findHandle = FPDFText_FindStart(text, keyStr, flag, 0);
         bool ret = FPDFText_FindNext(findHandle);
-        if (ret) {
-            foundIdx = FPDFText_GetSchResultIndex(findHandle);
-        }
+        if (ret) foundIdx = FPDFText_GetSchResultIndex(findHandle);
         FPDFText_FindClose(findHandle);
     }
     env->ReleaseStringChars(key, keyStr);
@@ -920,9 +914,7 @@ JNI_FUNC(jobject, PdfiumCore, nativePageCoordsToDevice)(JNI_ARGS, jlong pagePtr,
 static jlong loadTextPageInternal(JNIEnv *env, FPDF_PAGE page) {
     try {
         FPDF_TEXTPAGE text = FPDFText_LoadPage(page);
-        if (page == nullptr) {
-            throw std::runtime_error("Loaded page is null");
-        }
+        if (page == nullptr) throw std::runtime_error("Loaded page is null");
         return reinterpret_cast<jlong>(text);
     } catch (const char *msg) {
         LOGE("%s", msg);

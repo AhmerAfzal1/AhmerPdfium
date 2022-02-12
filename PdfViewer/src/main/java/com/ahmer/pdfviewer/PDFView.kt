@@ -1019,9 +1019,6 @@ class PDFView(context: Context?, set: AttributeSet?) : RelativeLayout(context, s
         if (isRecycled || mState != State.SHOWN) return
         // Moves the canvas before drawing any element
 
-        //val mCurrentOffsetX = mCurrentOffsetX
-        //val mCurrentOffsetY = mCurrentOffsetY
-
         canvas.translate(mCurrentOffsetX, mCurrentOffsetY)
         // Draws thumbnails
         for (mPart in cacheManager!!.getThumbnails()) {
