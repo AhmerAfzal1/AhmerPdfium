@@ -3,6 +3,7 @@ package com.ahmer.pdfviewer.link
 import android.content.ActivityNotFoundException
 import android.content.Intent
 import android.net.Uri
+import android.os.Build
 import android.util.Log
 import com.ahmer.pdfviewer.PDFView
 import com.ahmer.pdfviewer.model.LinkTapEvent
@@ -19,7 +20,12 @@ class DefaultLinkHandler(private val pdfView: PDFView) : LinkHandler {
 
     private fun handleUri(uri: String) {
         val mParsedUri = Uri.parse(uri)
-        val mIntent = Intent(Intent.ACTION_VIEW, mParsedUri)
+        val mIntent = Intent(Intent.ACTION_VIEW, mParsedUri).apply {
+            flags = Intent.FLAG_ACTIVITY_CLEAR_TOP or Intent.FLAG_ACTIVITY_SINGLE_TOP
+            if (Build.VERSION.SDK_INT < Build.VERSION_CODES.N || Build.VERSION.SDK_INT >= Build.VERSION_CODES.P) {
+                addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+            }
+        }
         val mTitle = "Select app for open link"
 
         // Try to invoke the intent.
