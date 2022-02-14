@@ -519,6 +519,7 @@ class PDFView(context: Context?, set: AttributeSet?) : RelativeLayout(context, s
     fun loadComplete(pdfFile: PdfFile) {
         mState = State.LOADED
         this.pdfFile = pdfFile
+        if (mRenderingHandlerThread == null) return
         if (mRenderingHandlerThread?.isAlive != true) mRenderingHandlerThread?.start()
         renderingHandler = mRenderingHandlerThread?.looper?.let {
             RenderingHandler(it, this)
@@ -973,6 +974,11 @@ class PDFView(context: Context?, set: AttributeSet?) : RelativeLayout(context, s
         mAnimationManager?.computeFling()
     }
 
+    override fun onAttachedToWindow() {
+        super.onAttachedToWindow()
+        if (mRenderingHandlerThread == null) mRenderingHandlerThread = HandlerThread("PDF renderer")
+    }
+
     override fun onDetachedFromWindow() {
         recycle()
         if (mRenderingHandlerThread != null) {
@@ -1325,7 +1331,6 @@ class PDFView(context: Context?, set: AttributeSet?) : RelativeLayout(context, s
     }
 
     private fun initPDFView() {
-        mRenderingHandlerThread = HandlerThread("PDF renderer")
         if (isInEditMode) return
         mPdfiumCore = PdfiumCore(context)
         cacheManager = CacheManager()
