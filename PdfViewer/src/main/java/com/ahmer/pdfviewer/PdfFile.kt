@@ -16,7 +16,7 @@ class PdfFile(
     private val pdfiumCore: PdfiumCore,
     private val pdfDocument: PdfDocument,
     private val fitPolicy: FitPolicy,
-    private val size: Size,
+    size: Size,
     /**
      * The pages the user want to display in order
      * (ex: 0, 2, 2, 8, 8, 1, 1, 1)
@@ -49,7 +49,7 @@ class PdfFile(
     /**
      * Original page sizes
      */
-    private val mOriginalPageSizes: MutableList<Size> = ArrayList<Size>()
+    private val mOriginalPageSizes: MutableList<Size> = ArrayList()
 
     /**
      * Calculated offsets for pages
@@ -64,7 +64,7 @@ class PdfFile(
     /**
      * Scaled page sizes
      */
-    private val mScaledPageSizes: MutableList<SizeF> = ArrayList<SizeF>()
+    private val mScaledPageSizes: MutableList<SizeF> = ArrayList()
 
     /**
      * Calculated document length (width or height, depending on swipe mode)
@@ -128,6 +128,9 @@ class PdfFile(
         return userPage
     }
 
+    /**
+     * Release native resources and opened file.
+     */
     fun dispose() {
         pdfiumCore.closeDocument(pdfDocument)
         userPages = intArrayOf()
@@ -142,6 +145,9 @@ class PdfFile(
         return if (mDocPage < 0 || userPage >= pagesCount) -1 else mDocPage
     }
 
+    /**
+     * Get table of contents (bookmarks) for given document.
+     */
     fun getBookmarks(): List<PdfDocument.Bookmark> {
         return pdfiumCore.getTableOfContents(pdfDocument)
     }
@@ -150,14 +156,9 @@ class PdfFile(
         return mDocumentLength * zoom
     }
 
-    fun getLinkAtPos(currentPage: Int, posX: Float, posY: Float): Long? {
-        return pdfiumCore.getLinkAtCoordinate(pdfDocument, currentPage, size, posX, posY)
-    }
-
-    fun getLinkTarget(lnkPtr: Long): String? {
-        return pdfiumCore.getLinkTarget(pdfDocument, lnkPtr)
-    }
-
+    /**
+     * Get metadata for given document.
+     */
     fun getMetaData(): PdfDocument.Meta {
         return pdfiumCore.getDocumentMeta(pdfDocument)
     }
@@ -180,8 +181,13 @@ class PdfFile(
         return (if (isVertical) mSize.height else mSize.width) * zoom
     }
 
-    fun getPageLinks(pageIndex: Int): List<PdfDocument.Link> {
-        return pdfiumCore.getPageLinks(pdfDocument, documentPage(pageIndex))
+    /**
+     * @return All links from given page.
+     */
+    fun getPageLinks(
+        pageIndex: Int, mSize: SizeF, posX: Float, posY: Float
+    ): List<PdfDocument.Link> {
+        return pdfiumCore.getPageLinks(pdfDocument, documentPage(pageIndex), mSize, posX, posY)
     }
 
     /**
@@ -191,14 +197,23 @@ class PdfFile(
         return if (documentPage(pageIndex) < 0) 0f else mPageOffsets[pageIndex] * zoom
     }
 
+    /**
+     * Get page rotation in degrees.
+     */
     fun getPageRotation(pageIndex: Int): Int {
         return pdfiumCore.getPageRotation(pageIndex)
     }
 
+    /**
+     * Get page size.
+     */
     fun getPageSize(pageIndex: Int): SizeF {
         return if (documentPage(pageIndex) < 0) SizeF(0f, 0f) else mScaledPageSizes[pageIndex]
     }
 
+    /**
+     * Get native size of page in pixels.
+     */
     fun getPageSizeNative(index: Int): Size {
         return pdfiumCore.getPageSize(pdfDocument, index)
     }
@@ -224,10 +239,17 @@ class PdfFile(
         }
     }
 
+    /**
+     * Get total number of pages in document
+     */
     fun getTotalPagesCount(): Int {
         return pdfiumCore.getPageCount(pdfDocument)
     }
 
+    /**
+     * @return mapped coordinates
+     * @see PdfiumCore.mapPageCoordsToDevice
+     */
     fun mapRectToDevice(
         pageIndex: Int, startX: Int, startY: Int, sizeX: Int, sizeY: Int, rect: RectF
     ): RectF {
@@ -316,6 +338,12 @@ class PdfFile(
         preparePagesOffset()
     }
 
+    /**
+     * Render page fragment on [Bitmap]. This method allows to render annotations.
+     * Page must be opened before rendering.
+     *
+     * @see PdfiumCore.renderPageBitmap
+     */
     fun renderPageBitmap(bitmap: Bitmap, pageIndex: Int, bounds: Rect, annotation: Boolean) {
         val docPage = documentPage(pageIndex)
         pdfiumCore.renderPageBitmap(

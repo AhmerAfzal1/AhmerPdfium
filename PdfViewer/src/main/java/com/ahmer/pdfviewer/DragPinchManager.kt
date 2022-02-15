@@ -1,6 +1,7 @@
 package com.ahmer.pdfviewer
 
 import android.graphics.PointF
+import android.util.Log
 import android.view.GestureDetector
 import android.view.GestureDetector.OnDoubleTapListener
 import android.view.MotionEvent
@@ -10,6 +11,7 @@ import android.view.View
 import android.view.View.OnTouchListener
 import com.ahmer.pdfium.util.SizeF
 import com.ahmer.pdfviewer.model.LinkTapEvent
+import com.ahmer.pdfviewer.util.PdfConstants
 import com.ahmer.pdfviewer.util.PdfConstants.Pinch.MAXIMUM_ZOOM
 import com.ahmer.pdfviewer.util.PdfConstants.Pinch.MINIMUM_ZOOM
 import kotlin.math.abs
@@ -70,10 +72,16 @@ internal class DragPinchManager(
             mPageY = mPdfFile.getSecondaryPageOffset(mPage, pdfView.getZoom()).toInt()
             mPageX = mPdfFile.getPageOffset(mPage, pdfView.getZoom()).toInt()
         }
-        for (mLink in mPdfFile.getPageLinks(mPage)) {
+
+        val mLinkPosX: Float = abs(mMappedX - mPageX)
+        val mLinkPosY: Float = abs(mMappedY - mPageY)
+        for (mLink in mPdfFile.getPageLinks(mPage, mPageSize, mLinkPosX, mLinkPosY)) {
+            Log.v(PdfConstants.TAG, "Link Bound: ${mLink.bounds}")
+            Log.v(PdfConstants.TAG, "Link Uri: ${mLink.uri}")
+            Log.v(PdfConstants.TAG, "Link Page: ${mLink.destPageIndex}")
             val mMapped = mPdfFile.mapRectToDevice(
                 mPage, mPageX, mPageY, mPageSize.width.toInt(),
-                mPageSize.height.toInt(), mLink.bounds
+                mPageSize.height.toInt(), mLink.bounds!!
             )
             mMapped.sort()
             if (mMapped.contains(mMappedX, mMappedY)) {
