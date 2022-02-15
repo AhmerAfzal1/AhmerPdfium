@@ -1,14 +1,15 @@
 package com.ahmer.pdfviewer.link
 
 import android.content.ActivityNotFoundException
+import android.content.Context
 import android.content.Intent
 import android.net.Uri
 import android.os.Build
 import android.util.Log
+import android.widget.Toast
 import com.ahmer.pdfviewer.PDFView
 import com.ahmer.pdfviewer.model.LinkTapEvent
 import com.ahmer.pdfviewer.util.PdfConstants
-import io.ahmer.utils.utilcode.ToastUtils
 
 class DefaultLinkHandler(private val pdfView: PDFView) : LinkHandler {
 
@@ -19,8 +20,9 @@ class DefaultLinkHandler(private val pdfView: PDFView) : LinkHandler {
     }
 
     private fun handleUri(uri: String) {
-        val mParsedUri = Uri.parse(uri)
-        val mIntent = Intent(Intent.ACTION_VIEW, mParsedUri).apply {
+        val mContext: Context = pdfView.context
+        val mParsedUri: Uri = Uri.parse(uri)
+        val mIntent: Intent = Intent(Intent.ACTION_VIEW, mParsedUri).apply {
             flags = Intent.FLAG_ACTIVITY_CLEAR_TOP or Intent.FLAG_ACTIVITY_SINGLE_TOP
             if (Build.VERSION.SDK_INT < Build.VERSION_CODES.N || Build.VERSION.SDK_INT >= Build.VERSION_CODES.P) {
                 addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
@@ -30,11 +32,11 @@ class DefaultLinkHandler(private val pdfView: PDFView) : LinkHandler {
 
         // Try to invoke the intent.
         try {
-            pdfView.context.startActivity(Intent.createChooser(mIntent, mTitle))
+            mContext.startActivity(Intent.createChooser(mIntent, mTitle))
         } catch (e: ActivityNotFoundException) {
             // Define what your app should do if no activity can handle the intent.
             Log.e(PdfConstants.TAG, e.message ?: "NULL")
-            ToastUtils.showLong("No apps can open for this link")
+            Toast.makeText(mContext, "No apps can open for this link", Toast.LENGTH_LONG).show()
         }
     }
 
