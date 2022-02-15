@@ -335,13 +335,6 @@ class PDFView(context: Context?, set: AttributeSet?) : RelativeLayout(context, s
         return pdfFile?.getMetaData()
     }
 
-    /**
-     * Will be empty until document is loaded
-     */
-    fun getLinks(page: Int): List<PdfDocument.Link> {
-        return pdfFile?.getPageLinks(page) ?: emptyList()
-    }
-
     fun getMaxZoom(): Float {
         return mMaxZoom
     }
@@ -1105,8 +1098,8 @@ class PDFView(context: Context?, set: AttributeSet?) : RelativeLayout(context, s
      * Use stream as the pdf source. Stream will be written to bytearray,
      * because native code does not support Java Streams
      */
-    fun fromStream(stream: InputStream): Configurator {
-        return Configurator(InputStreamSource(stream))
+    fun fromStream(stream: InputStream?): Configurator {
+        return Configurator(InputStreamSource(stream!!))
     }
 
     /**

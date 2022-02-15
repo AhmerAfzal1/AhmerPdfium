@@ -8,6 +8,7 @@ import android.os.ParcelFileDescriptor
 import android.util.Log
 import android.view.Surface
 import com.ahmer.pdfium.util.Size
+import com.ahmer.pdfium.util.SizeF
 import java.io.IOException
 
 class PdfiumCore(context: Context) {
@@ -40,8 +41,8 @@ class PdfiumCore(context: Context) {
     ): Long
 
     external fun nativeGetCharIndexAtCoord(
-        pagePtr: Long, width: Double, height: Double, textPtr: Long, posX: Double,
-        posY: Double, tolX: Double, tolY: Double
+        pagePtr: Long, width: Int, height: Int, textPtr: Long, posX: Int, posY: Int,
+        tolX: Double, tolY: Double
     ): Int
 
     external fun nativeGetCharPos(
@@ -52,10 +53,9 @@ class PdfiumCore(context: Context) {
     external fun nativeGetFindIdx(searchPtr: Long): Int
     external fun nativeGetFindLength(searchPtr: Long): Int
     external fun nativeGetLinkAtCoord(
-        pagePtr: Long, width: Double, height: Double, posX: Double, posY: Double
+        pagePtr: Long, width: Int, height: Int, posX: Int, posY: Int
     ): Long
 
-    external fun nativeGetLinkTarget(docPtr: Long, linkPtr: Long): String?
     external fun nativeGetMixedLooseCharPos(
         pagePtr: Long, offsetY: Int, offsetX: Int, width: Int, height: Int,
         pt: RectF?, tid: Long, index: Int, loose: Boolean
@@ -326,7 +326,6 @@ class PdfiumCore(context: Context) {
      * Render page fragment on [Bitmap]. This method allows to render annotations.
      * Page must be opened before rendering.
      *
-     *
      * For more info see {PdfiumCore#renderPageBitmap(Bitmap, int, int, int, int, int, boolean)}
      */
     fun renderPageBitmap(
@@ -411,9 +410,7 @@ class PdfiumCore(context: Context) {
         bookmark.pageIdx = nativeGetBookmarkDestIndex(doc.mNativeDocPtr, bookmarkPtr)
         tree.add(bookmark)
         val child = nativeGetFirstChildBookmark(doc.mNativeDocPtr, bookmarkPtr)
-        if (child != null) {
-            recursiveGetBookmark(bookmark.children, doc, child)
-        }
+        if (child != null) recursiveGetBookmark(bookmark.children, doc, child)
         val sibling = nativeGetSiblingBookmark(doc.mNativeDocPtr, bookmarkPtr)
         sibling?.let { recursiveGetBookmark(tree, doc, it) }
     }
@@ -421,20 +418,27 @@ class PdfiumCore(context: Context) {
     /**
      * Get all links from given page
      */
-    fun getPageLinks(doc: PdfDocument, pageIndex: Int): List<PdfDocument.Link> {
+    fun getPageLinks(doc: PdfDocument, pageIndex: Int, size: SizeF, posX: Float, posY: Float):
+            List<PdfDocument.Link> {
         synchronized(lock) {
-            val links: MutableList<PdfDocument.Link> = ArrayList()
-            val nativePagePtr: Long = doc.mNativePagesPtr[pageIndex] ?: return links
-            val linkPtrs = nativeGetPageLinks(nativePagePtr)
-            for (linkPtr in linkPtrs) {
-                val index = nativeGetDestPageIndex(doc.mNativeDocPtr, linkPtr)
-                val uri = nativeGetLinkURI(doc.mNativeDocPtr, linkPtr)
-                val rect = nativeGetLinkRect(linkPtr)
-                if (rect != null && index != null && uri != null) {
-                    links.add(PdfDocument.Link(rect, index, uri))
+            val mLinks: MutableList<PdfDocument.Link> = ArrayList()
+            val mPagePtr: Long = doc.mNativePagesPtr[pageIndex] ?: return mLinks
+            val mPageLinks: LongArray = nativeGetPageLinks(mPagePtr)
+            val mLinkAtCoordinate: Long = nativeGetLinkAtCoord(
+                mPagePtr, size.width.toInt(), size.height.toInt(), posX.toInt(), posY.toInt()
+            )
+            for (linkPtr in mPageLinks) {
+                val mIndex: Int? = nativeGetDestPageIndex(doc.mNativeDocPtr, mLinkAtCoordinate)
+                val mUri: String? = nativeGetLinkURI(doc.mNativeDocPtr, linkPtr)
+                val mBound: RectF? = nativeGetLinkRect(linkPtr)
+                if (mUri == null) {
+                    val uri: String? = nativeGetLinkURI(doc.mNativeDocPtr, mLinkAtCoordinate)
+                    mLinks.add(PdfDocument.Link(mBound, mIndex, uri))
+                } else {
+                    mLinks.add(PdfDocument.Link(mBound, mIndex, mUri))
                 }
             }
-            return links
+            return mLinks
         }
     }
 
@@ -496,19 +500,5 @@ class PdfiumCore(context: Context) {
      */
     fun getPageRotation(pageIndex: Int): Int {
         return nativeGetPageRotation(pageIndex.toLong())
-    }
-
-    fun getLinkAtCoordinate(
-        doc: PdfDocument, pageIndex: Int, size: Size, posX: Float, posY: Float
-    ): Long? {
-        return doc.mNativePagesPtr[pageIndex]?.let {
-            nativeGetLinkAtCoord(
-                it, size.width.toDouble(), size.height.toDouble(), posX.toDouble(), posY.toDouble()
-            )
-        }
-    }
-
-    fun getLinkTarget(doc: PdfDocument, lnkPtr: Long): String? {
-        return nativeGetLinkTarget(doc.mNativeDocPtr, lnkPtr)
     }
 }

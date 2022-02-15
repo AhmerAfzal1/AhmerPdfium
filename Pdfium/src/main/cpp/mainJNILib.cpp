@@ -54,9 +54,11 @@ struct rgb {
 class DocumentFile {
 public:
     FPDF_DOCUMENT pdfDocument = nullptr;
+
     DocumentFile() {
         initLibraryIfNeed();
     }
+
     ~DocumentFile();
 };
 
@@ -415,40 +417,16 @@ JNI_FUNC(void, PdfiumCore, nativeRenderPage)(JNI_ARGS, jlong pagePtr, jobject ob
     ANativeWindow_release(nativeWindow);
 }
 
-JNI_FUNC(jstring, PdfiumCore, nativeGetLinkTarget)(JNI_ARGS, jlong docPtr, jlong linkPtr) {
-    auto *doc = reinterpret_cast<DocumentFile *>(docPtr);
-    auto link = reinterpret_cast<FPDF_LINK>(linkPtr);
-    FPDF_DEST dest = FPDFLink_GetDest(doc->pdfDocument, link);
-    if (dest != nullptr) {
-        long pageIdx = FPDFDest_GetDestPageIndex(doc->pdfDocument, dest);
-        char buffer[16] = {0};
-        buffer[0] = '@';
-        sprintf(buffer + 1, "%d", (int) pageIdx);
-        return env->NewStringUTF(buffer);
-    }
-    FPDF_ACTION action = FPDFLink_GetAction(link);
-    if (action == nullptr) {
-        return nullptr;
-    }
-    size_t bufferLen = FPDFAction_GetURIPath(doc->pdfDocument, action, nullptr, 0);
-    if (bufferLen <= 0) {
-        return nullptr;
-    }
-    std::string uri;
-    FPDFAction_GetURIPath(doc->pdfDocument, action, WriteInto(&uri, bufferLen), bufferLen);
-    return env->NewStringUTF(uri.c_str());
-}
-
-JNI_FUNC(jlong, PdfiumCore, nativeGetLinkAtCoord)(JNI_ARGS, jlong pagePtr, jdouble width,
-                                                  jdouble height, jdouble posX, jdouble posY) {
+JNI_FUNC(jlong, PdfiumCore, nativeGetLinkAtCoord)(JNI_ARGS, jlong pagePtr, jint width,
+                                                  jint height, jint posX, jint posY) {
     double px, py;
     FPDF_DeviceToPage((FPDF_PAGE) pagePtr, 0, 0, width, height, 0, posX, posY, &px, &py);
     return (jlong) FPDFLink_GetLinkAtPoint((FPDF_PAGE) pagePtr, px, py);
 }
 
-JNI_FUNC(jint, PdfiumCore, nativeGetCharIndexAtCoord)(JNI_ARGS, jlong pagePtr, jdouble width,
-                                                      jdouble height, jlong textPtr, jdouble posX,
-                                                      jdouble posY, jdouble tolX, jdouble tolY) {
+JNI_FUNC(jint, PdfiumCore, nativeGetCharIndexAtCoord)(JNI_ARGS, jlong pagePtr, jint width,
+                                                      jint height, jlong textPtr, jint posX,
+                                                      jint posY, jdouble tolX, jdouble tolY) {
     double px, py;
     FPDF_DeviceToPage((FPDF_PAGE) pagePtr, 0, 0, width, height, 0, posX, posY, &px, &py);
     return FPDFText_GetCharIndexAtPos((FPDF_TEXTPAGE) textPtr, px, py, tolX, tolY);
@@ -456,7 +434,7 @@ JNI_FUNC(jint, PdfiumCore, nativeGetCharIndexAtCoord)(JNI_ARGS, jlong pagePtr, j
 
 JNI_FUNC(jstring, PdfiumCore, nativeGetText)(JNI_ARGS, jlong textPtr) {
     int len = FPDFText_CountChars((FPDF_TEXTPAGE) textPtr);
-//unsigned short* buffer = malloc(len*sizeof(unsigned short));
+    //unsigned short* buffer = malloc(len*sizeof(unsigned short));
     auto *buffer = new unsigned short[len + 1];
     FPDFText_GetText((FPDF_TEXTPAGE) textPtr, 0, len, buffer);
     jstring ret = env->NewString(buffer, len);
@@ -621,8 +599,8 @@ JNI_FUNC(jobject, PdfiumCore, nativeGetDestPageIndex)(JNI_ARGS, jlong docPtr, jl
     if (dest == nullptr) {
         return nullptr;
     }
-    unsigned long index = FPDFDest_GetDestPageIndex(doc->pdfDocument, dest);
-    return NewInteger(env, (jint) index);
+    long pageIdx = FPDFDest_GetDestPageIndex(doc->pdfDocument, dest);
+    return NewInteger(env, (jint) pageIdx);
 }
 
 JNI_FUNC(jstring, PdfiumCore, nativeGetLinkURI)(JNI_ARGS, jlong docPtr, jlong linkPtr) {

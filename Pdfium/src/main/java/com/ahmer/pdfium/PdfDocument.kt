@@ -29,7 +29,7 @@ class PdfDocument {
         }
     }
 
-    data class Link(val bounds: RectF, val destPageIdx: Int, val uri: String)
+    data class Link(val bounds: RectF?, val destPageIndex: Int?, val uri: String?)
 
     data class Meta(
         var title: String? = null,

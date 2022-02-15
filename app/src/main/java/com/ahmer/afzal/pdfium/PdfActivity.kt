@@ -432,7 +432,7 @@ class PdfActivity : AppCompatActivity(), OnPageChangeListener, OnLoadCompleteLis
     private fun init() {
         try {
             if (intent.getBooleanExtra(Constants.PDF_IS_NORMAL, true)) {
-                mPdfFile = Constants.PDF_SAMPLE_FILE
+                mPdfFile = "example.pdf"
                 mPassword = "5632"
             } else {
                 mPdfFile = Constants.PDF_SAMPLE_FILE

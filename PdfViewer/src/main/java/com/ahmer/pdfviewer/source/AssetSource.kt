@@ -11,9 +11,7 @@ class AssetSource(private val assetName: String) : DocumentSource {
 
     @Throws(IOException::class)
     override fun createDocument(
-        context: Context,
-        core: PdfiumCore,
-        password: String?
+        context: Context, core: PdfiumCore, password: String?
     ): PdfDocument {
         val mFile = PdfFileUtils.fileFromAsset(context, assetName)
         val mFileDescriptor = ParcelFileDescriptor.open(mFile, ParcelFileDescriptor.MODE_READ_ONLY)
