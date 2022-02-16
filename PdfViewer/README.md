@@ -1,28 +1,27 @@
 [![License](https://img.shields.io/badge/License-Apache%202.0-blue.svg)](https://opensource.org/licenses/Apache-2.0)
 
-# AhmerPdfViewer
+# PdfViewer
 
 Android view for displaying PDFs rendered with PdfiumAndroid from API 19
 
 ## Include PDFView in your layout
 
-``` xml
-<com.ahmer.afzal.pdfviewer.PDFView
-        android:id="@+id/pdfView"
-        android:layout_width="match_parent"
-        android:layout_height="match_parent"/>
+```xml
+
+<com.ahmer.pdfviewer.PDFView android:id="@+id/pdfView" android:layout_width="match_parent"
+    android:layout_height="match_parent" />
 ```
 
 ## Load a PDF file
 
 All available options with default values:
 
-``` java
+```kotlin
 pdfView.fromUri(Uri)
 or
 pdfView.fromFile(File)
 or
-pdfView.fromBytes(byte[])
+pdfView.fromBytes(ByteArray)
 or
 pdfView.fromStream(InputStream) // stream is written to bytearray - native code cannot use Java Streams
 or
@@ -33,7 +32,7 @@ pdfView.fromAsset(String)
     .enableSwipe(true) // allows to block changing pages using swipe
     .swipeHorizontal(false)
     .enableDoubletap(true)
-    .defaultPage(0)     
+    .defaultPage(0)
     .onDraw(onDrawListener) // allows to draw something on the current page, usually visible in the middle of the screen    
     .onDrawAll(onDrawListener) // allows to draw something on all pages, separately for every page. Called only for visible pages
     .onLoad(onLoadCompleteListener) // called after document is loaded and starts to be rendered
@@ -55,7 +54,7 @@ pdfView.fromAsset(String)
     .nightMode(false) // toggle night mode
     .pageSnap(true) // snap pages to screen boundaries
     .pageFling(false) // make a fling change only a single page like ViewPager
-    .load();
+    .load()
 ```
 
 * `pages` is optional, it allows you to filter and order the pages of the PDF as you need
@@ -75,22 +74,22 @@ argument (`new DefaultScrollHandle(this, true)`), handle can be placed left or t
 
 You can also create custom scroll handles, just implement **ScrollHandle** interface. All methods
 are documented as Javadoc comments on
-interface [source](https://github.com/AhmerAfzal1/AhmerPDF/blob/master/AhmerPDFViewer/src/main/java/com/ahmer/afzal/pdfviewer/scroll/ScrollHandle.java)
+interface [source](https://github.com/AhmerAfzal1/AhmerPdfium/blob/master/PdfViewer/src/main/java/com/ahmer/pdfviewer/scroll/ScrollHandle.kt)
 .
 
 ## Document sources
 
 _Document sources_, which are just providers for PDF documents. Every provider implements **
 DocumentSource** interface. Predefined providers are available in **
-com.ahmer.afzal.pdfviewer.source.DocumentSource** package and can be used as samples for creating
-custom ones.
+com.ahmer.pdfviewer.source.DocumentSource** package and can be used as samples for creating custom
+ones.
 
 Predefined providers can be used with shorthand methods:
 
-```
+```kotlin
 pdfView.fromUri(Uri)
 pdfView.fromFile(File)
-pdfView.fromBytes(byte[])
+pdfView.fromBytes(BtyeArray)
 pdfView.fromStream(InputStream)
 pdfView.fromAsset(String)
 ```
@@ -105,7 +104,7 @@ it in default application.
 
 You can also create custom link handlers, just implement **LinkHandler** interface and set it using
 `Configurator#linkHandler(LinkHandler)` method. Take a look
-at [DefaultLinkHandler](https://github.com/AhmerAfzal1/AhmerPDF/blob/master/AhmerPDFViewer/src/main/java/com/ahmer/afzal/pdfviewer/scroll/DefaultScrollHandle.java)
+at [DefaultLinkHandler](https://github.com/AhmerAfzal1/AhmerPdfium/blob/master/PdfViewer/src/main/java/com/ahmer/pdfviewer/scroll/DefaultScrollHandle.kt)
 source to implement custom behavior.
 
 ## Pages fit policy
@@ -135,10 +134,10 @@ If you are between mid and max levels, double tapping causes zooming to max and 
 
 Zoom levels can be changed using following methods:
 
-``` java
-void setMinZoom(float zoom);
-void setMidZoom(float zoom);
-void setMaxZoom(float zoom);
+```kotlin
+fun setMinZoom(minZoom: Float)
+fun setMidZoom(midZoom: Float)
+fun setMaxZoom(maxZoom: Float)
 ```
 
 ### Why I cannot open PDF from URL?
@@ -157,13 +156,12 @@ sample app
 Use `FitPolicy.WIDTH` policy or add following snippet when you want to fit desired page in document
 with different page sizes:
 
-``` java
-Configurator.onRender(new OnRenderListener() {
-    @Override
-    public void onInitiallyRendered(int pages, float pageWidth, float pageHeight) {
-        pdfView.fitToWidth(pageIndex);
+```kotlin
+onRender(object : OnRenderListener {
+    override fun onInitiallyRendered(nbPages: Int) {
+        pdfView.fitToWidth(pageIndex)
     }
-});
+})
 ```
 
 ### How can I scroll through single pages like a ViewPager?
@@ -171,7 +169,7 @@ Configurator.onRender(new OnRenderListener() {
 You can use a combination of the following settings to get scroll and fling behaviour similar to a
 ViewPager:
 
-``` java
+```kotlin
 .swipeHorizontal(true)
 .pageSnap(true)
 .autoSpacing(true)

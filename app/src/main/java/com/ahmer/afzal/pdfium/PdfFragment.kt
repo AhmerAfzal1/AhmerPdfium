@@ -311,12 +311,7 @@ class PdfFragment : Fragment(R.layout.fragment_pdf), OnPageChangeListener, OnLoa
 
     private fun printBookmarksTree(tree: List<PdfDocument.Bookmark>, sep: String) {
         for (b in tree) {
-            Log.v(
-                Constants.LOG_TAG,
-                String.format(
-                    Locale.getDefault(), "Bookmark %s %s, Page %d", sep, b.title, b.pageIdx
-                )
-            )
+            Log.v(Constants.LOG_TAG, "Bookmark $sep ${b.title}, Page: ${b.pageIdx}")
             if (b.hasChildren()) {
                 printBookmarksTree(b.children, "$sep-")
             }
@@ -325,8 +320,7 @@ class PdfFragment : Fragment(R.layout.fragment_pdf), OnPageChangeListener, OnLoa
 
     override fun onPageChanged(page: Int, pageCount: Int) {
         mCurrentPage = page
-        val title = String.format(Locale.getDefault(), "%s %s of %s", "Page", page + 1, pageCount)
-        mBinding.toolbar.title = title
+        mBinding.toolbar.title = "Page ${page + 1} of $pageCount"
     }
 
     override fun loadComplete(nbPages: Int) {
