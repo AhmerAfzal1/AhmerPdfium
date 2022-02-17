@@ -11,7 +11,7 @@ import com.ahmer.pdfium.util.Size
 import com.ahmer.pdfium.util.SizeF
 import java.io.IOException
 
-class PdfiumCore(context: Context) {
+class PdfiumCore(mContext: Context) {
 
     companion object {
         val lock = Any()
@@ -28,9 +28,11 @@ class PdfiumCore(context: Context) {
      * Context needed to get screen density
      */
     init {
-        mCurrentDpi = context.resources.displayMetrics.densityDpi
+        mCurrentDpi = mContext.resources.displayMetrics.densityDpi
         Log.d(TAG, "Starting AhmerPdfium...")
     }
+
+    val context: Context = mContext
 
     external fun nativeCountRects(textPtr: Long, st: Int, ed: Int): Int
     external fun nativeFindTextPage(pagePtr: Long, key: String?, flag: Int): Int

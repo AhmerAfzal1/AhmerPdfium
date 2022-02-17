@@ -27,7 +27,7 @@ import com.ahmer.pdfviewer.link.DefaultLinkHandler
 import com.ahmer.pdfviewer.listener.*
 import com.ahmer.pdfviewer.scroll.DefaultScrollHandle
 import com.ahmer.pdfviewer.util.FitPolicy
-import com.ahmer.pdfviewer.util.PdfFileUtils
+import com.ahmer.pdfviewer.util.PdfUtils
 import com.google.android.material.appbar.MaterialToolbar
 import dagger.hilt.android.AndroidEntryPoint
 import io.ahmer.utils.utilcode.*
@@ -238,7 +238,7 @@ class PdfActivity : AppCompatActivity(), OnPageChangeListener, OnLoadCompleteLis
             tvModifyDate.text = meta.modDate
             tvCreator.text = meta.creator
             tvProducer.text = meta.producer
-            val file = mPdfFile?.let { PdfFileUtils.fileFromAsset(this@PdfActivity, it) }
+            val file = mPdfFile?.let { PdfUtils.fileFromAsset(this@PdfActivity, it) }
             tvFileSize.text = FileUtils.getSize(file)
             tvFilePath.text = file?.path
             tvOk.setOnClickListener {
