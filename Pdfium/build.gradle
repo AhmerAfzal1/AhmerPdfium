@@ -111,7 +111,7 @@ publishing {
             pom {
                 name = 'AhmerPdfium'
                 description = 'Ahmer Pdfium Library for Android (API 19 binding)'
-                url = 'https://github.com/AhmerAfzal1/AhmerPDF'
+                url = 'https://github.com/AhmerAfzal1/AhmerPdfium'
                 packaging = 'aar'
                 licenses {
                     license {
@@ -128,9 +128,9 @@ publishing {
                 }
                 // Version control info, if you're using GitHub, follow the format as seen here
                 scm {
-                    connection = 'scm:git:git://github.com:AhmerAfzal1/AhmerPDF.git'
-                    developerConnection = 'scm:git:ssh://github.com/AhmerAfzal1/AhmerPDF.git'
-                    url = 'https://github.com/AhmerAfzal1/AhmerPDF/tree/master'
+                    connection = 'scm:git:git://github.com:AhmerAfzal1/AhmerPdfium.git'
+                    developerConnection = 'scm:git:ssh://github.com/AhmerAfzal1/AhmerPdfium.git'
+                    url = 'https://github.com/AhmerAfzal1/AhmerPdfium/tree/master'
                 }
             }
         }
