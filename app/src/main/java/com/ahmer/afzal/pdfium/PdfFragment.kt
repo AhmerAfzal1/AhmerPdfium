@@ -12,8 +12,11 @@ import android.view.inputmethod.InputMethodManager
 import android.widget.*
 import androidx.appcompat.app.AppCompatActivity
 import androidx.appcompat.widget.SearchView
+import androidx.core.view.MenuHost
+import androidx.core.view.MenuProvider
 import androidx.fragment.app.Fragment
 import androidx.fragment.app.viewModels
+import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.lifecycleScope
 import com.ahmer.afzal.pdfium.databinding.FragmentPdfBinding
 import com.ahmer.pdfium.PdfDocument
@@ -31,7 +34,8 @@ import kotlinx.coroutines.launch
 import java.util.*
 
 @AndroidEntryPoint
-class PdfFragment : Fragment(R.layout.fragment_pdf), OnPageChangeListener, OnLoadCompleteListener {
+class PdfFragment : Fragment(R.layout.fragment_pdf), MenuProvider, OnPageChangeListener,
+    OnLoadCompleteListener {
 
     private lateinit var mBinding: FragmentPdfBinding
     private lateinit var mMenu: Menu
@@ -66,7 +70,8 @@ class PdfFragment : Fragment(R.layout.fragment_pdf), OnPageChangeListener, OnLoa
             mIsViewHorizontal = mViewModel.flow.first().isViewHorizontal
             mSpacing = mViewModel.flow.first().spacing
         }
-        setHasOptionsMenu(true)
+        val menuHost: MenuHost = requireActivity()
+        menuHost.addMenuProvider(this, viewLifecycleOwner, Lifecycle.State.RESUMED)
         val mMenuInfo = mMenu.findItem(R.id.menuInfo)
         val mMenuJumpTo = mMenu.findItem(R.id.menuJumpTo)
         val mMenuNightMode = mMenu.findItem(R.id.menuNightMode)
@@ -332,8 +337,8 @@ class PdfFragment : Fragment(R.layout.fragment_pdf), OnPageChangeListener, OnLoa
         mMenu.findItem(R.id.menuNightMode).isEnabled = true
     }
 
-    override fun onCreateOptionsMenu(menu: Menu, inflater: MenuInflater) {
-        inflater.inflate(R.menu.pdf, menu)
+    override fun onCreateMenu(menu: Menu, menuInflater: MenuInflater) {
+        menuInflater.inflate(R.menu.pdf, menu)
         val searchItem = menu.findItem(R.id.menuSearch)
         mSearchView = searchItem.actionView as SearchView
         val pendingSearchQuery = mViewModel.searchDescription.value
@@ -348,8 +353,8 @@ class PdfFragment : Fragment(R.layout.fragment_pdf), OnPageChangeListener, OnLoa
         }
     }
 
-    override fun onOptionsItemSelected(item: MenuItem): Boolean {
-        return when (item.itemId) {
+    override fun onMenuItemSelected(menuItem: MenuItem): Boolean {
+        return when (menuItem.itemId) {
             R.id.menuNightMode -> {
                 if (!mIsNightMode) {
                     mIsNightMode = true
@@ -403,7 +408,7 @@ class PdfFragment : Fragment(R.layout.fragment_pdf), OnPageChangeListener, OnLoa
                 showMoreInfoDialog(mPdfView)
                 true
             }
-            else -> super.onOptionsItemSelected(item)
+            else -> false
         }
     }
 
