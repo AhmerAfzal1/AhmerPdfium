@@ -54,6 +54,8 @@ struct rgb {
 class DocumentFile {
 public:
     FPDF_DOCUMENT pdfDocument = nullptr;
+public:
+    jbyte *cDataCopy = nullptr;
 
     DocumentFile() {
         initLibraryIfNeed();
@@ -65,6 +67,10 @@ public:
 DocumentFile::~DocumentFile() {
     if (pdfDocument != nullptr) {
         FPDF_CloseDocument(pdfDocument);
+    }
+    if (cDataCopy != nullptr) {
+        free(cDataCopy);
+        cDataCopy = nullptr;
     }
     destroyLibraryIfNeed();
 }
@@ -224,7 +230,7 @@ JNI_FUNC(jlong, PdfiumCore, nativeOpenMemDocument)(JNI_ARGS, jbyteArray data, js
     jbyte *cData = env->GetByteArrayElements(data, nullptr);
     int size = (int) env->GetArrayLength(data);
     auto *cDataCopy = new jbyte[size];
-    memcpy(cDataCopy, cData, size);
+    env->GetByteArrayRegion(data, 0, size, cDataCopy);
     FPDF_DOCUMENT document = FPDF_LoadMemDocument(reinterpret_cast<const void *>(cDataCopy), size,
                                                   cPassword);
     env->ReleaseByteArrayElements(data, cData, JNI_ABORT);
@@ -245,6 +251,7 @@ JNI_FUNC(jlong, PdfiumCore, nativeOpenMemDocument)(JNI_ARGS, jbyteArray data, js
         return -1;
     }
     docFile->pdfDocument = document;
+    docFile->cDataCopy = cDataCopy;
     return reinterpret_cast<jlong>(docFile);
 }
 
