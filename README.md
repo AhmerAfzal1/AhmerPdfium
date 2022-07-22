@@ -9,7 +9,7 @@ Ahmer Pdfium library fork [barteksc/PdfiumAndroid](https://github.com/barteksc/P
 Add to _build.gradle_:
 
 ```groovy
-implementation 'io.github.ahmerafzal1:ahmer-pdfium:1.7.0'
+implementation 'io.github.ahmerafzal1:ahmer-pdfium:1.8.0'
 ```
 
 ## Simple example
@@ -34,7 +34,7 @@ fun openPdf(context: Context, file: File) {
         //the same method above adding 'true' as last param
         iv.setImageBitmap(bitmap)
         printInfo(pdfiumCore, pdfDocument)
-        pdfiumCore.closeDocument(pdfDocument); // important!
+        pdfiumCore.closeDocument(pdfDocument) // important!
     } catch (ex: IOException) {
         ex.printStackTrace()
     }
@@ -73,7 +73,7 @@ Android view for displaying PDFs rendered with PdfiumAndroid from API 19
 Add to _build.gradle_:
 
 ```groovy
-implementation 'io.github.ahmerafzal1:ahmer-pdfviewer:1.6.0'
+implementation 'io.github.ahmerafzal1:ahmer-pdfviewer:1.7.0'
 ```
 
 ## Include PDFView in your layout
