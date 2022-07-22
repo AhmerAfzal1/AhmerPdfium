@@ -45,17 +45,6 @@ typedef enum {
     FILEIDTYPE_CHANGING = 1
 } FPDF_FILEIDTYPE;
 
-typedef struct _FS_QUADPOINTSF {
-    FS_FLOAT x1;
-    FS_FLOAT y1;
-    FS_FLOAT x2;
-    FS_FLOAT y2;
-    FS_FLOAT x3;
-    FS_FLOAT y3;
-    FS_FLOAT x4;
-    FS_FLOAT y4;
-} FS_QUADPOINTSF;
-
 // Get the first child of |bookmark|, or the first top-level bookmark item.
 //
 //   document - handle to the document.
@@ -97,6 +86,18 @@ FPDF_EXPORT unsigned long FPDF_CALLCONV
 FPDFBookmark_GetTitle(FPDF_BOOKMARK bookmark,
                       void *buffer,
                       unsigned long buflen);
+
+// Experimental API.
+// Get the number of children of |bookmark|.
+//
+//   bookmark - handle to the bookmark.
+//
+// Returns a signed integer that represents the number of sub-items the given
+// bookmark has. If the value is positive, child items shall be shown by default
+// (open state). If the value is negative, child items shall be hidden by
+// default (closed state). Please refer to PDF 32000-1:2008, Table 153.
+// Returns 0 if the bookmark has no children or is invalid.
+FPDF_EXPORT int FPDF_CALLCONV FPDFBookmark_GetCount(FPDF_BOOKMARK bookmark);
 
 // Find the bookmark with |title| in |document|.
 //
