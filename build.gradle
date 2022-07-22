@@ -1,13 +1,13 @@
 buildscript {
-    ext.kotlin_version = "1.6.10"
+    ext.kotlin_version = "1.7.10"
     repositories {
         google()
         mavenCentral()
     }
     dependencies {
-        classpath 'com.android.tools.build:gradle:7.1.1'
-        classpath 'com.google.dagger:hilt-android-gradle-plugin:2.40.5'
-        classpath 'androidx.navigation:navigation-safe-args-gradle-plugin:2.5.0-alpha02'
+        classpath 'com.android.tools.build:gradle:7.2.1'
+        classpath 'com.google.dagger:hilt-android-gradle-plugin:2.43'
+        classpath 'androidx.navigation:navigation-safe-args-gradle-plugin:2.5.0'
         classpath "org.jetbrains.kotlin:kotlin-gradle-plugin:$kotlin_version"
         classpath "io.codearte.gradle.nexus:gradle-nexus-staging-plugin:0.30.0"
     }

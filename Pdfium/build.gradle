@@ -15,10 +15,9 @@ ext.'ossrhUsername' = System.getenv('OSSRH_USERNAME')
 ext.'ossrhPassword' = System.getenv('OSSRH_PASSWORD')
 
 android {
-    compileSdk 31
-    compileSdkVersion 31
-    buildToolsVersion '32.0.0'
-    ndkVersion '23.1.7779620'
+    compileSdk 33
+    buildToolsVersion '33.0.0'
+    ndkVersion '25.0.8775105'
 
     buildFeatures {
         viewBinding true
@@ -26,7 +25,7 @@ android {
 
     defaultConfig {
         minSdk 19
-        targetSdk 31
+        targetSdk 33
         versionCode 10
         versionName '1.7.0'
 
@@ -46,7 +45,7 @@ android {
     externalNativeBuild {
         cmake {
             path file('src/main/cpp/CMakeLists.txt')
-            version '3.18.1'
+            version '3.22.1'
         }
     }
 
