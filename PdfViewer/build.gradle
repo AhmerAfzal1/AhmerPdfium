@@ -15,7 +15,7 @@ ext.'ossrhUsername' = System.getenv('OSSRH_USERNAME')
 ext.'ossrhPassword' = System.getenv('OSSRH_PASSWORD')
 
 android {
-    compileSdk 32
+    compileSdk 33
     buildToolsVersion '33.0.0'
     ndkVersion '25.0.8775105'
 
@@ -26,8 +26,6 @@ android {
     defaultConfig {
         minSdk 19
         targetSdk 33
-        versionCode 10
-        versionName '1.7.0'
         consumerProguardFiles 'consumer-rules.pro'
     }
 
@@ -51,7 +49,7 @@ android {
 
 dependencies {
     implementation project(path: ':Pdfium')
-    implementation 'androidx.core:core-ktx:1.8.0'
+    implementation 'androidx.core:core-ktx:1.9.0'
 }
 
 tasks.withType(Javadoc).all {
