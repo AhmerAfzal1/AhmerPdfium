@@ -15,13 +15,15 @@ import android.view.View
 import android.view.Window
 import android.view.inputmethod.InputMethodManager
 import android.widget.*
+import androidx.activity.OnBackPressedDispatcher
 import androidx.activity.viewModels
 import androidx.appcompat.app.AppCompatActivity
 import androidx.appcompat.widget.SearchView
 import androidx.lifecycle.lifecycleScope
-import com.ahmer.afzal.pdfium.databinding.ActivityPdfBinding
 import com.ahmer.pdfium.PdfDocument
 import com.ahmer.pdfium.PdfPasswordException
+import com.ahmer.pdfium.R
+import com.ahmer.pdfium.databinding.ActivityPdfBinding
 import com.ahmer.pdfviewer.PDFView
 import com.ahmer.pdfviewer.link.DefaultLinkHandler
 import com.ahmer.pdfviewer.listener.*

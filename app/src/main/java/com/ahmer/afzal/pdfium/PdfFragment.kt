@@ -18,9 +18,10 @@ import androidx.fragment.app.Fragment
 import androidx.fragment.app.viewModels
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.lifecycleScope
-import com.ahmer.afzal.pdfium.databinding.FragmentPdfBinding
 import com.ahmer.pdfium.PdfDocument
 import com.ahmer.pdfium.PdfPasswordException
+import com.ahmer.pdfium.R
+import com.ahmer.pdfium.databinding.FragmentPdfBinding
 import com.ahmer.pdfviewer.PDFView
 import com.ahmer.pdfviewer.link.DefaultLinkHandler
 import com.ahmer.pdfviewer.listener.*
