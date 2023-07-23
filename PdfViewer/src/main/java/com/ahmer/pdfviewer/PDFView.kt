@@ -1,7 +1,14 @@
 package com.ahmer.pdfviewer
 
 import android.content.Context
-import android.graphics.*
+import android.graphics.Bitmap
+import android.graphics.Canvas
+import android.graphics.Color
+import android.graphics.Paint
+import android.graphics.PaintFlagsDrawFilter
+import android.graphics.PointF
+import android.graphics.Rect
+import android.graphics.RectF
 import android.net.Uri
 import android.os.HandlerThread
 import android.util.AttributeSet
@@ -14,11 +21,31 @@ import com.ahmer.pdfium.util.SizeF
 import com.ahmer.pdfviewer.exception.PageRenderingException
 import com.ahmer.pdfviewer.link.DefaultLinkHandler
 import com.ahmer.pdfviewer.link.LinkHandler
-import com.ahmer.pdfviewer.listener.*
+import com.ahmer.pdfviewer.listener.Callbacks
+import com.ahmer.pdfviewer.listener.OnDrawListener
+import com.ahmer.pdfviewer.listener.OnErrorListener
+import com.ahmer.pdfviewer.listener.OnLoadCompleteListener
+import com.ahmer.pdfviewer.listener.OnLongPressListener
+import com.ahmer.pdfviewer.listener.OnPageChangeListener
+import com.ahmer.pdfviewer.listener.OnPageErrorListener
+import com.ahmer.pdfviewer.listener.OnPageScrollListener
+import com.ahmer.pdfviewer.listener.OnRenderListener
+import com.ahmer.pdfviewer.listener.OnTapListener
 import com.ahmer.pdfviewer.model.PagePart
 import com.ahmer.pdfviewer.scroll.ScrollHandle
-import com.ahmer.pdfviewer.source.*
-import com.ahmer.pdfviewer.util.*
+import com.ahmer.pdfviewer.source.AssetSource
+import com.ahmer.pdfviewer.source.ByteArraySource
+import com.ahmer.pdfviewer.source.DocumentSource
+import com.ahmer.pdfviewer.source.FileSource
+import com.ahmer.pdfviewer.source.InputStreamSource
+import com.ahmer.pdfviewer.source.UriSource
+import com.ahmer.pdfviewer.util.FitPolicy
+import com.ahmer.pdfviewer.util.MathUtils
+import com.ahmer.pdfviewer.util.PdfConstants
+import com.ahmer.pdfviewer.util.PdfUtils
+import com.ahmer.pdfviewer.util.ScrollDir
+import com.ahmer.pdfviewer.util.SnapEdge
+import com.ahmer.pdfviewer.util.State
 import java.io.File
 import java.io.InputStream
 
@@ -295,12 +322,15 @@ class PDFView(context: Context?, set: AttributeSet?) : RelativeLayout(context, s
             mLength >= mPageLength -> {
                 SnapEdge.CENTER
             }
+
             mCurrentOffset >= mOffset -> {
                 SnapEdge.START
             }
+
             mOffset - mPageLength > mCurrentOffset - mLength -> {
                 SnapEdge.END
             }
+
             else -> {
                 SnapEdge.NONE
             }

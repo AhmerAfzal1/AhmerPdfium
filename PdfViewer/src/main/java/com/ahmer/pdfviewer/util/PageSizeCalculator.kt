@@ -37,6 +37,7 @@ class PageSizeCalculator(
                 mHeightRatio = mOptimalHeight!!.height / originalHeight.height
                 mOptimalWidth = fitHeight(originalWidth, originalWidth.height * mHeightRatio)
             }
+
             FitPolicy.BOTH -> {
                 val localOptimalMaxWidth = fitBoth(
                     originalWidth, viewSize.width.toFloat(), viewSize.height.toFloat()
@@ -52,6 +53,7 @@ class PageSizeCalculator(
                 )
                 mWidthRatio = mOptimalWidth!!.width / originalWidth.width
             }
+
             else -> {
                 mOptimalWidth = fitWidth(originalWidth, viewSize.width.toFloat())
                 mWidthRatio = mOptimalWidth!!.width / originalWidth.width

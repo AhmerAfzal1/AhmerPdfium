@@ -4,7 +4,7 @@ import android.graphics.RectF
 import com.ahmer.pdfviewer.model.PagePart
 import com.ahmer.pdfviewer.util.PdfConstants.Cache.CACHE_SIZE
 import com.ahmer.pdfviewer.util.PdfConstants.Cache.THUMBNAILS_CACHE_SIZE
-import java.util.*
+import java.util.PriorityQueue
 
 class CacheManager {
     private val mActiveCache: PriorityQueue<PagePart>

@@ -6,7 +6,7 @@ import com.ahmer.pdfviewer.util.MathUtils
 import com.ahmer.pdfviewer.util.PdfConstants
 import com.ahmer.pdfviewer.util.PdfConstants.Cache
 import com.ahmer.pdfviewer.util.PdfUtils
-import java.util.*
+import java.util.LinkedList
 import kotlin.math.abs
 
 internal class PagesLoader(private val pdfView: PDFView) {

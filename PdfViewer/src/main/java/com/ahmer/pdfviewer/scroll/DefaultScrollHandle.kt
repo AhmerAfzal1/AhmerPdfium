@@ -172,6 +172,7 @@ class DefaultScrollHandle @JvmOverloads constructor(
                 }
                 return true
             }
+
             MotionEvent.ACTION_MOVE -> {
                 if (mPdfView!!.isSwipeVertical()) {
                     setPosition(event.rawY - mCurrentPosition + mHandlerMiddle)
@@ -182,6 +183,7 @@ class DefaultScrollHandle @JvmOverloads constructor(
                 }
                 return true
             }
+
             MotionEvent.ACTION_CANCEL, MotionEvent.ACTION_UP, MotionEvent.ACTION_POINTER_UP -> {
                 hideDelayed()
                 mPdfView?.performPageSnap()

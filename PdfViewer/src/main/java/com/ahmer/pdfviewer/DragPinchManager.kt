@@ -120,9 +120,11 @@ internal class DragPinchManager(
             pdfView.getZoom() < pdfView.getMidZoom() -> {
                 pdfView.zoomWithAnimation(e.x, e.y, pdfView.getMidZoom())
             }
+
             pdfView.getZoom() < pdfView.getMaxZoom() -> {
                 pdfView.zoomWithAnimation(e.x, e.y, pdfView.getMaxZoom())
             }
+
             else -> {
                 pdfView.resetZoomWithAnimation()
             }
@@ -144,7 +146,7 @@ internal class DragPinchManager(
         return false
     }
 
-    override fun onScroll(e1: MotionEvent, e2: MotionEvent, distanceX: Float, distanceY: Float):
+    override fun onScroll(e1: MotionEvent?, e2: MotionEvent, distanceX: Float, distanceY: Float):
             Boolean {
         isScrolling = true
         if (pdfView.isZooming() || pdfView.isSwipeEnabled()) {
@@ -164,14 +166,16 @@ internal class DragPinchManager(
         pdfView.callbacks.callOnLongPress(e)
     }
 
-    override fun onFling(e1: MotionEvent, e2: MotionEvent, velocityX: Float, velocityY: Float):
+    override fun onFling(e1: MotionEvent?, e2: MotionEvent, velocityX: Float, velocityY: Float):
             Boolean {
         if (!pdfView.isSwipeEnabled()) return false
         if (pdfView.isPageFlingEnabled()) {
             if (pdfView.pageFillsScreen()) {
                 onBoundedFling(velocityX, velocityY)
             } else {
-                startPageFling(e1, e2, velocityX, velocityY)
+                if (e1 != null) {
+                    startPageFling(e1, e2, velocityX, velocityY)
+                }
             }
             return true
         }
