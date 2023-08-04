@@ -14,29 +14,41 @@ import android.view.MotionEvent
 import android.view.View
 import android.view.Window
 import android.view.inputmethod.InputMethodManager
-import android.widget.*
-import androidx.activity.OnBackPressedDispatcher
+import android.widget.Button
+import android.widget.EditText
+import android.widget.ProgressBar
+import android.widget.RelativeLayout
+import android.widget.TextView
 import androidx.activity.viewModels
 import androidx.appcompat.app.AppCompatActivity
 import androidx.appcompat.widget.SearchView
 import androidx.lifecycle.lifecycleScope
+import com.ahmer.afzal.pdfium.databinding.ActivityPdfBinding
 import com.ahmer.pdfium.PdfDocument
 import com.ahmer.pdfium.PdfPasswordException
-import com.ahmer.pdfium.R
-import com.ahmer.pdfium.databinding.ActivityPdfBinding
 import com.ahmer.pdfviewer.PDFView
 import com.ahmer.pdfviewer.link.DefaultLinkHandler
-import com.ahmer.pdfviewer.listener.*
+import com.ahmer.pdfviewer.listener.OnErrorListener
+import com.ahmer.pdfviewer.listener.OnLoadCompleteListener
+import com.ahmer.pdfviewer.listener.OnPageChangeListener
+import com.ahmer.pdfviewer.listener.OnPageErrorListener
+import com.ahmer.pdfviewer.listener.OnPageScrollListener
+import com.ahmer.pdfviewer.listener.OnRenderListener
+import com.ahmer.pdfviewer.listener.OnTapListener
 import com.ahmer.pdfviewer.scroll.DefaultScrollHandle
 import com.ahmer.pdfviewer.util.FitPolicy
 import com.ahmer.pdfviewer.util.PdfUtils
 import com.google.android.material.appbar.MaterialToolbar
 import dagger.hilt.android.AndroidEntryPoint
-import io.ahmer.utils.utilcode.*
+import io.ahmer.utils.utilcode.FileUtils
+import io.ahmer.utils.utilcode.KeyboardUtils
+import io.ahmer.utils.utilcode.StringUtils
+import io.ahmer.utils.utilcode.ThrowableUtils
+import io.ahmer.utils.utilcode.ToastUtils
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.launch
-import java.util.*
+import java.util.Locale
 
 
 @AndroidEntryPoint
@@ -124,11 +136,13 @@ class PdfActivity : AppCompatActivity(), OnPageChangeListener, OnLoadCompleteLis
                     inputPass.text.toString() == "" -> {
                         ToastUtils.showShort(v.context.getString(R.string.password_not_empty))
                     }
+
                     StringUtils.isSpace(
                         inputPass.text.toString()
                     ) -> {
                         ToastUtils.showShort(v.context.getString(R.string.password_not_space))
                     }
+
                     else -> {
                         mPassword = inputPass.text.toString()
                         mPdfFile?.let { displayFromAsset(mPdfView, it) }
@@ -180,9 +194,11 @@ class PdfActivity : AppCompatActivity(), OnPageChangeListener, OnLoadCompleteLis
                     pageNumber == "" -> {
                         ToastUtils.showShort(getString(R.string.please_enter_number))
                     }
+
                     number > pdfView.getTotalPagesCount() -> {
                         ToastUtils.showShort(getString(R.string.no_page))
                     }
+
                     else -> {
                         KeyboardUtils.hideSoftInput(it)
                         pdfView.jumpTo(number - 1, true)
@@ -373,9 +389,11 @@ class PdfActivity : AppCompatActivity(), OnPageChangeListener, OnLoadCompleteLis
                     }
                     mPdfFile?.let { displayFromAsset(mPdfView, it) }
                 }
+
                 R.id.menuJumpTo -> {
                     showJumpToDialog(mPdfView)
                 }
+
                 R.id.menuPageSnap -> {
                     val mPageSnap = mMenu.findItem(R.id.menuPageSnap)
                     if (mIsPageSnap) {
@@ -392,6 +410,7 @@ class PdfActivity : AppCompatActivity(), OnPageChangeListener, OnLoadCompleteLis
                     mViewModel.updatePdfPageSnap(mIsPageSnap)
                     mPdfFile?.let { displayFromAsset(mPdfView, it) }
                 }
+
                 R.id.menuSwitchView -> {
                     val mHorizontal = mMenu.findItem(R.id.menuSwitchView)
                     if (!mIsViewHorizontal) {
@@ -406,6 +425,7 @@ class PdfActivity : AppCompatActivity(), OnPageChangeListener, OnLoadCompleteLis
                     mViewModel.updatePdfViewChange(mIsViewHorizontal)
                     mPdfFile?.let { displayFromAsset(mPdfView, it) }
                 }
+
                 R.id.menuInfo -> {
                     showMoreInfoDialog(mPdfView)
                 }

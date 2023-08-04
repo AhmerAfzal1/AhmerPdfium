@@ -11,7 +11,7 @@ import android.view.ViewGroup
 import android.widget.RelativeLayout
 import android.widget.TextView
 import androidx.core.content.ContextCompat
-import com.ahmer.afzal.pdfviewer.R
+import com.ahmer.pdfviewer.R
 import com.ahmer.pdfviewer.PDFView
 import com.ahmer.pdfviewer.util.PdfUtils
 import java.lang.Float.isInfinite

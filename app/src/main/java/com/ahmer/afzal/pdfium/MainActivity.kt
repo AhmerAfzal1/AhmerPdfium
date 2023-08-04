@@ -4,8 +4,7 @@ import android.content.Intent
 import android.os.Build
 import android.os.Bundle
 import androidx.appcompat.app.AppCompatActivity
-import com.ahmer.pdfium.R
-import com.ahmer.pdfium.databinding.ActivityMainBinding
+import com.ahmer.afzal.pdfium.databinding.ActivityMainBinding
 import dagger.hilt.android.AndroidEntryPoint
 
 @AndroidEntryPoint
