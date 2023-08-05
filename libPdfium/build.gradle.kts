@@ -1,80 +1,68 @@
-import com.android.build.gradle.BaseExtension
-import com.android.build.api.dsl.ApplicationExtension
-import org.jetbrains.kotlin.gradle.tasks.KotlinCompile
+@file:Suppress("UnstableApiUsage")
 
 plugins {
-    id("java-library")
-    id("org.jetbrains.kotlin.jvm")
+    id("com.android.library")
+    id("org.jetbrains.kotlin.android")
 }
 
-val mKeyId: String? = System.getenv("SIGNING_KEY_ID")
-val mPassword: String? = System.getenv("SIGNING_PASSWORD")
-val mSecretKeyRingKey: String? = System.getenv("SIGNING_SECRET_KEY_RING_FILE")
-val mOSSrhUsername: String? = System.getenv("OSSRH_USERNAME")
-val mOSSrhPassword: String? = System.getenv("OSSRH_PASSWORD")
+android {
+    namespace = "com.ahmer.pdfium"
+    compileSdk = 33
 
-java {
-    sourceCompatibility = JavaVersion.VERSION_17
-    targetCompatibility = JavaVersion.VERSION_17
-}
+    buildFeatures {
+        dataBinding = true
+        viewBinding = true
+    }
 
-fun Project.configureBaseExtension() {
-    extensions.findByType(BaseExtension::class)?.run {
-        compileSdkVersion(34)
-        buildToolsVersion = "33.0.1"
-        ndkVersion = "25.2.9519653"
-
-        defaultConfig {
-            minSdk = 19
-            targetSdk = 34
-            versionCode = 10
-            versionName = "1.7.0"
-
-            externalNativeBuild {
-                cmake {
-                    arguments += listOf(
-                        "-DANDROID_STL=c++_static",
-                        "-DANDROID_PLATFORM=android-${minSdk.toString()}",
-                        "-DANDROID_ARM_NEON=TRUE"
-                    )
-                    cppFlags += "-std=c++17 -frtti -fexceptions"
-                }
-            }
-
-            ndk {
-                abiFilters += listOf("arm64-v8a", "armeabi-v7a", "x86", "x86_64")
-            }
-        }
-
+    defaultConfig {
+        minSdk = 19
+        consumerProguardFiles("consumer-rules.pro")
         externalNativeBuild {
             cmake {
-                path = file("src/main/cpp/CMakeLists.txt")
-                version = cmake.version.toString()
+                arguments += listOf(
+                    "-DANDROID_STL=c++_static", "-DANDROID_PLATFORM=android-${minSdk.toString()}",
+                    "-DANDROID_ARM_NEON=TRUE"
+                )
+                cppFlags += "-std=c++17 -frtti -fexceptions"
             }
         }
 
-        compileOptions {
-            sourceCompatibility = JavaVersion.VERSION_17
-            targetCompatibility = JavaVersion.VERSION_17
-        }
-
-        extensions.findByType(ApplicationExtension::class)?.lint {
-            checkReleaseBuilds = false
-            checkAllWarnings = true
-            warningsAsErrors = false
-            abortOnError = false
-            disable.addAll(setOf("TypographyFractions", "TypographyQuotes", "Typos"))
+        ndk {
+            abiFilters += listOf("arm64-v8a", "armeabi-v7a", "x86", "x86_64")
         }
     }
-}
 
-fun Project.configureJavaExtension() {
-    extensions.findByType(JavaPluginExtension::class.java)?.run {
+    buildTypes {
+        release {
+            isMinifyEnabled = false
+            proguardFiles(
+                getDefaultProguardFile("proguard-android-optimize.txt"), "proguard-rules.pro"
+            )
+        }
+    }
+    externalNativeBuild {
+        cmake {
+            path("src/main/cpp/CMakeLists.txt")
+            version = "3.22.1"
+        }
+    }
+    compileOptions {
         sourceCompatibility = JavaVersion.VERSION_17
         targetCompatibility = JavaVersion.VERSION_17
     }
+
+    kotlinOptions {
+        jvmTarget = "17"
+    }
+
+    lint {
+        checkAllWarnings = true
+        warningsAsErrors = false
+        abortOnError = false
+        disable.addAll(setOf("TypographyFractions", "TypographyQuotes", "Typos"))
+    }
 }
 
-tasks.withType<KotlinCompile>().configureEach {
-    kotlinOptions.jvmTarget = "17"
+dependencies {
+    implementation("androidx.core:core-ktx:1.10.1")
 }

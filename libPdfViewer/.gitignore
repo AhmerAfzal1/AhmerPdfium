@@ -1,1 +1,6 @@
 /build
+/.cxx
+.cxx/
+/release
+/release/
+release/
