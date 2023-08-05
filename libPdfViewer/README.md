@@ -8,9 +8,7 @@ Android view for displaying PDFs rendered with PdfiumAndroid from API 19
 
 ```xml
 
-<com.ahmer.pdfviewer.PDFView 
-    android:id="@+id/pdfView" 
-    android:layout_width="match_parent"
+<com.ahmer.pdfviewer.PDFView android:id="@+id/pdfView" android:layout_width="match_parent"
     android:layout_height="match_parent" />
 ```
 
@@ -173,7 +171,7 @@ ViewPager:
 
 ```kotlin
 .swipeHorizontal(true)
-.pageSnap(true)
-.autoSpacing(true)
-.pageFling(true)
+    .pageSnap(true)
+    .autoSpacing(true)
+    .pageFling(true)
 ```

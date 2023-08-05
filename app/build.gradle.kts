@@ -5,12 +5,17 @@ plugins {
 
 android {
     namespace = "com.ahmer.afzal.pdfviewer"
-    compileSdk = 33
+    compileSdk = 34
+
+    buildFeatures {
+        dataBinding = true
+        viewBinding = true
+    }
 
     defaultConfig {
         applicationId = "com.ahmer.afzal.pdfviewer"
         minSdk = 19
-        targetSdk = 33
+        targetSdk = 34
         versionCode = 1
         versionName = "1.0"
         multiDexEnabled = true
@@ -27,12 +32,12 @@ android {
     }
 
     compileOptions {
-        sourceCompatibility = JavaVersion.VERSION_1_8
-        targetCompatibility = JavaVersion.VERSION_1_8
+        sourceCompatibility = JavaVersion.VERSION_17
+        targetCompatibility = JavaVersion.VERSION_17
     }
 
     kotlinOptions {
-        jvmTarget = "1.8"
+        jvmTarget = "17"
     }
 }
 
