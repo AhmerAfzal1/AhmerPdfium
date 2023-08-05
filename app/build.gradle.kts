@@ -11,9 +11,11 @@ android {
     defaultConfig {
         applicationId = "com.ahmer.afzal.pdfviewer"
         minSdk = 21
-        targetSdk = 33
         versionCode = 1
         versionName = "1.0"
+
+        multiDexEnabled = true
+        vectorDrawables.useSupportLibrary = true
     }
 
     buildTypes {

@@ -6,10 +6,10 @@ plugins {
 android {
     namespace = "com.ahmer.pdfviewer"
     compileSdk = 33
+    ndkVersion = "25.2.9519653"
 
     defaultConfig {
         minSdk = 21
-        consumerProguardFiles("consumer-rules.pro")
     }
 
     buildTypes {

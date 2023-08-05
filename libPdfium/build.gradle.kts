@@ -8,15 +8,17 @@ plugins {
 android {
     namespace = "com.ahmer.pdfium"
     compileSdk = 33
+    ndkVersion = "25.2.9519653"
 
     buildFeatures {
+        //noinspection DataBindingWithoutKapt
         dataBinding = true
         viewBinding = true
     }
 
     defaultConfig {
         minSdk = 19
-        consumerProguardFiles("consumer-rules.pro")
+
         externalNativeBuild {
             cmake {
                 arguments += listOf(

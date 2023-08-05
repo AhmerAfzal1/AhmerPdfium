@@ -1,12 +1,8 @@
-import com.android.build.api.dsl.ApplicationExtension
-import com.android.build.gradle.BaseExtension
-import org.jetbrains.kotlin.gradle.tasks.KotlinCompile
-
 plugins {
     id("com.android.application") version "8.1.0" apply false
+    id("com.android.library") version "8.1.0" apply false
     id("org.jetbrains.kotlin.android") version "1.8.0" apply false
     id("org.jetbrains.kotlin.jvm") version "1.8.0" apply false
-    id("com.android.library") version "8.1.0" apply false
 }/*
 
 fun Project.configureBaseExtension() {
