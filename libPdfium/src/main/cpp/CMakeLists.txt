@@ -32,7 +32,7 @@ add_library( # Sets the name of the library.
 target_include_directories(pdfsdk_jni PRIVATE
         ${CMAKE_SOURCE_DIR}/utils
         ${CMAKE_SOURCE_DIR}/include
-        ${CMAKE_SOURCE_DIR}/include/cppp)
+        ${CMAKE_SOURCE_DIR}/include/cpp)
 
 find_package(Threads REQUIRED)
 
