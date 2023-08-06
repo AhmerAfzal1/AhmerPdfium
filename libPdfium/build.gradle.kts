@@ -7,7 +7,7 @@ plugins {
 
 android {
     namespace = "com.ahmer.pdfium"
-    compileSdk = 33
+    compileSdk = 34
     ndkVersion = "25.2.9519653"
 
     buildFeatures {
@@ -67,4 +67,7 @@ android {
 
 dependencies {
     implementation("androidx.core:core-ktx:1.10.1")
+    implementation("org.jetbrains.kotlinx:kotlinx-coroutines-android:1.7.3")
+    implementation("org.jetbrains.kotlinx:kotlinx-coroutines-core:1.7.3")
+    implementation("org.jetbrains.kotlinx:kotlinx-coroutines-play-services:1.7.3")
 }

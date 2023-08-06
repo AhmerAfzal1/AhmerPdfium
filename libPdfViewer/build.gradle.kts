@@ -5,7 +5,7 @@ plugins {
 
 android {
     namespace = "com.ahmer.pdfviewer"
-    compileSdk = 33
+    compileSdk = 34
     ndkVersion = "25.2.9519653"
 
     defaultConfig {
@@ -43,4 +43,7 @@ android {
 dependencies {
     implementation(project(mapOf("path" to ":libPdfium")))
     implementation("androidx.core:core-ktx:1.10.1")
+    implementation("org.jetbrains.kotlinx:kotlinx-coroutines-android:1.7.3")
+    implementation("org.jetbrains.kotlinx:kotlinx-coroutines-core:1.7.3")
+    implementation("org.jetbrains.kotlinx:kotlinx-coroutines-play-services:1.7.3")
 }
