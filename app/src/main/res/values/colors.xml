@@ -2,4 +2,8 @@
 <resources>
     <color name="black">#FF000000</color>
     <color name="white">#FFFFFFFF</color>
+
+    <color name="bgMainLayout">#EEEEEEEE</color>
+    <color name="bgRoundedLayout">#FCFCFCFC</color>
+    <color name="bgRoundedStrokeLayout">#DDDDDDDD</color>
 </resources>
