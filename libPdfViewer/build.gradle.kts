@@ -36,6 +36,7 @@ android {
             )
         }
     }
+
     compileOptions {
         sourceCompatibility = JavaVersion.VERSION_17
         targetCompatibility = JavaVersion.VERSION_17
@@ -99,6 +100,7 @@ artifacts {
     archives(tasks["javadocJar"])
     archives(tasks["releaseSourcesJar"])
 }
+
 afterEvaluate {
     publishing {
         publications {
@@ -107,12 +109,7 @@ afterEvaluate {
                 artifact(tasks["javadocJar"])
                 artifact(tasks["releaseSourcesJar"])
                 artifact(tasks["bundleReleaseAar"])
-                //artifact("$buildDir/outputs/aar/libPdfViewer-release.aar")
                 artifactId = "ahmer-pdfviewer"
-
-                /*afterEvaluate {
-                    from(components["release"])
-                }*/
 
                 // Self-explanatory metadata for the most part
                 pom {
@@ -127,6 +124,7 @@ afterEvaluate {
                             url.set("http://www.apache.org/licenses/LICENSE-2.0.txt")
                         }
                     }
+
                     developers {
                         developer {
                             id.set("ahmerafzal1")
@@ -135,6 +133,7 @@ afterEvaluate {
                             roles.set(listOf("owner", "developer"))
                         }
                     }
+
                     // Version control info, if you're using GitHub, follow the format as seen here
                     scm {
                         connection.set("scm:git:git://github.com/AhmerAfzal1/AhmerPdfium.git")
