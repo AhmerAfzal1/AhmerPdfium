@@ -73,7 +73,7 @@ Android view for displaying PDFs rendered with PdfiumAndroid from API 19
 Add to _build.gradle_:
 
 ```groovy
-implementation 'io.github.ahmerafzal1:ahmer-pdfviewer:1.7.0'
+implementation 'io.github.ahmerafzal1:ahmer-pdfviewer:1.7.2'
 ```
 
 ## Include PDFView in your layout
