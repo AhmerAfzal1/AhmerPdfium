@@ -9,7 +9,7 @@ Ahmer Pdfium library fork [barteksc/PdfiumAndroid](https://github.com/barteksc/P
 Add to _build.gradle_:
 
 ```groovy
-implementation 'io.github.ahmerafzal1:ahmer-pdfium:1.8.0'
+implementation 'io.github.ahmerafzal1:ahmer-pdfium:1.8.1'
 ```
 
 ## Simple example
