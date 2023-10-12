@@ -58,22 +58,24 @@ find_library( # Sets the name of the path variable.
         log-lib
 
         # Specifies the name of the NDK library that
-        # you want CMake to locate.
+        # CMake needs to locate.
         log)
 
 find_library( # Sets the name of the path variable.
         android-lib
 
         # Specifies the name of the NDK library that
-        # you want CMake to locate.
+        # CMake needs to locate.
         android)
 
 find_library( # Sets the name of the path variable.
         jnigraphics-lib
 
         # Specifies the name of the NDK library that
-        # you want CMake to locate.
+        # CMake needs to locate.
         jnigraphics)
+
+find_package(Threads REQUIRED)
 
 # Specifies libraries CMake should link to your target library. You
 # can link multiple libraries, such as libraries you define in this
@@ -88,6 +90,8 @@ target_link_libraries( # Specifies the target library.
         libicuuc
         libpartition_alloc
         libpdfium
+        Threads::Threads
+        GLESv3
 
         # Links the target library to the log library
         # included in the NDK.
