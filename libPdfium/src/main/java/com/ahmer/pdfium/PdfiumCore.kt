@@ -19,7 +19,12 @@ class PdfiumCore(mContext: Context) {
         private var mCurrentDpi = 0
 
         init {
-            System.loadLibrary("pdfsdk")
+            System.loadLibrary("absl.cr")
+            System.loadLibrary("c++_chrome.cr")
+            System.loadLibrary("chrome_zlib.cr")
+            System.loadLibrary("icuuc.cr")
+            System.loadLibrary("partition_alloc.cr")
+            System.loadLibrary("pdfium.cr")
             System.loadLibrary("pdfsdk_jni")
         }
     }
