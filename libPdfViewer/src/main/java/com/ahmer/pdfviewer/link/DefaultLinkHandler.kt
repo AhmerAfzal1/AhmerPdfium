@@ -35,7 +35,7 @@ class DefaultLinkHandler(private val pdfView: PDFView) : LinkHandler {
             mContext.startActivity(Intent.createChooser(mIntent, mTitle))
         } catch (e: ActivityNotFoundException) {
             // Define what your app should do if no activity can handle the intent.
-            Log.e(PdfConstants.TAG, e.message ?: "NULL")
+            Log.e(PdfConstants.TAG, e.localizedMessage ?: "NULL", e)
             Toast.makeText(mContext, "No apps can open for this link", Toast.LENGTH_LONG).show()
         }
     }

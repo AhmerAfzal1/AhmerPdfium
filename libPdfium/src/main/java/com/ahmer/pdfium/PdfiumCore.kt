@@ -11,74 +11,17 @@ import com.ahmer.pdfium.util.Size
 import com.ahmer.pdfium.util.SizeF
 import java.io.IOException
 
-class PdfiumCore(mContext: Context) {
+class PdfiumCore(context: Context) {
+    val getContext: Context = context
 
-    companion object {
-        val lock = Any()
-        private val TAG = PdfiumCore::class.java.name
-        private var mCurrentDpi = 0
-
-        init {
-            System.loadLibrary("pdfsdk")
-            System.loadLibrary("pdfsdk_jni")
-        }
-    }
-
-    /**
-     * Context needed to get screen density
-     */
-    init {
-        mCurrentDpi = mContext.resources.displayMetrics.densityDpi
-        Log.d(TAG, "Starting AhmerPdfium...")
-    }
-
-    val context: Context = mContext
-
-    external fun nativeCountRects(textPtr: Long, st: Int, ed: Int): Int
-    external fun nativeFindTextPage(pagePtr: Long, key: String?, flag: Int): Int
-    external fun nativeFindTextPageEnd(searchPtr: Long)
-    external fun nativeFindTextPageNext(searchPtr: Long): Boolean
-    external fun nativeFindTextPageStart(
-        textPtr: Long, keyStr: Long, flag: Int, startIdx: Int
-    ): Long
-
-    external fun nativeGetCharIndexAtCoord(
-        pagePtr: Long, width: Int, height: Int, textPtr: Long, posX: Int, posY: Int,
-        tolX: Double, tolY: Double
-    ): Int
-
-    external fun nativeGetCharPos(
-        pagePtr: Long, offsetY: Int, offsetX: Int, width: Int, height: Int,
-        pt: RectF?, tid: Long, index: Int, loose: Boolean
-    ): Int
-
-    external fun nativeGetFindIdx(searchPtr: Long): Int
-    external fun nativeGetFindLength(searchPtr: Long): Int
-    external fun nativeGetLinkAtCoord(
+    private external fun nativeGetLinkAtCoord(
         pagePtr: Long, width: Int, height: Int, posX: Int, posY: Int
     ): Long
 
-    external fun nativeGetMixedLooseCharPos(
-        pagePtr: Long, offsetY: Int, offsetX: Int, width: Int, height: Int,
-        pt: RectF?, tid: Long, index: Int, loose: Boolean
-    ): Int
-
-    external fun nativeGetRect(
-        pagePtr: Long, offsetY: Int, offsetX: Int, width: Int, height: Int,
-        textPtr: Long, rect: RectF?, idx: Int
-    ): Boolean
-
-    external fun nativeGetStringChars(key: String?): Long
-    external fun nativeGetText(textPtr: Long): String?
-    external fun nativeLoadTextPage(pagePtr: Long): Long
+    private external fun nativeLoadTextPage(pagePtr: Long): Long
     private external fun nativeCloseDocument(docPtr: Long)
     private external fun nativeClosePage(pagePtr: Long)
     private external fun nativeClosePages(pagesPtr: LongArray)
-    private external fun nativeCountAndGetRects(
-        pagePtr: Long, offsetY: Int, offsetX: Int, width: Int, height: Int,
-        arr: ArrayList<RectF>, tid: Long, selSt: Int, selEd: Int
-    ): Int
-
     private external fun nativeGetBookmarkDestIndex(docPtr: Long, bookmarkPtr: Long): Long
     private external fun nativeGetBookmarkTitle(bookmarkPtr: Long): String?
     private external fun nativeGetDestPageIndex(docPtr: Long, linkPtr: Long): Int?
@@ -97,12 +40,12 @@ class PdfiumCore(mContext: Context) {
     private external fun nativeGetSiblingBookmark(docPtr: Long, bookmarkPtr: Long): Long?
     private external fun nativeLoadPage(docPtr: Long, pageIndex: Int): Long
     private external fun nativeLoadPages(docPtr: Long, fromIndex: Int, toIndex: Int): LongArray
-    private external fun nativeOpenDocument(fd: Int, password: String): Long
-    private external fun nativeOpenMemDocument(data: ByteArray, password: String): Long
+    private external fun nativeOpenDocument(fd: Int, password: String?): Long
+    private external fun nativeOpenMemDocument(data: ByteArray, password: String?): Long
     private external fun nativePageCoordsToDevice(
         pagePtr: Long, startX: Int, startY: Int, sizeX: Int, sizeY: Int,
         rotate: Int, pageX: Double, pageY: Double
-    ): Point?
+    ): Point
 
     private external fun nativeRenderPage(
         pagePtr: Long, surface: Surface, startX: Int, startY: Int,
@@ -121,27 +64,35 @@ class PdfiumCore(mContext: Context) {
 
     /**
      * Create new document from file
+     * @param parcelFileDescriptor opened file descriptor of file
+     * @return PdfDocument
      */
     @Throws(IOException::class)
-    fun newDocument(fd: ParcelFileDescriptor): PdfDocument {
-        return newDocument(fd, null)
+    fun newDocument(parcelFileDescriptor: ParcelFileDescriptor): PdfDocument {
+        return newDocument(parcelFileDescriptor, null)
     }
 
     /**
      * Create new document from file with password
+     * @param parcelFileDescriptor opened file descriptor of file
+     * @param password password for decryption
+     * @return PdfDocument
      */
     @Throws(IOException::class)
-    fun newDocument(fd: ParcelFileDescriptor, password: String?): PdfDocument {
-        val document = PdfDocument()
-        document.parcelFileDescriptor = fd
+    fun newDocument(parcelFileDescriptor: ParcelFileDescriptor, password: String?): PdfDocument {
         synchronized(lock) {
-            document.mNativeDocPtr = password?.let { nativeOpenDocument(fd.fd, it) }!!
+            return PdfDocument(
+                nativeDocPtr = nativeOpenDocument(parcelFileDescriptor.fd, password)
+            ).also { document ->
+                document.parcelFileDescriptor = parcelFileDescriptor
+            }
         }
-        return document
     }
 
     /**
      * Create new document from bytearray
+     * @param data bytearray of pdf file
+     * @return PdfDocument
      */
     @Throws(IOException::class)
     fun newDocument(data: ByteArray): PdfDocument {
@@ -150,21 +101,24 @@ class PdfiumCore(mContext: Context) {
 
     /**
      * Create new document from bytearray with password
+     * @param data bytearray of pdf file
+     * @param password password for decryption
+     * @return PdfDocument
      */
     @Throws(IOException::class)
     fun newDocument(data: ByteArray, password: String?): PdfDocument {
-        val document = PdfDocument()
         synchronized(lock) {
-            document.mNativeDocPtr = password?.let { nativeOpenMemDocument(data, it) }!!
+            return PdfDocument(nativeOpenMemDocument(data, password)).also { document ->
+                document.parcelFileDescriptor = null
+            }
         }
-        return document
     }
 
     /**
      * Get total number of pages in document
      */
     fun getPageCount(doc: PdfDocument): Int {
-        synchronized(lock) { return nativeGetPageCount(doc.mNativeDocPtr) }
+        synchronized(lock) { return nativeGetPageCount(doc.nativeDocPtr) }
     }
 
     /**
@@ -172,8 +126,8 @@ class PdfiumCore(mContext: Context) {
      */
     fun openPage(doc: PdfDocument, pageIndex: Int): Long {
         synchronized(lock) {
-            val pagePtr: Long = nativeLoadPage(doc.mNativeDocPtr, pageIndex)
-            doc.mNativePagesPtr[pageIndex] = pagePtr
+            val pagePtr: Long = nativeLoadPage(doc.nativeDocPtr, pageIndex)
+            doc.nativePagesPtr[pageIndex] = pagePtr
             return pagePtr
         }
     }
@@ -183,11 +137,11 @@ class PdfiumCore(mContext: Context) {
      */
     fun openPage(doc: PdfDocument, fromIndex: Int, toIndex: Int): LongArray {
         synchronized(lock) {
-            val pagesPtr: LongArray = nativeLoadPages(doc.mNativeDocPtr, fromIndex, toIndex)
+            val pagesPtr: LongArray = nativeLoadPages(doc.nativeDocPtr, fromIndex, toIndex)
             var pageIndex = fromIndex
             for (page in pagesPtr) {
                 if (pageIndex > toIndex) break
-                doc.mNativePagesPtr[pageIndex] = page
+                doc.nativePagesPtr[pageIndex] = page
                 pageIndex++
             }
             return pagesPtr
@@ -198,17 +152,6 @@ class PdfiumCore(mContext: Context) {
         synchronized(lock) { return nativeLoadTextPage(pagePtr) }
     }
 
-    fun getTextRects(
-        pagePtr: Long, offsetY: Int, offsetX: Int, size: Size, arr: ArrayList<RectF>,
-        textPtr: Long, selSt: Int, selEd: Int
-    ): Int {
-        synchronized(lock) {
-            return nativeCountAndGetRects(
-                pagePtr, offsetY, offsetX, size.width, size.height, arr, textPtr, selSt, selEd
-            )
-        }
-    }
-
     /**
      * Get page width in pixels.
      * This method requires page to be opened.
@@ -216,7 +159,7 @@ class PdfiumCore(mContext: Context) {
     fun getPageWidth(doc: PdfDocument, index: Int): Int {
         synchronized(lock) {
             var pagePtr: Long = -1L
-            return if (doc.mNativePagesPtr[index]?.also { pagePtr = it } != null) {
+            return if (doc.nativePagesPtr[index]?.also { pagePtr = it } != null) {
                 nativeGetPageWidthPixel(pagePtr, mCurrentDpi)
             } else 0
         }
@@ -229,7 +172,7 @@ class PdfiumCore(mContext: Context) {
     fun getPageHeight(doc: PdfDocument, index: Int): Int {
         synchronized(lock) {
             var pagePtr: Long = -1L
-            return if (doc.mNativePagesPtr[index]?.also { pagePtr = it } != null) {
+            return if (doc.nativePagesPtr[index]?.also { pagePtr = it } != null) {
                 nativeGetPageHeightPixel(pagePtr, mCurrentDpi)
             } else 0
         }
@@ -242,7 +185,7 @@ class PdfiumCore(mContext: Context) {
     fun getPageWidthPoint(doc: PdfDocument, index: Int): Int {
         synchronized(lock) {
             var pagePtr: Long = -1L
-            return if (doc.mNativePagesPtr[index]?.also { pagePtr = it } != null) {
+            return if (doc.nativePagesPtr[index]?.also { pagePtr = it } != null) {
                 nativeGetPageWidthPoint(pagePtr)
             } else 0
         }
@@ -255,7 +198,7 @@ class PdfiumCore(mContext: Context) {
     fun getPageHeightPoint(doc: PdfDocument, index: Int): Int {
         synchronized(lock) {
             var pagePtr: Long = -1L
-            return if (doc.mNativePagesPtr[index]?.also { pagePtr = it } != null) {
+            return if (doc.nativePagesPtr[index]?.also { pagePtr = it } != null) {
                 nativeGetPageHeightPoint(pagePtr)
             } else 0
         }
@@ -267,7 +210,7 @@ class PdfiumCore(mContext: Context) {
      */
     fun getPageSize(doc: PdfDocument, index: Int): Size {
         synchronized(lock) {
-            return nativeGetPageSizeByIndex(doc.mNativeDocPtr, index, mCurrentDpi)
+            return nativeGetPageSizeByIndex(doc.nativeDocPtr, index, mCurrentDpi)
         }
     }
 
@@ -290,7 +233,7 @@ class PdfiumCore(mContext: Context) {
         doc: PdfDocument, surface: Surface, pageIndex: Int, startX: Int, startY: Int,
         drawSizeX: Int, drawSizeY: Int, annotation: Boolean
     ) {
-        val mDoc: Long? = doc.mNativePagesPtr[pageIndex]
+        val mDoc: Long? = doc.nativePagesPtr[pageIndex]
         if (mDoc != null) {
             synchronized(lock) {
                 try {
@@ -298,10 +241,10 @@ class PdfiumCore(mContext: Context) {
                         mDoc, surface, startX, startY, drawSizeX, drawSizeY, annotation
                     )
                 } catch (e: NullPointerException) {
-                    Log.e(TAG, "mContext may be null")
+                    Log.e(TAG, "mContext may be null", e)
                     e.printStackTrace()
                 } catch (e: Exception) {
-                    Log.e(TAG, "Exception throw from native")
+                    Log.e(TAG, "Exception throw from native", e)
                     e.printStackTrace()
                 }
             }
@@ -334,7 +277,7 @@ class PdfiumCore(mContext: Context) {
         doc: PdfDocument, bitmap: Bitmap, pageIndex: Int, startX: Int,
         startY: Int, drawSizeX: Int, drawSizeY: Int, annotation: Boolean
     ) {
-        val mDoc: Long? = doc.mNativePagesPtr[pageIndex]
+        val mDoc: Long? = doc.nativePagesPtr[pageIndex]
         if (mDoc != null) {
             synchronized(lock) {
                 try {
@@ -342,10 +285,10 @@ class PdfiumCore(mContext: Context) {
                         mDoc, bitmap, startX, startY, drawSizeX, drawSizeY, annotation
                     )
                 } catch (e: NullPointerException) {
-                    Log.e(TAG, "mContext may be null")
+                    Log.e(TAG, "context may be null", e)
                     e.printStackTrace()
                 } catch (e: Exception) {
-                    Log.e(TAG, "Exception throw from native")
+                    Log.e(TAG, "Exception throw from native", e)
                     e.printStackTrace()
                 }
             }
@@ -356,11 +299,11 @@ class PdfiumCore(mContext: Context) {
      * Release native resources and opened file
      */
     fun closeDocument(doc: PdfDocument) {
-        for (index in doc.mNativePagesPtr.keys) {
-            doc.mNativePagesPtr[index]?.let { nativeClosePage(it) }
+        for (index in doc.nativePagesPtr.keys) {
+            doc.nativePagesPtr[index]?.let { nativeClosePage(it) }
         }
-        doc.mNativePagesPtr.clear()
-        nativeCloseDocument(doc.mNativeDocPtr)
+        doc.nativePagesPtr.clear()
+        nativeCloseDocument(doc.nativeDocPtr)
         if (doc.parcelFileDescriptor != null) {
             try {
                 doc.parcelFileDescriptor?.close()
@@ -378,14 +321,14 @@ class PdfiumCore(mContext: Context) {
     fun getDocumentMeta(doc: PdfDocument): PdfDocument.Meta {
         synchronized(lock) {
             val meta = PdfDocument.Meta()
-            meta.title = nativeGetDocumentMetaText(doc.mNativeDocPtr, "Title")
-            meta.author = nativeGetDocumentMetaText(doc.mNativeDocPtr, "Author")
-            meta.subject = nativeGetDocumentMetaText(doc.mNativeDocPtr, "Subject")
-            meta.keywords = nativeGetDocumentMetaText(doc.mNativeDocPtr, "Keywords")
-            meta.creator = nativeGetDocumentMetaText(doc.mNativeDocPtr, "Creator")
-            meta.producer = nativeGetDocumentMetaText(doc.mNativeDocPtr, "Producer")
-            meta.creationDate = nativeGetDocumentMetaText(doc.mNativeDocPtr, "CreationDate")
-            meta.modDate = nativeGetDocumentMetaText(doc.mNativeDocPtr, "ModDate")
+            meta.title = nativeGetDocumentMetaText(doc.nativeDocPtr, "Title")
+            meta.author = nativeGetDocumentMetaText(doc.nativeDocPtr, "Author")
+            meta.subject = nativeGetDocumentMetaText(doc.nativeDocPtr, "Subject")
+            meta.keywords = nativeGetDocumentMetaText(doc.nativeDocPtr, "Keywords")
+            meta.creator = nativeGetDocumentMetaText(doc.nativeDocPtr, "Creator")
+            meta.producer = nativeGetDocumentMetaText(doc.nativeDocPtr, "Producer")
+            meta.creationDate = nativeGetDocumentMetaText(doc.nativeDocPtr, "CreationDate")
+            meta.modDate = nativeGetDocumentMetaText(doc.nativeDocPtr, "ModDate")
             meta.totalPages = getPageCount(doc)
             return meta
         }
@@ -397,7 +340,7 @@ class PdfiumCore(mContext: Context) {
     fun getTableOfContents(doc: PdfDocument): List<PdfDocument.Bookmark> {
         synchronized(lock) {
             val topLevel: MutableList<PdfDocument.Bookmark> = ArrayList()
-            val first = nativeGetFirstChildBookmark(doc.mNativeDocPtr, null)
+            val first = nativeGetFirstChildBookmark(doc.nativeDocPtr, null)
             first?.let { recursiveGetBookmark(topLevel, doc, it) }
             return topLevel
         }
@@ -407,13 +350,13 @@ class PdfiumCore(mContext: Context) {
         tree: MutableList<PdfDocument.Bookmark>, doc: PdfDocument, bookmarkPtr: Long
     ) {
         val bookmark = PdfDocument.Bookmark()
-        bookmark.mNativePtr = bookmarkPtr
+        bookmark.nativePtr = bookmarkPtr
         bookmark.title = nativeGetBookmarkTitle(bookmarkPtr)
-        bookmark.pageIdx = nativeGetBookmarkDestIndex(doc.mNativeDocPtr, bookmarkPtr)
+        bookmark.pageIdx = nativeGetBookmarkDestIndex(doc.nativeDocPtr, bookmarkPtr)
         tree.add(bookmark)
-        val child = nativeGetFirstChildBookmark(doc.mNativeDocPtr, bookmarkPtr)
+        val child = nativeGetFirstChildBookmark(doc.nativeDocPtr, bookmarkPtr)
         if (child != null) recursiveGetBookmark(bookmark.children, doc, child)
-        val sibling = nativeGetSiblingBookmark(doc.mNativeDocPtr, bookmarkPtr)
+        val sibling = nativeGetSiblingBookmark(doc.nativeDocPtr, bookmarkPtr)
         sibling?.let { recursiveGetBookmark(tree, doc, it) }
     }
 
@@ -424,17 +367,17 @@ class PdfiumCore(mContext: Context) {
             List<PdfDocument.Link> {
         synchronized(lock) {
             val mLinks: MutableList<PdfDocument.Link> = ArrayList()
-            val mPagePtr: Long = doc.mNativePagesPtr[pageIndex] ?: return mLinks
+            val mPagePtr: Long = doc.nativePagesPtr[pageIndex] ?: return mLinks
             val mPageLinks: LongArray = nativeGetPageLinks(mPagePtr)
             val mLinkAtCoordinate: Long = nativeGetLinkAtCoord(
                 mPagePtr, size.width.toInt(), size.height.toInt(), posX.toInt(), posY.toInt()
             )
             for (linkPtr in mPageLinks) {
-                val mIndex: Int? = nativeGetDestPageIndex(doc.mNativeDocPtr, mLinkAtCoordinate)
-                val mUri: String? = nativeGetLinkURI(doc.mNativeDocPtr, linkPtr)
+                val mIndex: Int? = nativeGetDestPageIndex(doc.nativeDocPtr, mLinkAtCoordinate)
+                val mUri: String? = nativeGetLinkURI(doc.nativeDocPtr, linkPtr)
                 val mBound: RectF? = nativeGetLinkRect(linkPtr)
                 if (mUri == null) {
-                    val uri: String? = nativeGetLinkURI(doc.mNativeDocPtr, mLinkAtCoordinate)
+                    val uri: String? = nativeGetLinkURI(doc.nativeDocPtr, mLinkAtCoordinate)
                     mLinks.add(PdfDocument.Link(mBound, mIndex, uri))
                 } else {
                     mLinks.add(PdfDocument.Link(mBound, mIndex, mUri))
@@ -462,14 +405,13 @@ class PdfiumCore(mContext: Context) {
     fun mapPageCoordsToDevice(
         doc: PdfDocument, pageIndex: Int, startX: Int, startY: Int, sizeX: Int,
         sizeY: Int, rotate: Int, pageX: Double, pageY: Double
-    ): Point? {
-        val mDoc: Long? = doc.mNativePagesPtr[pageIndex]
-        var point: Point? = null
+    ): Point {
+        val mDoc: Long? = doc.nativePagesPtr[pageIndex]
+        var p: Point? = null
         if (mDoc != null) {
-            point =
-                nativePageCoordsToDevice(mDoc, startX, startY, sizeX, sizeY, rotate, pageX, pageY)
+            p = nativePageCoordsToDevice(mDoc, startX, startY, sizeX, sizeY, rotate, pageX, pageY)
         }
-        return point
+        return p!!
     }
 
     /**
@@ -489,8 +431,8 @@ class PdfiumCore(mContext: Context) {
             coords.bottom.toDouble()
         )
         return RectF(
-            leftTop!!.x.toFloat(), leftTop.y.toFloat(),
-            rightBottom!!.x.toFloat(), rightBottom.y.toFloat()
+            leftTop.x.toFloat(), leftTop.y.toFloat(),
+            rightBottom.x.toFloat(), rightBottom.y.toFloat()
         )
     }
 
@@ -502,5 +444,21 @@ class PdfiumCore(mContext: Context) {
      */
     fun getPageRotation(pageIndex: Int): Int {
         return nativeGetPageRotation(pageIndex.toLong())
+    }
+
+    companion object {
+        val lock = Any()
+        private val TAG = PdfiumCore::class.java.name
+        private var mCurrentDpi = 0
+
+        init {
+            System.loadLibrary("pdfsdk")
+            System.loadLibrary("pdfsdk_jni")
+        }
+    }
+
+    init {
+        mCurrentDpi = context.resources.displayMetrics.densityDpi
+        Log.d(TAG, "Starting AhmerPdfium...")
     }
 }

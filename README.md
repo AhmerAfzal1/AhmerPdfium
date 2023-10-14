@@ -42,15 +42,15 @@ fun openPdf(context: Context, file: File) {
 
 fun printInfo(core: PdfiumCore, doc: PdfDocument) {
     val meta: PdfDocument.Meta = core.getDocumentMeta(doc)
-    Log.e(TAG, "Title = " + meta.title)
-    Log.e(TAG, "Author = " + meta.author)
-    Log.e(TAG, "Subject = " + meta.subject)
-    Log.e(TAG, "Keywords = " + meta.keywords)
-    Log.e(TAG, "Creator = " + meta.creator)
-    Log.e(TAG, "Producer = " + meta.producer)
-    Log.e(TAG, "CreationDate = " + meta.creationDate)
-    Log.e(TAG, "ModDate = " + meta.modDate)
-    Log.e(TAG, "TotalPages = " + meta.totalPages)
+    Log.v(TAG, "Title = " + meta.title)
+    Log.v(TAG, "Author = " + meta.author)
+    Log.v(TAG, "Subject = " + meta.subject)
+    Log.v(TAG, "Keywords = " + meta.keywords)
+    Log.v(TAG, "Creator = " + meta.creator)
+    Log.v(TAG, "Producer = " + meta.producer)
+    Log.v(TAG, "CreationDate = " + meta.creationDate)
+    Log.v(TAG, "ModDate = " + meta.modDate)
+    Log.v(TAG, "TotalPages = " + meta.totalPages)
     printBookmarksTree(core.getTableOfContents(doc), "-")
 }
 

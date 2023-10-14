@@ -1,5 +1,6 @@
 @file:Suppress("UnstableApiUsage")
 
+import org.jetbrains.kotlin.gradle.dsl.JvmTarget
 import java.net.URI
 
 plugins {
@@ -72,7 +73,7 @@ android {
     }
 
     kotlinOptions {
-        jvmTarget = "17"
+        jvmTarget = JvmTarget.JVM_17.target
     }
 
     lint {

@@ -4,23 +4,17 @@ import android.graphics.RectF
 import android.os.ParcelFileDescriptor
 import android.util.ArrayMap
 
-class PdfDocument {
-    val mNativePagesPtr: MutableMap<Int, Long> = ArrayMap()
-    val mNativeTextPtr: MutableMap<Int, Long> = ArrayMap()
-    var mNativeDocPtr: Long = 0L
+class PdfDocument(val nativeDocPtr: Long) {
+    val nativePagesPtr: MutableMap<Int, Long> = ArrayMap()
     var parcelFileDescriptor: ParcelFileDescriptor? = null
 
     fun hasPage(index: Int): Boolean {
-        return mNativePagesPtr.containsKey(index)
-    }
-
-    fun hasText(index: Int): Boolean {
-        return mNativeTextPtr.containsKey(index)
+        return nativePagesPtr.containsKey(index)
     }
 
     data class Bookmark(
         val children: MutableList<Bookmark> = ArrayList(),
-        var mNativePtr: Long = 0L,
+        var nativePtr: Long = 0L,
         var pageIdx: Long = 0L,
         var title: String? = null
     ) {

@@ -9,7 +9,7 @@ class UriSource(private val uri: Uri) : DocumentSource {
 
     @Throws(IOException::class)
     override fun createDocument(core: PdfiumCore, password: String?): PdfDocument {
-        val mFileDescriptor = core.context.contentResolver.openFileDescriptor(uri, "r")
+        val mFileDescriptor = core.getContext.contentResolver.openFileDescriptor(uri, "r")
         return core.newDocument(mFileDescriptor!!, password)
     }
 }

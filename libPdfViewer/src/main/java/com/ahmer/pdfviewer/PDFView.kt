@@ -339,7 +339,7 @@ class PDFView(context: Context?, set: AttributeSet?) : RelativeLayout(context, s
 
     fun fitToWidth(page: Int) {
         if (mState != State.SHOWN) {
-            Log.e(PdfConstants.TAG, "Cannot fit, document not rendered yet")
+            Log.v(PdfConstants.TAG, "Cannot fit, document not rendered yet")
             return
         }
         zoomTo(width / pdfFile!!.getPageSize(page).width)
@@ -712,7 +712,7 @@ class PDFView(context: Context?, set: AttributeSet?) : RelativeLayout(context, s
 
     fun onPageError(ex: PageRenderingException) {
         if (!callbacks.callOnPageError(ex.page, ex.cause)) {
-            Log.e(PdfConstants.TAG, "Cannot open page: " + ex.page + " due to: " + ex.cause)
+            Log.e(PdfConstants.TAG, "Cannot open page: " + ex.page + " due to: " + ex.cause, ex)
         }
     }
 

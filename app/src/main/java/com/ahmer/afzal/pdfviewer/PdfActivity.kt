@@ -91,7 +91,7 @@ class PdfActivity : AppCompatActivity(), OnPageChangeListener, OnLoadCompleteLis
             toolbarClick(toolbar)
         }
         lifecycleScope.launch(Dispatchers.Main) {
-            repeatOnLifecycle(Lifecycle.State.STARTED){
+            repeatOnLifecycle(Lifecycle.State.STARTED) {
                 mIsAutoSpacing = mViewModel.flow.first().isAutoSpacing
                 mIsPageSnap = mViewModel.flow.first().isPageSnap
                 mIsViewHorizontal = mViewModel.flow.first().isViewHorizontal
