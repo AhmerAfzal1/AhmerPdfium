@@ -1,8 +1,8 @@
 package com.ahmer.pdfium.util
 
-class Size(val width: Int, val height: Int) {
+data class Size(val width: Int, val height: Int) {
 
-    override fun equals(other: Any?): Boolean {
+    /*override fun equals(other: Any?): Boolean {
         if (other == null) {
             return false
         }
@@ -22,5 +22,5 @@ class Size(val width: Int, val height: Int) {
     override fun hashCode(): Int {
         // Assuming most sizes are <2^16, doing a rotate will give us perfect hashing
         return height xor (width shl Integer.SIZE / 2 or (width ushr Integer.SIZE / 2))
-    }
+    }*/
 }

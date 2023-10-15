@@ -75,12 +75,12 @@ internal class DragPinchManager(
 
         val mLinkPosX: Float = abs(mMappedX - mPageX)
         val mLinkPosY: Float = abs(mMappedY - mPageY)
-        for (mLink in mPdfFile.getPageLinks(mPage, mPageSize, mLinkPosX, mLinkPosY)) {
+        for (mLink in mPdfFile.getPageLinks(mPageSize, mLinkPosX, mLinkPosY)) {
             Log.v(PdfConstants.TAG, "Link Bound: ${mLink.bounds}")
             Log.v(PdfConstants.TAG, "Link Uri: ${mLink.uri}")
             Log.v(PdfConstants.TAG, "Link Page: ${mLink.destPageIndex}")
             val mMapped = mPdfFile.mapRectToDevice(
-                mPage, mPageX, mPageY, mPageSize.width.toInt(),
+                 mPageX, mPageY, mPageSize.width.toInt(),
                 mPageSize.height.toInt(), mLink.bounds!!
             )
             mMapped.sort()

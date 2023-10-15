@@ -37,8 +37,6 @@ class RenderingHandler(looper: Looper, private val pdfView: PDFView) : Handler(l
                 } else {
                     mPart.renderedBitmap?.recycle()
                 }
-            } else {
-                mPart?.renderedBitmap?.recycle()
             }
         } catch (ex: PageRenderingException) {
             pdfView.post { pdfView.onPageError(ex) }
@@ -88,7 +86,7 @@ class RenderingHandler(looper: Looper, private val pdfView: PDFView) : Handler(l
             return null
         }
         calculateBounds(mWidth, mHeight, task.bounds)
-        mPdfFile?.renderPageBitmap(mBitmap, task.page, mRoundedBounds, task.isAnnotation)
+        mPdfFile?.renderPageBitmap(mBitmap, mRoundedBounds, task.isAnnotation)
         if (pdfView.isNightMode()) {
             mBitmap = toNightMode(mBitmap, task.isBestQuality)
         }

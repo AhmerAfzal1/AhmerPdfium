@@ -400,8 +400,8 @@ class PDFView(context: Context?, set: AttributeSet?) : RelativeLayout(context, s
      * @param pageIndex the page index
      * @return the rotation
      */
-    fun getPageRotation(pageIndex: Int): Int {
-        return pdfFile?.getPageRotation(pageIndex)!!
+    fun getPageRotation(): Int {
+        return pdfFile?.getPageRotation()!!
     }
 
     fun getPageSize(pageIndex: Int): SizeF {
@@ -532,7 +532,9 @@ class PDFView(context: Context?, set: AttributeSet?) : RelativeLayout(context, s
         check(isRecycled) { "Don't call load on a PDF View without recycling it first." }
         isRecycled = false
         // Start decoding document
-        mDecodingTask = mPdfiumCore?.let { DecodingTask(docSource, it, password, userPages, this) }
+        val document = docSource.createDocument(mPdfiumCore!!, password)
+        val pdfPage = document.openPage(mCurrentPage)
+        mDecodingTask = mPdfiumCore?.let { DecodingTask(document, pdfPage, userPages, this) }
         mDecodingTask?.execute()
     }
 
