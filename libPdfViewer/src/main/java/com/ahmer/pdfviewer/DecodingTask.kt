@@ -4,9 +4,7 @@ import android.os.Handler
 import android.os.Looper
 import com.ahmer.pdfium.PdfDocument
 import com.ahmer.pdfium.PdfPage
-import com.ahmer.pdfium.PdfiumCore
 import com.ahmer.pdfium.util.Size
-import com.ahmer.pdfviewer.source.DocumentSource
 import java.util.concurrent.ExecutorService
 import java.util.concurrent.Executors
 

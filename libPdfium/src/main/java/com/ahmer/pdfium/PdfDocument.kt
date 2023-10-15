@@ -150,7 +150,7 @@ class PdfDocument(val nativeDocPtr: Long) : Closeable {
      * @throws IllegalArgumentException if document is closed
      */
     fun saveAsCopy(callback: PdfWriteCallback): Boolean {
-        check(value =!isClosed) { "Already closed" }
+        check(value = !isClosed) { "Already closed" }
         return nativeSaveAsCopy(nativeDocPtr, callback)
     }
 

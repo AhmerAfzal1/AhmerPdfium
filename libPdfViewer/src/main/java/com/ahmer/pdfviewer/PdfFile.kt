@@ -7,7 +7,6 @@ import android.graphics.RectF
 import android.util.SparseBooleanArray
 import com.ahmer.pdfium.PdfDocument
 import com.ahmer.pdfium.PdfPage
-import com.ahmer.pdfium.PdfiumCore
 import com.ahmer.pdfium.util.Size
 import com.ahmer.pdfium.util.SizeF
 import com.ahmer.pdfviewer.exception.PageRenderingException
