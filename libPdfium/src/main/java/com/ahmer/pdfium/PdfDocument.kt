@@ -40,10 +40,10 @@ class PdfDocument(val nativeDocPtr: Long) : Closeable {
      *  Get the page count of the PDF document
      *  @return the number of pages
      */
-    fun getPageCount(): Int {
+    val getPageCount: Int by lazy {
         check(value = !isClosed) { "Already closed" }
-        synchronized(PdfiumCore.lock) {
-            return nativeGetPageCount(nativeDocPtr)
+        synchronized(lock = PdfiumCore.lock) {
+            nativeGetPageCount(nativeDocPtr)
         }
     }
 
@@ -51,10 +51,10 @@ class PdfDocument(val nativeDocPtr: Long) : Closeable {
      *  Get the page character counts for every page of the PDF document
      *  @return an array of character counts
      */
-    fun getPageCharCounts(): IntArray {
+    val getPageCharCounts: IntArray by lazy {
         check(value = !isClosed) { "Already closed" }
-        synchronized(PdfiumCore.lock) {
-            return nativeGetPageCharCounts(nativeDocPtr)
+        synchronized(lock = PdfiumCore.lock) {
+            nativeGetPageCharCounts(nativeDocPtr)
         }
     }
 
@@ -66,18 +66,18 @@ class PdfDocument(val nativeDocPtr: Long) : Closeable {
      */
     fun openPage(pageIndex: Int): PdfPage {
         check(value = !isClosed) { "Already closed" }
-        synchronized(PdfiumCore.lock) {
+        synchronized(lock = PdfiumCore.lock) {
             if (pageMap.containsKey(pageIndex)) {
                 pageMap[pageIndex]?.let {
                     it.count++
                     //Log.v(TAG, "from cache openPage: pageIndex: $pageIndex, count: ${it.count}")
-                    return PdfPage(this, pageIndex, it.pagePtr, pageMap)
+                    return PdfPage(document = this, pageIndex, it.pagePtr, pageMap)
                 }
             }
             //Log.v(TAG, "openPage: pageIndex: $pageIndex")
             val pagePtr = nativeLoadPage(nativeDocPtr, pageIndex)
-            pageMap[pageIndex] = PageCount(pagePtr, 1)
-            return PdfPage(this, pageIndex, pagePtr, pageMap)
+            pageMap[pageIndex] = PageCount(pagePtr = pagePtr, count = 1)
+            return PdfPage(document = this, pageIndex, pagePtr, pageMap)
         }
     }
 
@@ -91,7 +91,7 @@ class PdfDocument(val nativeDocPtr: Long) : Closeable {
     fun openPage(fromIndex: Int, toIndex: Int): LongArray {
         check(value = !isClosed) { "Already closed" }
         var pagesPtr: LongArray
-        synchronized(PdfiumCore.lock) {
+        synchronized(lock = PdfiumCore.lock) {
             pagesPtr = nativeLoadPages(nativeDocPtr, fromIndex, toIndex)
             var pageIndex = fromIndex
             for (page in pagesPtr) {
@@ -109,19 +109,19 @@ class PdfDocument(val nativeDocPtr: Long) : Closeable {
      * @throws IllegalArgumentException if document is closed or the page cannot be loaded
      */
     fun openTextPage(page: PdfPage): PdfTextPage {
-        check(!isClosed) { "Already closed" }
-        synchronized(PdfiumCore.lock) {
+        check(value = !isClosed) { "Already closed" }
+        synchronized(lock = PdfiumCore.lock) {
             if (textPageMap.containsKey(page.pageIndex)) {
                 textPageMap[page.pageIndex]?.let {
                     it.count++
                     //Log.v(TAG,"from cache openTextPage: pageIndex: ${page.pageIndex}, count: ${it.count}")
-                    return PdfTextPage(this, page.pageIndex, it.pagePtr, textPageMap)
+                    return PdfTextPage(document = this, page.pageIndex, it.pagePtr, textPageMap)
                 }
             }
             //Log.v(TAG,"openTextPage: pageIndex: ${page.pageIndex}")
             val textPagePtr = nativeLoadTextPage(nativeDocPtr, page.pagePtr)
-            textPageMap[page.pageIndex] = PageCount(textPagePtr, 1)
-            return PdfTextPage(this, page.pageIndex, textPagePtr, textPageMap)
+            textPageMap[page.pageIndex] = PageCount(textPagePtr, count = 1)
+            return PdfTextPage(document = this, page.pageIndex, textPagePtr, textPageMap)
         }
     }
 
@@ -135,7 +135,7 @@ class PdfDocument(val nativeDocPtr: Long) : Closeable {
     fun openTextPages(fromIndex: Int, toIndex: Int): List<PdfTextPage> {
         check(value = !isClosed) { "Already closed" }
         var textPagesPtr: LongArray
-        synchronized(PdfiumCore.lock) {
+        synchronized(lock = PdfiumCore.lock) {
             textPagesPtr = nativeLoadPages(nativeDocPtr, fromIndex, toIndex)
             return textPagesPtr.mapIndexed { index: Int, pagePtr: Long ->
                 PdfTextPage(this, fromIndex + index, pagePtr, textPageMap)
@@ -172,12 +172,13 @@ class PdfDocument(val nativeDocPtr: Long) : Closeable {
      * @return the [Bookmark] list
      * @throws IllegalArgumentException if document is closed
      */
-    fun getTableOfContents(): List<Bookmark> {
-        synchronized(PdfiumCore.lock) {
-            val topLevel: MutableList<Bookmark> = ArrayList()
-            val first = nativeGetFirstChildBookmark(nativeDocPtr, null)
-            first?.let { recursiveGetBookmark(topLevel, it) }
-            return topLevel
+    val getTableOfContents: List<Bookmark> by lazy {
+        synchronized(lock = PdfiumCore.lock) {
+            ArrayList<Bookmark>().apply {
+                nativeGetFirstChildBookmark(docPtr = nativeDocPtr, bookmarkPtr = null)?.let {
+                    recursiveGetBookmark(tree = this, bookmarkPtr = it)
+                }
+            }
         }
     }
 
@@ -186,20 +187,20 @@ class PdfDocument(val nativeDocPtr: Long) : Closeable {
      * @return the [Meta] data
      * @throws IllegalArgumentException if document is closed
      */
-    fun getDocumentMeta(): Meta {
+    val getDocumentMeta: Meta by lazy {
         check(value = !isClosed) { "Already closed" }
-        synchronized(PdfiumCore.lock) {
-            val meta = Meta()
-            meta.title = nativeGetDocumentMetaText(nativeDocPtr, "Title")
-            meta.author = nativeGetDocumentMetaText(nativeDocPtr, "Author")
-            meta.subject = nativeGetDocumentMetaText(nativeDocPtr, "Subject")
-            meta.keywords = nativeGetDocumentMetaText(nativeDocPtr, "Keywords")
-            meta.creator = nativeGetDocumentMetaText(nativeDocPtr, "Creator")
-            meta.producer = nativeGetDocumentMetaText(nativeDocPtr, "Producer")
-            meta.creationDate = nativeGetDocumentMetaText(nativeDocPtr, "CreationDate")
-            meta.modDate = nativeGetDocumentMetaText(nativeDocPtr, "ModDate")
-            meta.totalPages = getPageCount()
-            return meta
+        synchronized(lock = PdfiumCore.lock) {
+            Meta().apply {
+                title = nativeGetDocumentMetaText(nativeDocPtr, "Title")
+                author = nativeGetDocumentMetaText(nativeDocPtr, "Author")
+                subject = nativeGetDocumentMetaText(nativeDocPtr, "Subject")
+                keywords = nativeGetDocumentMetaText(nativeDocPtr, "Keywords")
+                creator = nativeGetDocumentMetaText(nativeDocPtr, "Creator")
+                producer = nativeGetDocumentMetaText(nativeDocPtr, "Producer")
+                creationDate = nativeGetDocumentMetaText(nativeDocPtr, "CreationDate")
+                modDate = nativeGetDocumentMetaText(nativeDocPtr, "ModDate")
+                totalPages = getPageCount
+            }
         }
     }
 
@@ -208,9 +209,9 @@ class PdfDocument(val nativeDocPtr: Long) : Closeable {
      * @throws IllegalArgumentException if document is closed
      */
     override fun close() {
-        check(!isClosed) { "Already closed" }
+        check(value = !isClosed) { "Already closed" }
         Log.v(TAG, "PdfDocument.close")
-        synchronized(PdfiumCore.lock) {
+        synchronized(lock = PdfiumCore.lock) {
             isClosed = true
             nativeCloseDocument(nativeDocPtr)
             parcelFileDescriptor?.close()

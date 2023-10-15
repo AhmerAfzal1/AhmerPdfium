@@ -6,5 +6,6 @@ class Constants {
         const val LOG_TAG: String = "AhmerPdf"
         const val PDF_IS_NORMAL: String = "normal"
         const val PDF_SAMPLE_FILE: String = "statement.pdf"
+        const val PDF_SAMPLE_FILE_PASSWORD_PROTECTED: String = "grammar.pdf"
     }
 }

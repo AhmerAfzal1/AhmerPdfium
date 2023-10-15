@@ -294,7 +294,7 @@ class PdfFragment : Fragment(R.layout.fragment_pdf), MenuProvider, OnPageChangeL
                     } else {
                         ToastUtils.showLong(resources.getString(R.string.error_loading_pdf))
                         t?.printStackTrace()
-                        Log.v(Constants.LOG_TAG, " onError: $t")
+                        Log.e(Constants.LOG_TAG, " onError: ${t?.localizedMessage}", t)
                     }
                 }
             })
@@ -302,7 +302,7 @@ class PdfFragment : Fragment(R.layout.fragment_pdf), MenuProvider, OnPageChangeL
                 override fun onPageError(page: Int, t: Throwable?) {
                     t?.printStackTrace()
                     ToastUtils.showLong("onPageError")
-                    Log.v(Constants.LOG_TAG, "onPageError: $t on page: $page")
+                    Log.e(Constants.LOG_TAG, "onPageError: ${t?.localizedMessage} on page: $page", t)
                 }
             })
             .onRender(object : OnRenderListener {
@@ -451,7 +451,7 @@ class PdfFragment : Fragment(R.layout.fragment_pdf), MenuProvider, OnPageChangeL
                 mPdfFile = Constants.PDF_SAMPLE_FILE
                 mPassword = "5632"
             } else {
-                mPdfFile = Constants.PDF_SAMPLE_FILE
+                mPdfFile = Constants.PDF_SAMPLE_FILE_PASSWORD_PROTECTED
             }
             mPdfFile?.let { displayFromAsset(mPdfView, it) }
         } catch (e: Exception) {

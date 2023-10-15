@@ -153,7 +153,7 @@ class PdfFile(
      * Get table of contents (bookmarks) for given document.
      */
     fun getBookmarks(): List<PdfDocument.Bookmark> {
-        return pdfDocument.getTableOfContents()
+        return pdfDocument.getTableOfContents
     }
 
     fun getDocLen(zoom: Float): Float {
@@ -164,7 +164,7 @@ class PdfFile(
      * Get metadata for given document.
      */
     fun getMetaData(): PdfDocument.Meta {
-        return pdfDocument.getDocumentMeta()
+        return pdfDocument.getDocumentMeta
     }
 
     fun getPageAtOffset(offset: Float, zoom: Float): Int {
@@ -203,7 +203,7 @@ class PdfFile(
      * Get page rotation in degrees.
      */
     fun getPageRotation(): Int {
-        return pdfPage.getPageRotation()
+        return pdfPage.getPageRotation
     }
 
     /**
@@ -217,7 +217,7 @@ class PdfFile(
      * Get native size of page in pixels.
      */
     fun getPageSizeNative(): Size {
-        return pdfPage.getPageSize()
+        return pdfPage.getPageSize
     }
 
     fun getPageSpacing(pageIndex: Int, zoom: Float): Float {
@@ -245,7 +245,7 @@ class PdfFile(
      * Get total number of pages in document
      */
     fun getTotalPagesCount(): Int {
-        return pdfDocument.getPageCount()
+        return pdfDocument.getPageCount
     }
 
     /**
@@ -260,7 +260,7 @@ class PdfFile(
     fun openPage(pageIndex: Int): Boolean {
         val mDocPage = documentPage(pageIndex)
         if (mDocPage < 0) return false
-        synchronized(lock) {
+        synchronized(lock = lock) {
             if (mOpenedPages.indexOfKey(mDocPage) < 0) {
                 try {
                     pdfDocument.openPage(mDocPage)

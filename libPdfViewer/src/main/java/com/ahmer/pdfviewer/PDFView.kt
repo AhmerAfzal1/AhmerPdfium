@@ -152,7 +152,7 @@ class PDFView(context: Context?, set: AttributeSet?) : RelativeLayout(context, s
     /**
      * The index of the current sequence
      */
-    private var mCurrentPage: Int = 0
+    var mCurrentPage: Int = 0
 
     /**
      * Paint object for drawing debug stuff
@@ -179,7 +179,7 @@ class PDFView(context: Context?, set: AttributeSet?) : RelativeLayout(context, s
      * Paint object for drawing
      */
     private var mPaint: Paint? = null
-    private var mPdfiumCore: PdfiumCore? = null
+    var pdfiumCore: PdfiumCore? = null
 
     /**
      * The thread [.renderingHandler] will run on
@@ -529,12 +529,10 @@ class PDFView(context: Context?, set: AttributeSet?) : RelativeLayout(context, s
     }
 
     private fun load(docSource: DocumentSource, password: String?, userPages: IntArray? = null) {
-        check(isRecycled) { "Don't call load on a PDF View without recycling it first." }
+        check(value = isRecycled) { "Don't call load on a PDF View without recycling it first." }
         isRecycled = false
         // Start decoding document
-        val document = docSource.createDocument(mPdfiumCore!!, password)
-        val pdfPage = document.openPage(mCurrentPage)
-        mDecodingTask = mPdfiumCore?.let { DecodingTask(document, pdfPage, userPages, this) }
+        mDecodingTask = pdfiumCore?.let { DecodingTask(docSource, password, userPages, this) }
         mDecodingTask?.execute()
     }
 
@@ -1357,7 +1355,7 @@ class PDFView(context: Context?, set: AttributeSet?) : RelativeLayout(context, s
 
     private fun initPDFView() {
         if (isInEditMode) return
-        mPdfiumCore = PdfiumCore(context)
+        pdfiumCore = PdfiumCore(context)
         cacheManager = CacheManager()
         mAnimationManager = AnimationManager(this)
         mDragPinchManager = DragPinchManager(this, mAnimationManager!!)

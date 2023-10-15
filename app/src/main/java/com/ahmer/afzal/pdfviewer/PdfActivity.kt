@@ -462,7 +462,7 @@ class PdfActivity : AppCompatActivity(), OnPageChangeListener, OnLoadCompleteLis
                 mPdfFile = "example.pdf"
                 mPassword = "5632"
             } else {
-                mPdfFile = Constants.PDF_SAMPLE_FILE
+                mPdfFile = Constants.PDF_SAMPLE_FILE_PASSWORD_PROTECTED
             }
             mPdfFile?.let { displayFromAsset(mPdfView, it) }
         } catch (e: Exception) {

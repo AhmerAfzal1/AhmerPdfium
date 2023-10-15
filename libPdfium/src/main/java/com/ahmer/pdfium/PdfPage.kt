@@ -81,22 +81,22 @@ class PdfPage(
      * @return page height in pixels
      * @throws IllegalStateException If the page or document is closed
      */
-    fun getPageHeight(): Int {
+    val getPageHeight: Int by lazy {
         check(value = !isClosed && !document.isClosed) { "Already closed" }
-        synchronized(PdfiumCore.lock) {
-            return nativeGetPageHeightPixel(pagePtr, PdfiumCore.screenDpi)
+        synchronized(lock = PdfiumCore.lock) {
+            nativeGetPageHeightPixel(pagePtr, PdfiumCore.screenDpi)
         }
     }
 
     /**
      * Get page width in pixels.
      * @return page width in pixels
-     *  @throws IllegalStateException If the page or document is closed
+     * @throws IllegalStateException If the page or document is closed
      */
-    fun getPageWidth(): Int {
+    val getPageWidth: Int by lazy {
         check(value = !isClosed && !document.isClosed) { "Already closed" }
-        synchronized(PdfiumCore.lock) {
-            return nativeGetPageWidthPixel(pagePtr, PdfiumCore.screenDpi)
+        synchronized(lock = PdfiumCore.lock) {
+            nativeGetPageWidthPixel(pagePtr, PdfiumCore.screenDpi)
         }
     }
 
@@ -105,10 +105,10 @@ class PdfPage(
      * @return page height in points
      * @throws IllegalStateException If the page or document is closed
      */
-    fun getPageHeightPoint(): Int {
+    val getPageHeightPoint: Int by lazy {
         check(value = !isClosed && !document.isClosed) { "Already closed" }
-        synchronized(PdfiumCore.lock) {
-            return nativeGetPageHeightPoint(pagePtr)
+        synchronized(lock = PdfiumCore.lock) {
+            nativeGetPageHeightPoint(pagePtr)
         }
     }
 
@@ -117,10 +117,10 @@ class PdfPage(
      * @return page width in points
      * @throws IllegalStateException If the page or document is closed
      */
-    fun getPageWidthPoint(): Int {
+    val getPageWidthPoint: Int by lazy {
         check(value = !isClosed && !document.isClosed) { "Already closed" }
-        synchronized(PdfiumCore.lock) {
-            return nativeGetPageWidthPoint(pagePtr)
+        synchronized(lock = PdfiumCore.lock) {
+            nativeGetPageWidthPoint(pagePtr)
         }
     }
 
@@ -129,10 +129,10 @@ class PdfPage(
      *  @return page size in pixels
      *  @throws IllegalStateException If the page or document is closed
      */
-    fun getPageSize(): Size {
+    val getPageSize: Size by lazy {
         check(value = !isClosed && !document.isClosed) { "Already closed" }
-        synchronized(PdfiumCore.lock) {
-            return nativeGetPageSizeByIndex(document.nativeDocPtr, pageIndex, PdfiumCore.screenDpi)
+        synchronized(lock = PdfiumCore.lock) {
+            nativeGetPageSizeByIndex(document.nativeDocPtr, pageIndex, PdfiumCore.screenDpi)
         }
     }
 
@@ -140,9 +140,9 @@ class PdfPage(
      * Get page rotation in degrees
      * @return page rotation
      */
-    fun getPageRotation(): Int {
+    val getPageRotation: Int by lazy {
         check(value = !isClosed && !document.isClosed) { "Already closed" }
-        return nativeGetPageRotation(pagePtr)
+        nativeGetPageRotation(pagePtr)
     }
 
     /**
@@ -160,7 +160,7 @@ class PdfPage(
         drawSizeX: Int, drawSizeY: Int, annotation: Boolean
     ) {
         check(value = !isClosed && !document.isClosed) { "Already closed" }
-        synchronized(PdfiumCore.lock) {
+        synchronized(lock = PdfiumCore.lock) {
             try {
                 nativeRenderPage(pagePtr, surface, startX, startY, drawSizeX, drawSizeY, annotation)
             } catch (e: NullPointerException) {
@@ -194,7 +194,7 @@ class PdfPage(
         drawSizeX: Int, drawSizeY: Int, annotation: Boolean
     ) {
         check(value = !isClosed && !document.isClosed) { "Already closed" }
-        synchronized(PdfiumCore.lock) {
+        synchronized(lock = PdfiumCore.lock) {
             nativeRenderPageBitmap(
                 pagePtr, bitmap, startX, startY, drawSizeX, drawSizeY, annotation
             )
@@ -205,7 +205,7 @@ class PdfPage(
         check(value = !isClosed && !document.isClosed) { "Already closed" }
         val matrixValues = FloatArray(THREE_BY_THREE)
         matrix.getValues(matrixValues)
-        synchronized(PdfiumCore.lock) {
+        synchronized(lock = PdfiumCore.lock) {
             nativeRenderPageBitmapWithMatrix(
                 pagePtr, bitmap, floatArrayOf(
                     matrixValues[Matrix.MSCALE_X],
@@ -222,7 +222,7 @@ class PdfPage(
      */
     fun getPageLinks(size: SizeF, posX: Float, posY: Float): List<PdfDocument.Link> {
         check(value = !isClosed && !document.isClosed) { "Already closed" }
-        synchronized(PdfiumCore.lock) {
+        synchronized(lock = PdfiumCore.lock) {
             val mLinks: MutableList<PdfDocument.Link> = ArrayList()
             val mPageLinks: LongArray = nativeGetPageLinks(pagePtr)
             val mLinkAtCoordinate: Long = nativeGetLinkAtCoord(
@@ -311,7 +311,7 @@ class PdfPage(
     fun mapDeviceCoordsToPage(
         startX: Int, startY: Int, sizeX: Int, sizeY: Int, rotate: Int, deviceX: Int, deviceY: Int
     ): PointF {
-        check(!isClosed && !document.isClosed) { "Already closed" }
+        check(value = !isClosed && !document.isClosed) { "Already closed" }
         return nativeDeviceCoordsToPage(
             pagePtr, startX, startY, sizeX, sizeY, rotate, deviceX, deviceY
         )
@@ -322,7 +322,7 @@ class PdfPage(
      */
     override fun close() {
         if (isClosed) return
-        synchronized(PdfiumCore.lock) {
+        synchronized(lock = PdfiumCore.lock) {
             pageMap[pageIndex]?.let {
                 if (it.count > 1) {
                     it.count--

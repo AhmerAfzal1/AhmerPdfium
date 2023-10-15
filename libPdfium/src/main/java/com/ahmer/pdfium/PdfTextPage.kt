@@ -49,10 +49,10 @@ class PdfTextPage(
      * @return the number of characters on the page
      * @throws IllegalStateException if the page or document is closed
      */
-    fun textPageCountChars(): Int {
+    val textPageCountChars: Int by lazy {
         check(value = !isClosed && !document.isClosed) { "Already closed" }
-        synchronized(PdfiumCore.lock) {
-            return nativeTextCountChars(pagePtr)
+        synchronized(lock = PdfiumCore.lock) {
+            nativeTextCountChars(pagePtr)
         }
     }
 
@@ -65,7 +65,7 @@ class PdfTextPage(
      */
     fun textPageGetTextLegacy(startIndex: Int, length: Int): String? {
         check(value = !isClosed && !document.isClosed) { "Already closed" }
-        synchronized(PdfiumCore.lock) {
+        synchronized(lock = PdfiumCore.lock) {
             try {
                 val buf = ShortArray(length + 1)
                 val r = nativeTextGetText(pagePtr, startIndex, length, buf)
@@ -91,7 +91,7 @@ class PdfTextPage(
 
     fun textPageGetText(startIndex: Int, length: Int): String? {
         check(value = !isClosed && !document.isClosed) { "Already closed" }
-        synchronized(PdfiumCore.lock) {
+        synchronized(lock = PdfiumCore.lock) {
             try {
                 val bytes = ByteArray(length * 2)
                 val r = nativeTextGetTextByteArray(pagePtr, startIndex, length, bytes)
@@ -116,7 +116,7 @@ class PdfTextPage(
      */
     fun textPageGetUnicode(index: Int): Char {
         check(value = !isClosed && !document.isClosed) { "Already closed" }
-        synchronized(PdfiumCore.lock) {
+        synchronized(lock = PdfiumCore.lock) {
             return nativeTextGetUnicode(pagePtr, index).toChar()
         }
     }
@@ -129,17 +129,17 @@ class PdfTextPage(
      */
     fun textPageGetCharBox(index: Int): RectF? {
         check(value = !isClosed && !document.isClosed) { "Already closed" }
-        synchronized(PdfiumCore.lock) {
+        synchronized(lock = PdfiumCore.lock) {
             try {
-                val o = nativeTextGetCharBox(pagePtr, index)
+                val odd = nativeTextGetCharBox(pagePtr, index)
                 // Note these are in an odd order left, right, bottom, top
-                // what what Pdfium native code returns
-                val r = RectF()
-                r.left = o[0].toFloat()
-                r.right = o[1].toFloat()
-                r.bottom = o[2].toFloat()
-                r.top = o[3].toFloat()
-                return r
+                // What Pdfium native code returns
+                val rectF = RectF()
+                rectF.left = odd[0].toFloat()
+                rectF.right = odd[1].toFloat()
+                rectF.bottom = odd[2].toFloat()
+                rectF.top = odd[3].toFloat()
+                return rectF
             } catch (e: NullPointerException) {
                 Log.e(TAG, "Context may be null", e)
             } catch (e: Exception) {
@@ -162,7 +162,7 @@ class PdfTextPage(
         x: Double, y: Double, xTolerance: Double, yTolerance: Double
     ): Int {
         check(value = !isClosed && !document.isClosed) { "Already closed" }
-        synchronized(PdfiumCore.lock) {
+        synchronized(lock = PdfiumCore.lock) {
             try {
                 return nativeTextGetCharIndexAtPos(pagePtr, x, y, xTolerance, yTolerance)
             } catch (e: Exception) {
@@ -181,7 +181,7 @@ class PdfTextPage(
      */
     fun textPageCountRects(startIndex: Int, count: Int): Int {
         check(value = !isClosed && !document.isClosed) { "Already closed" }
-        synchronized(PdfiumCore.lock) {
+        synchronized(lock = PdfiumCore.lock) {
             try {
                 return nativeTextCountRects(pagePtr, startIndex, count)
             } catch (e: NullPointerException) {
@@ -201,15 +201,15 @@ class PdfTextPage(
      */
     fun textPageGetRect(rectIndex: Int): RectF? {
         check(value = !isClosed && !document.isClosed) { "Already closed" }
-        synchronized(PdfiumCore.lock) {
+        synchronized(lock = PdfiumCore.lock) {
             try {
-                val o = nativeTextGetRect(pagePtr, rectIndex)
-                val r = RectF()
-                r.left = o[0].toFloat()
-                r.top = o[1].toFloat()
-                r.right = o[2].toFloat()
-                r.bottom = o[3].toFloat()
-                return r
+                val odd = nativeTextGetRect(pagePtr, rectIndex)
+                val rectF = RectF()
+                rectF.left = odd[0].toFloat()
+                rectF.top = odd[1].toFloat()
+                rectF.right = odd[2].toFloat()
+                rectF.bottom = odd[3].toFloat()
+                return rectF
             } catch (e: NullPointerException) {
                 Log.e(TAG, "Context may be null", e)
             } catch (e: Exception) {
@@ -228,23 +228,19 @@ class PdfTextPage(
      */
     fun textPageGetBoundedText(rect: RectF, length: Int): String? {
         check(value = !isClosed && !document.isClosed) { "Already closed" }
-        synchronized(PdfiumCore.lock) {
+        synchronized(lock = PdfiumCore.lock) {
             try {
-                val buf = ShortArray(length + 1)
-                val r = nativeTextGetBoundedText(
-                    pagePtr,
-                    rect.left.toDouble(),
-                    rect.top.toDouble(),
-                    rect.right.toDouble(),
-                    rect.bottom.toDouble(),
-                    buf
+                val buffer = ShortArray(length + 1)
+                val textRect = nativeTextGetBoundedText(
+                    pagePtr, rect.left.toDouble(), rect.top.toDouble(),
+                    rect.right.toDouble(), rect.bottom.toDouble(), buffer
                 )
-                val bytes = ByteArray((r - 1) * 2)
-                val bb = ByteBuffer.wrap(bytes)
-                bb.order(ByteOrder.LITTLE_ENDIAN)
-                for (i in 0 until r - 1) {
-                    val s = buf[i]
-                    bb.putShort(s)
+                val bytes = ByteArray((textRect - 1) * 2)
+                val byteBuffer = ByteBuffer.wrap(bytes)
+                byteBuffer.order(ByteOrder.LITTLE_ENDIAN)
+                for (i in 0 until textRect - 1) {
+                    val s = buffer[i]
+                    byteBuffer.putShort(s)
                 }
                 return String(bytes, StandardCharsets.UTF_16LE)
             } catch (e: NullPointerException) {
@@ -264,7 +260,7 @@ class PdfTextPage(
      */
     fun getFontSize(charIndex: Int): Double {
         check(value = !isClosed && !document.isClosed) { "Already closed" }
-        synchronized(PdfiumCore.lock) {
+        synchronized(lock = PdfiumCore.lock) {
             return nativeGetFontSize(pagePtr, charIndex)
         }
     }
@@ -274,7 +270,7 @@ class PdfTextPage(
      */
     override fun close() {
         if (isClosed) return
-        synchronized(PdfiumCore.lock) {
+        synchronized(lock = PdfiumCore.lock) {
             pageMap[pageIndex]?.let {
                 if (it.count > 1) {
                     it.count--

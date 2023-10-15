@@ -1,12 +1,13 @@
 package com.ahmer.pdfium
 
 import android.content.Context
+import android.content.res.Resources
 import android.os.ParcelFileDescriptor
 import android.util.Log
 import java.io.IOException
 
 class PdfiumCore(context: Context) {
-    var getContext: Context = context
+    val getContext: Context by lazy { context }
 
     private external fun nativeOpenDocument(fd: Int, password: String?): Long
     private external fun nativeOpenMemDocument(data: ByteArray, password: String?): Long
@@ -29,7 +30,7 @@ class PdfiumCore(context: Context) {
      */
     @Throws(IOException::class)
     fun newDocument(parcelFileDescriptor: ParcelFileDescriptor, password: String?): PdfDocument {
-        synchronized(lock) {
+        synchronized(lock = lock) {
             return PdfDocument(
                 nativeDocPtr = nativeOpenDocument(parcelFileDescriptor.fd, password)
             ).also { document ->
@@ -56,7 +57,7 @@ class PdfiumCore(context: Context) {
      */
     @Throws(IOException::class)
     fun newDocument(data: ByteArray, password: String?): PdfDocument {
-        synchronized(lock) {
+        synchronized(lock = lock) {
             return PdfDocument(nativeOpenMemDocument(data, password)).also { document ->
                 document.parcelFileDescriptor = null
             }
@@ -66,7 +67,7 @@ class PdfiumCore(context: Context) {
     companion object {
         private val TAG: String = PdfiumCore::class.java.name
         val lock: Any = Any()
-        var screenDpi: Int = 0
+        val screenDpi: Int by lazy { Resources.getSystem().displayMetrics.densityDpi }
 
         init {
             try {
@@ -79,7 +80,6 @@ class PdfiumCore(context: Context) {
     }
 
     init {
-        screenDpi = context.resources.displayMetrics.densityDpi
         Log.d(TAG, "Starting AhmerPdfium...")
     }
 }

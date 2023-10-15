@@ -14,7 +14,7 @@ class CacheManager {
     private val mThumbnails: MutableList<PagePart>
 
     fun cachePart(part: PagePart) {
-        synchronized(mPassiveActiveLock) {
+        synchronized(lock = mPassiveActiveLock) {
             // If cache too big, remove and recycle
             makeAFreeSpace()
             // Then add part
@@ -23,14 +23,14 @@ class CacheManager {
     }
 
     fun makeANewSet() {
-        synchronized(mPassiveActiveLock) {
+        synchronized(lock = mPassiveActiveLock) {
             mPassiveCache.addAll(mActiveCache)
             mActiveCache.clear()
         }
     }
 
     private fun makeAFreeSpace() {
-        synchronized(mPassiveActiveLock) {
+        synchronized(lock = mPassiveActiveLock) {
             while (mActiveCache.size + mPassiveCache.size >= CACHE_SIZE && !mPassiveCache.isEmpty()) {
                 mPassiveCache.poll()?.renderedBitmap?.recycle()
             }
@@ -41,7 +41,7 @@ class CacheManager {
     }
 
     fun cacheThumbnail(part: PagePart) {
-        synchronized(mThumbnails) {
+        synchronized(lock = mThumbnails) {
             // If cache too big, remove and recycle
             while (mThumbnails.size >= THUMBNAILS_CACHE_SIZE) {
                 mThumbnails.removeAt(0).renderedBitmap?.recycle()
@@ -55,7 +55,7 @@ class CacheManager {
             Boolean {
         val mFakePart = PagePart(page, null, pageRelativeBounds, false, 0)
         var mFound: PagePart? = null
-        synchronized(mPassiveActiveLock) {
+        synchronized(lock = mPassiveActiveLock) {
             if (find(mPassiveCache, mFakePart)?.also { mFound = it } != null) {
                 mFound?.let { mPassiveCache.remove(it) }
                 mFound?.cacheOrder = toOrder
@@ -71,7 +71,7 @@ class CacheManager {
      */
     fun containsThumbnail(page: Int, pageRelativeBounds: RectF): Boolean {
         val mFakePart = PagePart(page, null, pageRelativeBounds, true, 0)
-        synchronized(mThumbnails) {
+        synchronized(lock = mThumbnails) {
             for (mPart in mThumbnails) {
                 if (mPart == mFakePart) {
                     return true
@@ -96,7 +96,7 @@ class CacheManager {
 
     val pageParts: List<PagePart>
         get() {
-            synchronized(mPassiveActiveLock) {
+            synchronized(lock = mPassiveActiveLock) {
                 val mParts: MutableList<PagePart> = ArrayList(mPassiveCache)
                 mParts.addAll(mActiveCache)
                 return mParts
@@ -104,17 +104,17 @@ class CacheManager {
         }
 
     fun getThumbnails(): List<PagePart> {
-        synchronized(mThumbnails) { return mThumbnails }
+        synchronized(lock = mThumbnails) { return mThumbnails }
     }
 
     fun recycle() {
-        synchronized(mPassiveActiveLock) {
+        synchronized(lock = mPassiveActiveLock) {
             for (mPartPassive in mPassiveCache) mPartPassive.renderedBitmap?.recycle()
             mPassiveCache.clear()
             for (mPartActive in mActiveCache) mPartActive.renderedBitmap?.recycle()
             mActiveCache.clear()
         }
-        synchronized(mThumbnails) {
+        synchronized(lock = mThumbnails) {
             for (mPartThumbnails in mThumbnails) mPartThumbnails.renderedBitmap?.recycle()
             mThumbnails.clear()
         }
