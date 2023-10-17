@@ -52,7 +52,7 @@ class PdfTextPage(
     val textPageCountChars: Int by lazy {
         check(value = !isClosed && !document.isClosed) { "Already closed" }
         synchronized(lock = PdfiumCore.lock) {
-            nativeTextCountChars(pagePtr)
+            nativeTextCountChars(textPagePtr = pagePtr)
         }
     }
 
@@ -67,19 +67,20 @@ class PdfTextPage(
         check(value = !isClosed && !document.isClosed) { "Already closed" }
         synchronized(lock = PdfiumCore.lock) {
             try {
-                val buf = ShortArray(length + 1)
-                val r = nativeTextGetText(pagePtr, startIndex, length, buf)
-                if (r <= 0) {
+                val buffer = ShortArray(size = length + 1)
+                val chars = nativeTextGetText(
+                    textPagePtr = pagePtr, startIndex = startIndex, count = length, result = buffer
+                )
+                if (chars <= 0) {
                     return ""
                 }
-                val bytes = ByteArray((r - 1) * 2)
-                val bb = ByteBuffer.wrap(bytes)
-                bb.order(ByteOrder.LITTLE_ENDIAN)
-                for (i in 0 until r - 1) {
-                    val s = buf[i]
-                    bb.putShort(s)
+                val bytes = ByteArray(size = (chars - 1) * 2)
+                val byteBuffer = ByteBuffer.wrap(bytes)
+                byteBuffer.order(ByteOrder.LITTLE_ENDIAN)
+                for (i in 0 until chars - 1) {
+                    byteBuffer.putShort(buffer[i])
                 }
-                return String(bytes, StandardCharsets.UTF_16LE)
+                return String(bytes = bytes, charset = StandardCharsets.UTF_16LE)
             } catch (e: NullPointerException) {
                 Log.e(TAG, "Context may be null", e)
             } catch (e: Exception) {
@@ -93,12 +94,14 @@ class PdfTextPage(
         check(value = !isClosed && !document.isClosed) { "Already closed" }
         synchronized(lock = PdfiumCore.lock) {
             try {
-                val bytes = ByteArray(length * 2)
-                val r = nativeTextGetTextByteArray(pagePtr, startIndex, length, bytes)
-                if (r <= 0) {
+                val bytes = ByteArray(size = length * 2)
+                val chars = nativeTextGetTextByteArray(
+                    textPagePtr = pagePtr, startIndex = startIndex, count = length, result = bytes
+                )
+                if (chars <= 0) {
                     return ""
                 }
-                return String(bytes, StandardCharsets.UTF_16LE)
+                return String(bytes = bytes, charset = StandardCharsets.UTF_16LE)
             } catch (e: NullPointerException) {
                 Log.e(TAG, "Context may be null", e)
             } catch (e: Exception) {
@@ -117,7 +120,7 @@ class PdfTextPage(
     fun textPageGetUnicode(index: Int): Char {
         check(value = !isClosed && !document.isClosed) { "Already closed" }
         synchronized(lock = PdfiumCore.lock) {
-            return nativeTextGetUnicode(pagePtr, index).toChar()
+            return nativeTextGetUnicode(textPagePtr = pagePtr, index = index).toChar()
         }
     }
 
@@ -131,15 +134,15 @@ class PdfTextPage(
         check(value = !isClosed && !document.isClosed) { "Already closed" }
         synchronized(lock = PdfiumCore.lock) {
             try {
-                val odd = nativeTextGetCharBox(pagePtr, index)
+                val odd = nativeTextGetCharBox(textPagePtr = pagePtr, index = index)
                 // Note these are in an odd order left, right, bottom, top
                 // What Pdfium native code returns
-                val rectF = RectF()
-                rectF.left = odd[0].toFloat()
-                rectF.right = odd[1].toFloat()
-                rectF.bottom = odd[2].toFloat()
-                rectF.top = odd[3].toFloat()
-                return rectF
+                return RectF().apply {
+                    left = odd[0].toFloat()
+                    right = odd[1].toFloat()
+                    bottom = odd[2].toFloat()
+                    top = odd[3].toFloat()
+                }
             } catch (e: NullPointerException) {
                 Log.e(TAG, "Context may be null", e)
             } catch (e: Exception) {
@@ -164,7 +167,10 @@ class PdfTextPage(
         check(value = !isClosed && !document.isClosed) { "Already closed" }
         synchronized(lock = PdfiumCore.lock) {
             try {
-                return nativeTextGetCharIndexAtPos(pagePtr, x, y, xTolerance, yTolerance)
+                return nativeTextGetCharIndexAtPos(
+                    textPagePtr = pagePtr, x = x, y = y,
+                    xTolerance = xTolerance, yTolerance = yTolerance
+                )
             } catch (e: Exception) {
                 Log.e(TAG, "Exception throw from native", e)
             }
@@ -183,7 +189,9 @@ class PdfTextPage(
         check(value = !isClosed && !document.isClosed) { "Already closed" }
         synchronized(lock = PdfiumCore.lock) {
             try {
-                return nativeTextCountRects(pagePtr, startIndex, count)
+                return nativeTextCountRects(
+                    textPagePtr = pagePtr, startIndex = startIndex, count = count
+                )
             } catch (e: NullPointerException) {
                 Log.e(TAG, "Context may be null", e)
             } catch (e: Exception) {
@@ -203,13 +211,13 @@ class PdfTextPage(
         check(value = !isClosed && !document.isClosed) { "Already closed" }
         synchronized(lock = PdfiumCore.lock) {
             try {
-                val odd = nativeTextGetRect(pagePtr, rectIndex)
-                val rectF = RectF()
-                rectF.left = odd[0].toFloat()
-                rectF.top = odd[1].toFloat()
-                rectF.right = odd[2].toFloat()
-                rectF.bottom = odd[3].toFloat()
-                return rectF
+                val odd = nativeTextGetRect(textPagePtr = pagePtr, rectIndex = rectIndex)
+                return RectF().apply {
+                    left = odd[0].toFloat()
+                    top = odd[1].toFloat()
+                    right = odd[2].toFloat()
+                    bottom = odd[3].toFloat()
+                }
             } catch (e: NullPointerException) {
                 Log.e(TAG, "Context may be null", e)
             } catch (e: Exception) {
@@ -230,19 +238,18 @@ class PdfTextPage(
         check(value = !isClosed && !document.isClosed) { "Already closed" }
         synchronized(lock = PdfiumCore.lock) {
             try {
-                val buffer = ShortArray(length + 1)
+                val buffer = ShortArray(size = length + 1)
                 val textRect = nativeTextGetBoundedText(
-                    pagePtr, rect.left.toDouble(), rect.top.toDouble(),
-                    rect.right.toDouble(), rect.bottom.toDouble(), buffer
+                    textPagePtr = pagePtr, left = rect.left.toDouble(), top = rect.top.toDouble(),
+                    right = rect.right.toDouble(), bottom = rect.bottom.toDouble(), arr = buffer
                 )
-                val bytes = ByteArray((textRect - 1) * 2)
+                val bytes = ByteArray(size = (textRect - 1) * 2)
                 val byteBuffer = ByteBuffer.wrap(bytes)
                 byteBuffer.order(ByteOrder.LITTLE_ENDIAN)
                 for (i in 0 until textRect - 1) {
-                    val s = buffer[i]
-                    byteBuffer.putShort(s)
+                    byteBuffer.putShort(buffer[i])
                 }
-                return String(bytes, StandardCharsets.UTF_16LE)
+                return String(bytes = bytes, charset = StandardCharsets.UTF_16LE)
             } catch (e: NullPointerException) {
                 Log.e(TAG, "Context may be null", e)
             } catch (e: Exception) {
@@ -261,7 +268,7 @@ class PdfTextPage(
     fun getFontSize(charIndex: Int): Double {
         check(value = !isClosed && !document.isClosed) { "Already closed" }
         synchronized(lock = PdfiumCore.lock) {
-            return nativeGetFontSize(pagePtr, charIndex)
+            return nativeGetFontSize(pagePtr = pagePtr, charIndex = charIndex)
         }
     }
 
@@ -277,9 +284,9 @@ class PdfTextPage(
                     return
                 }
             }
-            pageMap.remove(pageIndex)
+            pageMap.remove(key = pageIndex)
             isClosed = true
-            nativeCloseTextPage(pagePtr)
+            nativeCloseTextPage(pagePtr = pagePtr)
         }
     }
 

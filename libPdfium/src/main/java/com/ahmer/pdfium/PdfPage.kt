@@ -84,7 +84,7 @@ class PdfPage(
     val getPageHeight: Int by lazy {
         check(value = !isClosed && !document.isClosed) { "Already closed" }
         synchronized(lock = PdfiumCore.lock) {
-            nativeGetPageHeightPixel(pagePtr, PdfiumCore.screenDpi)
+            nativeGetPageHeightPixel(pagePtr = pagePtr, dpi = PdfiumCore.screenDpi)
         }
     }
 
@@ -96,7 +96,7 @@ class PdfPage(
     val getPageWidth: Int by lazy {
         check(value = !isClosed && !document.isClosed) { "Already closed" }
         synchronized(lock = PdfiumCore.lock) {
-            nativeGetPageWidthPixel(pagePtr, PdfiumCore.screenDpi)
+            nativeGetPageWidthPixel(pagePtr = pagePtr, PdfiumCore.screenDpi)
         }
     }
 
@@ -108,7 +108,7 @@ class PdfPage(
     val getPageHeightPoint: Int by lazy {
         check(value = !isClosed && !document.isClosed) { "Already closed" }
         synchronized(lock = PdfiumCore.lock) {
-            nativeGetPageHeightPoint(pagePtr)
+            nativeGetPageHeightPoint(pagePtr = pagePtr)
         }
     }
 
@@ -120,7 +120,7 @@ class PdfPage(
     val getPageWidthPoint: Int by lazy {
         check(value = !isClosed && !document.isClosed) { "Already closed" }
         synchronized(lock = PdfiumCore.lock) {
-            nativeGetPageWidthPoint(pagePtr)
+            nativeGetPageWidthPoint(pagePtr = pagePtr)
         }
     }
 
@@ -132,7 +132,9 @@ class PdfPage(
     val getPageSize: Size by lazy {
         check(value = !isClosed && !document.isClosed) { "Already closed" }
         synchronized(lock = PdfiumCore.lock) {
-            nativeGetPageSizeByIndex(document.nativeDocPtr, pageIndex, PdfiumCore.screenDpi)
+            nativeGetPageSizeByIndex(
+                docPtr = document.nativeDocPtr, pageIndex = pageIndex, dpi = PdfiumCore.screenDpi
+            )
         }
     }
 
@@ -142,7 +144,7 @@ class PdfPage(
      */
     val getPageRotation: Int by lazy {
         check(value = !isClosed && !document.isClosed) { "Already closed" }
-        nativeGetPageRotation(pagePtr)
+        nativeGetPageRotation(pagePtr = pagePtr)
     }
 
     /**
@@ -162,7 +164,10 @@ class PdfPage(
         check(value = !isClosed && !document.isClosed) { "Already closed" }
         synchronized(lock = PdfiumCore.lock) {
             try {
-                nativeRenderPage(pagePtr, surface, startX, startY, drawSizeX, drawSizeY, annotation)
+                nativeRenderPage(
+                    pagePtr = pagePtr, surface = surface, startX = startX, startY = startY,
+                    drawSizeHor = drawSizeX, drawSizeVer = drawSizeY, annotation = annotation
+                )
             } catch (e: NullPointerException) {
                 Log.e(TAG, "Context may be null", e)
                 e.printStackTrace()
@@ -196,23 +201,22 @@ class PdfPage(
         check(value = !isClosed && !document.isClosed) { "Already closed" }
         synchronized(lock = PdfiumCore.lock) {
             nativeRenderPageBitmap(
-                pagePtr, bitmap, startX, startY, drawSizeX, drawSizeY, annotation
+                pagePtr = pagePtr, bitmap = bitmap, startX = startX, startY = startY,
+                drawSizeHor = drawSizeX, drawSizeVer = drawSizeY, annotation = annotation
             )
         }
     }
 
     fun renderPageBitmap(bitmap: Bitmap?, matrix: Matrix, clipRect: RectF, annotation: Boolean) {
         check(value = !isClosed && !document.isClosed) { "Already closed" }
-        val matrixValues = FloatArray(THREE_BY_THREE)
+        val matrixValues = FloatArray(size = THREE_BY_THREE)
         matrix.getValues(matrixValues)
         synchronized(lock = PdfiumCore.lock) {
             nativeRenderPageBitmapWithMatrix(
-                pagePtr, bitmap, floatArrayOf(
-                    matrixValues[Matrix.MSCALE_X],
-                    matrixValues[Matrix.MSCALE_Y],
-                    matrixValues[Matrix.MTRANS_X],
-                    matrixValues[Matrix.MTRANS_Y],
-                ), clipRect, annotation
+                pagePtr = pagePtr, bitmap = bitmap, matrix = floatArrayOf(
+                    matrixValues[Matrix.MSCALE_X], matrixValues[Matrix.MSCALE_Y],
+                    matrixValues[Matrix.MTRANS_X], matrixValues[Matrix.MTRANS_Y]
+                ), clipRect = clipRect, annotation = annotation
             )
         }
     }
@@ -223,23 +227,29 @@ class PdfPage(
     fun getPageLinks(size: SizeF, posX: Float, posY: Float): List<PdfDocument.Link> {
         check(value = !isClosed && !document.isClosed) { "Already closed" }
         synchronized(lock = PdfiumCore.lock) {
-            val mLinks: MutableList<PdfDocument.Link> = ArrayList()
-            val mPageLinks: LongArray = nativeGetPageLinks(pagePtr)
-            val mLinkAtCoordinate: Long = nativeGetLinkAtCoord(
-                pagePtr, size.width.toInt(), size.height.toInt(), posX.toInt(), posY.toInt()
+            val links: MutableList<PdfDocument.Link> = ArrayList()
+            val pageLinks: LongArray = nativeGetPageLinks(pagePtr = pagePtr)
+            val linkAtCoordinate: Long = nativeGetLinkAtCoord(
+                pagePtr = pagePtr, width = size.width.toInt(), height = size.height.toInt(),
+                posX = posX.toInt(), posY = posY.toInt()
             )
-            for (linkPtr in mPageLinks) {
-                val mIndex: Int? = nativeGetDestPageIndex(document.nativeDocPtr, mLinkAtCoordinate)
-                val mUri: String? = nativeGetLinkURI(document.nativeDocPtr, linkPtr)
-                val mBound: RectF? = nativeGetLinkRect(linkPtr)
+            for (linkPtr in pageLinks) {
+                val index: Int? = nativeGetDestPageIndex(
+                    docPtr = document.nativeDocPtr, linkPtr = linkAtCoordinate
+                )
+                val mUri: String? =
+                    nativeGetLinkURI(docPtr = document.nativeDocPtr, linkPtr = linkPtr)
+                val rectF: RectF? = nativeGetLinkRect(linkPtr = linkPtr)
                 if (mUri == null) {
-                    val uri: String? = nativeGetLinkURI(document.nativeDocPtr, mLinkAtCoordinate)
-                    mLinks.add(PdfDocument.Link(mBound, mIndex, uri))
+                    val uri: String? = nativeGetLinkURI(
+                        docPtr = document.nativeDocPtr, linkPtr = linkAtCoordinate
+                    )
+                    links.add(PdfDocument.Link(bounds = rectF, destPageIndex = index, uri = uri))
                 } else {
-                    mLinks.add(PdfDocument.Link(mBound, mIndex, mUri))
+                    links.add(PdfDocument.Link(bounds = rectF, destPageIndex = index, uri = mUri))
                 }
             }
-            return mLinks
+            return links
         }
     }
 
@@ -261,7 +271,10 @@ class PdfPage(
         startX: Int, startY: Int, sizeX: Int, sizeY: Int, rotate: Int, pageX: Double, pageY: Double
     ): Point {
         check(value = !isClosed && !document.isClosed) { "Already closed" }
-        return nativePageCoordsToDevice(pagePtr, startX, startY, sizeX, sizeY, rotate, pageX, pageY)
+        return nativePageCoordsToDevice(
+            pagePtr = pagePtr, startX = startX, startY = startY, sizeX = sizeX, sizeY = sizeY,
+            rotate = rotate, pageX = pageX, pageY = pageY
+        )
     }
 
     /**
@@ -283,10 +296,12 @@ class PdfPage(
         startX: Int, startY: Int, sizeX: Int, sizeY: Int, rotate: Int, coords: RectF
     ): RectF {
         val leftTop = mapPageCoordsToDevice(
-            startX, startY, sizeX, sizeY, rotate, coords.left.toDouble(), coords.top.toDouble()
+            startX = startX, startY = startY, sizeX = sizeX, sizeY = sizeY, rotate = rotate,
+            pageX = coords.left.toDouble(), pageY = coords.top.toDouble()
         )
         val rightBottom = mapPageCoordsToDevice(
-            startX, startY, sizeX, sizeY, rotate, coords.right.toDouble(), coords.bottom.toDouble()
+            startX = startX, startY = startY, sizeX = sizeX, sizeY = sizeY, rotate = rotate,
+            pageX = coords.right.toDouble(), pageY = coords.bottom.toDouble()
         )
         return RectF(
             leftTop.x.toFloat(), leftTop.y.toFloat(),
@@ -313,7 +328,8 @@ class PdfPage(
     ): PointF {
         check(value = !isClosed && !document.isClosed) { "Already closed" }
         return nativeDeviceCoordsToPage(
-            pagePtr, startX, startY, sizeX, sizeY, rotate, deviceX, deviceY
+            pagePtr = pagePtr, startX = startX, startY = startY, sizeX = sizeX, sizeY = sizeY,
+            rotate = rotate, deviceX = deviceX, deviceY = deviceY
         )
     }
 
@@ -329,9 +345,9 @@ class PdfPage(
                     return
                 }
             }
-            pageMap.remove(pageIndex)
+            pageMap.remove(key = pageIndex)
             isClosed = true
-            nativeClosePage(pagePtr)
+            nativeClosePage(pagePtr = pagePtr)
         }
     }
 

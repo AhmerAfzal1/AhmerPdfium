@@ -19,7 +19,7 @@ class PdfiumCore(context: Context) {
      */
     @Throws(IOException::class)
     fun newDocument(parcelFileDescriptor: ParcelFileDescriptor): PdfDocument {
-        return newDocument(parcelFileDescriptor, null)
+        return newDocument(parcelFileDescriptor = parcelFileDescriptor, password = null)
     }
 
     /**
@@ -32,7 +32,7 @@ class PdfiumCore(context: Context) {
     fun newDocument(parcelFileDescriptor: ParcelFileDescriptor, password: String?): PdfDocument {
         synchronized(lock = lock) {
             return PdfDocument(
-                nativeDocPtr = nativeOpenDocument(parcelFileDescriptor.fd, password)
+                nativeDocPtr = nativeOpenDocument(parcelFileDescriptor.fd, password = password)
             ).also { document ->
                 document.parcelFileDescriptor = parcelFileDescriptor
             }
@@ -46,7 +46,7 @@ class PdfiumCore(context: Context) {
      */
     @Throws(IOException::class)
     fun newDocument(data: ByteArray): PdfDocument {
-        return newDocument(data, null)
+        return newDocument(data = data, password = null)
     }
 
     /**
@@ -58,7 +58,9 @@ class PdfiumCore(context: Context) {
     @Throws(IOException::class)
     fun newDocument(data: ByteArray, password: String?): PdfDocument {
         synchronized(lock = lock) {
-            return PdfDocument(nativeOpenMemDocument(data, password)).also { document ->
+            return PdfDocument(
+                nativeDocPtr = nativeOpenMemDocument(data = data, password = password)
+            ).also { document ->
                 document.parcelFileDescriptor = null
             }
         }
@@ -74,12 +76,16 @@ class PdfiumCore(context: Context) {
                 System.loadLibrary("pdfsdk")
                 System.loadLibrary("pdfsdk_jni")
             } catch (e: UnsatisfiedLinkError) {
-                Log.e(TAG, "Native libraries failed to load", e)
+                Log.e(TAG, "UnsatisfiedLinkError: Native libraries failed to load", e)
+            } catch (e: SecurityException) {
+                Log.e(TAG, "SecurityException: Native libraries failed to load", e)
+            } catch (e: NullPointerException) {
+                Log.e(TAG, "NullPointerException: Native libraries failed to load", e)
             }
         }
     }
 
     init {
-        Log.d(TAG, "Starting AhmerPdfium...")
+        Log.v(TAG, "Starting AhmerPdfium...")
     }
 }

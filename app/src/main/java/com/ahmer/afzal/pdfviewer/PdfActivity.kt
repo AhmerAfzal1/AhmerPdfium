@@ -358,8 +358,8 @@ class PdfActivity : AppCompatActivity(), OnPageChangeListener, OnLoadCompleteLis
 
     private fun printBookmarksTree(tree: List<PdfDocument.Bookmark>, sep: String) {
         for (b in tree) {
-            Log.v(Constants.LOG_TAG, "Bookmark $sep ${b.title}, Page: ${b.pageIdx}")
-            if (b.hasChildren()) {
+            Log.v(Constants.LOG_TAG, "Bookmark $sep ${b.title}, Page: ${b.pageIndex}")
+            if (b.hasChildren) {
                 printBookmarksTree(b.children, "$sep-")
             }
         }

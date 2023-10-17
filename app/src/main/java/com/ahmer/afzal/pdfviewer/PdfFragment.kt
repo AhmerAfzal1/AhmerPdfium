@@ -302,7 +302,11 @@ class PdfFragment : Fragment(R.layout.fragment_pdf), MenuProvider, OnPageChangeL
                 override fun onPageError(page: Int, t: Throwable?) {
                     t?.printStackTrace()
                     ToastUtils.showLong("onPageError")
-                    Log.e(Constants.LOG_TAG, "onPageError: ${t?.localizedMessage} on page: $page", t)
+                    Log.e(
+                        Constants.LOG_TAG,
+                        "onPageError: ${t?.localizedMessage} on page: $page",
+                        t
+                    )
                 }
             })
             .onRender(object : OnRenderListener {
@@ -339,8 +343,8 @@ class PdfFragment : Fragment(R.layout.fragment_pdf), MenuProvider, OnPageChangeL
 
     private fun printBookmarksTree(tree: List<PdfDocument.Bookmark>, sep: String) {
         for (b in tree) {
-            Log.v(Constants.LOG_TAG, "Bookmark $sep ${b.title}, Page: ${b.pageIdx}")
-            if (b.hasChildren()) {
+            Log.v(Constants.LOG_TAG, "Bookmark $sep ${b.title}, Page: ${b.pageIndex}")
+            if (b.hasChildren) {
                 printBookmarksTree(b.children, "$sep-")
             }
         }
