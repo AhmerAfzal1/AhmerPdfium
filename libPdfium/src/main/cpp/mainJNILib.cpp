@@ -575,7 +575,6 @@ JNI_FUNC(void, PdfPage, nativeRenderPageBitmapWithMatrix)(JNI_ARGS, jlong pagePt
 
     FPDF_BITMAP pdfBitmap = FPDFBitmap_CreateEx((int) canvasHorSize, (int) canvasVerSize,
                                                 format, tmp, sourceStride);
-
     /*
     LOGD("Start X: %d", startX);
     LOGD("Start Y: %d", startY);
@@ -584,15 +583,11 @@ JNI_FUNC(void, PdfPage, nativeRenderPageBitmapWithMatrix)(JNI_ARGS, jlong pagePt
     LOGD("Draw Hor: %d", drawSizeHor);
     LOGD("Draw Ver: %d", drawSizeVer);
      */
-
     int flags = FPDF_REVERSE_BYTE_ORDER;
-
     if (annotation) {
         flags |= FPDF_ANNOT;
     }
-
     FPDFBitmap_FillRect(pdfBitmap, 0, 0, canvasHorSize, canvasVerSize, 0xFFFFFFFF); //White
-
     jclass clazz = env->FindClass("android/graphics/RectF");
     jfieldID left = env->GetFieldID(clazz, "left", "F");
     jfieldID top = env->GetFieldID(clazz, "top", "F");
@@ -602,10 +597,8 @@ JNI_FUNC(void, PdfPage, nativeRenderPageBitmapWithMatrix)(JNI_ARGS, jlong pagePt
     jfloat topClip = env->GetFloatField(clipRect, top);
     jfloat rightClip = env->GetFloatField(clipRect, right);
     jfloat bottomClip = env->GetFloatField(clipRect, bottom);
-
     jboolean isCopy;
     auto matrixFloats = env->GetFloatArrayElements(matrixValues, &isCopy);
-
     auto matrix = FS_MATRIX();
     matrix.a = matrixFloats[0];
     matrix.b = 0;
@@ -621,15 +614,11 @@ JNI_FUNC(void, PdfPage, nativeRenderPageBitmapWithMatrix)(JNI_ARGS, jlong pagePt
     if (isCopy) {
         env->ReleaseFloatArrayElements(matrixValues, (jfloat *) matrixFloats, JNI_ABORT);
     }
-
-
     FPDF_RenderPageBitmapWithMatrix(pdfBitmap, page, &matrix, &clip, flags);
-
     if (info.format == ANDROID_BITMAP_FORMAT_RGB_565) {
         rgbBitmapTo565(tmp, sourceStride, addr, &info);
         free(tmp);
     }
-
     AndroidBitmap_unlockPixels(env, bitmap);
 }
 
@@ -703,6 +692,114 @@ JNI_FUNC(void, PdfPage, nativeRenderPageBitmap)(JNI_ARGS, jlong pagePtr, jobject
         free(tmp);
     }
     AndroidBitmap_unlockPixels(env, bitmap);
+}
+
+JNI_FUNC(jfloatArray, PdfPage, nativeGetPageArtBox)(JNI_ARGS, jlong pagePtr) {
+    auto page = reinterpret_cast<FPDF_PAGE>(pagePtr);
+    jfloatArray result = env->NewFloatArray(4);
+    if (result == nullptr) {
+        return nullptr;
+    }
+    float rect[4];
+    if (!FPDFPage_GetArtBox(page, &rect[0], &rect[1], &rect[2], &rect[3])) {
+        rect[0] = -1.0f;
+        rect[1] = -1.0f;
+        rect[2] = -1.0f;
+        rect[3] = -1.0f;
+    }
+    env->SetFloatArrayRegion(result, 0, 4, (jfloat *) rect);
+    return result;
+}
+
+JNI_FUNC(jfloatArray, PdfPage, nativeGetPageBleedBox)(JNI_ARGS, jlong pagePtr) {
+    auto page = reinterpret_cast<FPDF_PAGE>(pagePtr);
+    jfloatArray result = env->NewFloatArray(4);
+    if (result == nullptr) {
+        return nullptr;
+    }
+    float rect[4];
+    if (!FPDFPage_GetBleedBox(page, &rect[0], &rect[1], &rect[2], &rect[3])) {
+        rect[0] = -1.0f;
+        rect[1] = -1.0f;
+        rect[2] = -1.0f;
+        rect[3] = -1.0f;
+    }
+    env->SetFloatArrayRegion(result, 0, 4, (jfloat *) rect);
+    return result;
+}
+
+JNI_FUNC(jfloatArray, PdfPage, nativeGetPageBoundingBox)(JNI_ARGS, jlong pagePtr) {
+    auto page = reinterpret_cast<FPDF_PAGE>(pagePtr);
+    jfloatArray result = env->NewFloatArray(4);
+    if (result == nullptr) {
+        return nullptr;
+    }
+    float rect[4];
+    FS_RECTF fsRect;
+    if (!FPDF_GetPageBoundingBox(page, &fsRect)) {
+        rect[0] = -1.0f;
+        rect[1] = -1.0f;
+        rect[2] = -1.0f;
+        rect[3] = -1.0f;
+    } else {
+        rect[0] = fsRect.left;
+        rect[1] = fsRect.top;
+        rect[2] = fsRect.right;
+        rect[3] = fsRect.bottom;
+    }
+    env->SetFloatArrayRegion(result, 0, 4, (jfloat*)rect);
+    return result;
+}
+
+JNI_FUNC(jfloatArray, PdfPage, nativeGetPageCropBox)(JNI_ARGS, jlong pagePtr) {
+    auto page = reinterpret_cast<FPDF_PAGE>(pagePtr);
+    jfloatArray result = env->NewFloatArray(4);
+    if (result == nullptr) {
+        return nullptr;
+    }
+    float rect[4];
+    if (!FPDFPage_GetCropBox(page, &rect[0], &rect[1], &rect[2], &rect[3])) {
+        rect[0] = -1.0f;
+        rect[1] = -1.0f;
+        rect[2] = -1.0f;
+        rect[3] = -1.0f;
+    }
+    env->SetFloatArrayRegion(result, 0, 4, (jfloat *) rect);
+    return result;
+}
+
+JNI_FUNC(jfloatArray, PdfPage, nativeGetPageMediaBox)(JNI_ARGS, jlong pagePtr) {
+    auto page = reinterpret_cast<FPDF_PAGE>(pagePtr);
+    jfloatArray result = env->NewFloatArray(4);
+    if (result == nullptr) {
+        return nullptr;
+    }
+    float rect[4];
+    if (!FPDFPage_GetMediaBox(page, &rect[0], &rect[1], &rect[2], &rect[3])) {
+        rect[0] = -1.0f;
+        rect[1] = -1.0f;
+        rect[2] = -1.0f;
+        rect[3] = -1.0f;
+    }
+    env->SetFloatArrayRegion(result, 0, 4, (jfloat *) rect);
+    return result;
+}
+
+JNI_FUNC(jfloatArray, PdfPage, nativeGetPageTrimBox)(JNI_ARGS, jlong pagePtr) {
+    auto page = reinterpret_cast<FPDF_PAGE>(pagePtr);
+    jfloatArray result = env->NewFloatArray(4);
+    if (result == nullptr) {
+        return nullptr;
+    }
+    float rect[4];
+    if (!FPDFPage_GetTrimBox(page, &rect[0], &rect[1], &rect[2], &rect[3])) {
+        rect[0] = -1.0f;
+        rect[1] = -1.0f;
+        rect[2] = -1.0f;
+        rect[3] = -1.0f;
+    }
+    env->SetFloatArrayRegion(result, 0, 4, (jfloat*)rect);
+    return result;
 }
 
 /*

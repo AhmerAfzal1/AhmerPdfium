@@ -7,7 +7,6 @@ Android view for displaying PDFs rendered with PdfiumAndroid from API 19
 ## Include PDFView in your layout
 
 ```xml
-
 <com.ahmer.pdfviewer.PDFView 
     android:id="@+id/pdfView" 
     android:layout_width="match_parent"
@@ -172,8 +171,8 @@ You can use a combination of the following settings to get scroll and fling beha
 ViewPager:
 
 ```kotlin
-.swipeHorizontal(true)
-.pageSnap(true)
-.autoSpacing(true)
-.pageFling(true)
+pdfview.swipeHorizontal(true)
+    .pageSnap(true)
+    .autoSpacing(true)
+    .pageFling(true)
 ```

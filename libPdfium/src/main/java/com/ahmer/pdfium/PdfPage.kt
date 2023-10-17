@@ -23,8 +23,8 @@ class PdfPage(
     private external fun nativeClosePage(pagePtr: Long)
     private external fun nativeClosePages(pagesPtr: LongArray)
     private external fun nativeDeviceCoordsToPage(
-        pagePtr: Long, startX: Int, startY: Int, sizeX: Int,
-        sizeY: Int, rotate: Int, deviceX: Int, deviceY: Int
+        pagePtr: Long, startX: Int, startY: Int, sizeX: Int, sizeY: Int, rotate: Int,
+        deviceX: Int, deviceY: Int
     ): PointF
 
     private external fun nativeGetDestPageIndex(docPtr: Long, linkPtr: Long): Int?
@@ -34,40 +34,37 @@ class PdfPage(
 
     private external fun nativeGetLinkRect(linkPtr: Long): RectF?
     private external fun nativeGetLinkURI(docPtr: Long, linkPtr: Long): String?
+    private external fun nativeGetPageArtBox(pagePtr: Long): FloatArray
+    private external fun nativeGetPageBleedBox(pagePtr: Long): FloatArray
+    private external fun nativeGetPageBoundingBox(pagePtr: Long): FloatArray
+    private external fun nativeGetPageCropBox(pagePtr: Long): FloatArray
     private external fun nativeGetPageHeightPixel(pagePtr: Long, dpi: Int): Int
     private external fun nativeGetPageHeightPoint(pagePtr: Long): Int
     private external fun nativeGetPageLinks(pagePtr: Long): LongArray
+    private external fun nativeGetPageMediaBox(pagePtr: Long): FloatArray
     private external fun nativeGetPageRotation(pagePtr: Long): Int
     private external fun nativeGetPageSizeByIndex(docPtr: Long, pageIndex: Int, dpi: Int): Size
+    private external fun nativeGetPageTrimBox(pagePtr: Long): FloatArray
     private external fun nativeGetPageWidthPixel(pagePtr: Long, dpi: Int): Int
     private external fun nativeGetPageWidthPoint(pagePtr: Long): Int
     private external fun nativePageCoordsToDevice(
-        pagePtr: Long, startX: Int, startY: Int, sizeX: Int,
-        sizeY: Int, rotate: Int, pageX: Double, pageY: Double
+        pagePtr: Long, startX: Int, startY: Int, sizeX: Int, sizeY: Int, rotate: Int,
+        pageX: Double, pageY: Double
     ): Point
 
     private external fun nativeRenderPage(
-        pagePtr: Long, surface: Surface, startX: Int, startY: Int,
-        drawSizeHor: Int, drawSizeVer: Int, annotation: Boolean
+        pagePtr: Long, surface: Surface, startX: Int, startY: Int, drawSizeHor: Int,
+        drawSizeVer: Int, annotation: Boolean
     )
 
     private external fun nativeRenderPageBitmap(
-        pagePtr: Long, bitmap: Bitmap?, startX: Int, startY: Int,
-        drawSizeHor: Int, drawSizeVer: Int, annotation: Boolean
+        pagePtr: Long, bitmap: Bitmap?, startX: Int, startY: Int, drawSizeHor: Int,
+        drawSizeVer: Int, annotation: Boolean
     )
 
     private external fun nativeRenderPageBitmapWithMatrix(
         pagePtr: Long, bitmap: Bitmap?, matrix: FloatArray, clipRect: RectF, annotation: Boolean
     )
-
-    /*
-    private external fun nativeGetPageArtBox(pagePtr: Long): FloatArray
-    private external fun nativeGetPageBleedBox(pagePtr: Long): FloatArray
-    private external fun nativeGetPageBoundingBox(pagePtr: Long): FloatArray
-    private external fun nativeGetPageCropBox(pagePtr: Long): FloatArray
-    private external fun nativeGetPageMediaBox(pagePtr: Long): FloatArray
-    private external fun nativeGetPageTrimBox(pagePtr: Long): FloatArray
-    */
 
     /**
      * Open a text page
@@ -192,7 +189,6 @@ class PdfPage(
      *
      *  * ARGB_8888 - best quality, high memory usage, higher possibility of OutOfMemoryError
      *  * RGB_565 - little worse quality, 1/2 the memory usage
-     *
      */
     fun renderPageBitmap(
         bitmap: Bitmap?, startX: Int, startY: Int,
@@ -203,6 +199,32 @@ class PdfPage(
             nativeRenderPageBitmap(
                 pagePtr = pagePtr, bitmap = bitmap, startX = startX, startY = startY,
                 drawSizeHor = drawSizeX, drawSizeVer = drawSizeY, annotation = annotation
+            )
+        }
+    }
+
+    /**
+     * Render page fragment on [Bitmap] with no annotation.<br></br>
+     * @param bitmap Bitmap on which to render page
+     * @param startX left position of the page in the bitmap
+     * @param startY top position of the page in the bitmap
+     * @param drawSizeX horizontal size of the page on the bitmap
+     * @param drawSizeY vertical size of the page on the bitmap
+     * @throws IllegalStateException If the page or document is closed
+     *
+     * Supported bitmap configurations:
+     *
+     *  * ARGB_8888 - best quality, high memory usage, higher possibility of OutOfMemoryError
+     *  * RGB_565 - little worse quality, 1/2 the memory usage
+     */
+    fun renderPageBitmap(
+        bitmap: Bitmap?, startX: Int, startY: Int, drawSizeX: Int, drawSizeY: Int
+    ) {
+        check(value = !isClosed && !document.isClosed) { "Already closed" }
+        synchronized(lock = PdfiumCore.lock) {
+            renderPageBitmap(
+                bitmap = bitmap, startX = startX, startY = startY, drawSizeX = drawSizeX,
+                drawSizeY = drawSizeY, annotation = false
             )
         }
     }
@@ -331,6 +353,114 @@ class PdfPage(
             pagePtr = pagePtr, startX = startX, startY = startY, sizeX = sizeX, sizeY = sizeY,
             rotate = rotate, deviceX = deviceX, deviceY = deviceY
         )
+    }
+
+    /**
+     *  Get the page's art box in PostScript points (1/72th of an inch)
+     *  @return page art box in points or RectF(-1, -1, -1, -1) if not present
+     *  @throws IllegalStateException If the page or document is closed
+     */
+    fun getPageArtBox(): RectF {
+        check(value = !isClosed && !document.isClosed) { "Already closed" }
+        synchronized(lock = PdfiumCore.lock) {
+            val bound = nativeGetPageArtBox(pagePtr = pagePtr)
+            return RectF().apply {
+                left = bound[LEFT]
+                top = bound[TOP]
+                right = bound[RIGHT]
+                bottom = bound[BOTTOM]
+            }
+        }
+    }
+
+    /**
+     *  Get the page's bleed box in PostScript points (1/72th of an inch)
+     *  @return page bleed box in points or RectF(-1, -1, -1, -1) if not present
+     *  @throws IllegalStateException If the page or document is closed
+     */
+    fun getPageBleedBox(): RectF {
+        check(value = !isClosed && !document.isClosed) { "Already closed" }
+        synchronized(lock = PdfiumCore.lock) {
+            val bound = nativeGetPageBleedBox(pagePtr = pagePtr)
+            return RectF().apply {
+                left = bound[LEFT]
+                top = bound[TOP]
+                right = bound[RIGHT]
+                bottom = bound[BOTTOM]
+            }
+        }
+    }
+
+    /**
+     *  Get the page's bounding box in PostScript points (1/72th of an inch)
+     *  @return page bounding box in points or RectF(-1, -1, -1, -1) if not present
+     *  @throws IllegalStateException If the page or document is closed
+     */
+    fun getPageBoundingBox(): RectF {
+        check(value = !isClosed && !document.isClosed) { "Already closed" }
+        synchronized(lock = PdfiumCore.lock) {
+            val bound = nativeGetPageBoundingBox(pagePtr = pagePtr)
+            return RectF().apply {
+                left = bound[LEFT]
+                top = bound[TOP]
+                right = bound[RIGHT]
+                bottom = bound[BOTTOM]
+            }
+        }
+    }
+
+    /**
+     *  Get the page's crop box in PostScript points (1/72th of an inch)
+     *  @return page crop box in points or RectF(-1, -1, -1, -1) if not present
+     *  @throws IllegalStateException If the page or document is closed
+     */
+    fun getPageCropBox(): RectF {
+        check(value = !isClosed && !document.isClosed) { "Already closed" }
+        synchronized(lock = PdfiumCore.lock) {
+            val bound = nativeGetPageCropBox(pagePtr = pagePtr)
+            return RectF().apply {
+                left = bound[LEFT]
+                top = bound[TOP]
+                right = bound[RIGHT]
+                bottom = bound[BOTTOM]
+            }
+        }
+    }
+
+    /**
+     *  Get the page's media box in PostScript points (1/72th of an inch)
+     *  @return page media box in points or RectF(-1, -1, -1, -1) if not present
+     *  @throws IllegalStateException If the page or document is closed
+     */
+    fun getPageMediaBox(): RectF {
+        check(value = !isClosed && !document.isClosed) { "Already closed" }
+        synchronized(lock = PdfiumCore.lock) {
+            val bound = nativeGetPageMediaBox(pagePtr = pagePtr)
+            return RectF().apply {
+                left = bound[LEFT]
+                top = bound[TOP]
+                right = bound[RIGHT]
+                bottom = bound[BOTTOM]
+            }
+        }
+    }
+
+    /**
+     *  Get the page's trim box in PostScript points (1/72th of an inch)
+     *  @return page trim box in points or RectF(-1, -1, -1, -1) if not present
+     *  @throws IllegalStateException If the page or document is closed
+     */
+    fun getPageTrimBox(): RectF {
+        check(value = !isClosed && !document.isClosed) { "Already closed" }
+        synchronized(lock = PdfiumCore.lock) {
+            val bound = nativeGetPageTrimBox(pagePtr = pagePtr)
+            return RectF().apply {
+                left = bound[LEFT]
+                top = bound[TOP]
+                right = bound[RIGHT]
+                bottom = bound[BOTTOM]
+            }
+        }
     }
 
     /**

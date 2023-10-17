@@ -11,8 +11,8 @@ fun openPdf(context: Context, file: File, password: String? = null) {
     val iv: ImageView = findViewById(R.id.imageView)
     val fd: ParcelFileDescriptor =
         ParcelFileDescriptor.open(file, ParcelFileDescriptor.MODE_READ_ONLY)
-    val pageNum: Int = 0
-    val pdfiumCore:PdfiumCore = PdfiumCore(context)
+    val pageNum = 0
+    val pdfiumCore = PdfiumCore(context)
     try {
         val pdfDocument: PdfDocument = pdfiumCore.newDocument(fd, password)
         val pdfPage: PdfPage = pdfDocument.openPage(pageNum)
@@ -28,6 +28,7 @@ fun openPdf(context: Context, file: File, password: String? = null) {
         printInfo(pdfDocument)
         pdfDocument.close() // important!
     } catch (ex: IOException) {
+        Log.e(TAG, ex.localizedMessage, ex)
         ex.printStackTrace()
     }
 }
@@ -48,7 +49,7 @@ fun printInfo(doc: PdfDocument) {
 
 fun printBookmarksTree(tree: List<PdfDocument.Bookmark>, sep: String) {
     for (b in tree) {
-        Log.v(Constants.LOG_TAG, "Bookmark $sep ${b.title}, Page: ${b.pageIdx}")
+        Log.v(TAG, "Bookmark $sep ${b.title}, Page: ${b.pageIndex}")
         if (b.hasChildren) {
             printBookmarksTree(b.children, "$sep-")
         }

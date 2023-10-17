@@ -95,7 +95,7 @@ class PdfDocument(val nativeDocPtr: Long) : Closeable {
      * @return the opened pages [PdfPage]
      * @throws IllegalArgumentException if document is closed or the pages cannot be loaded
      */
-    fun openPage(fromIndex: Int, toIndex: Int): LongArray {
+    fun openPages(fromIndex: Int, toIndex: Int): LongArray {
         check(value = !isClosed) { "Already closed" }
         var pagesPtr: LongArray
         synchronized(lock = PdfiumCore.lock) {
