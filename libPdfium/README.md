@@ -7,33 +7,33 @@ Ahmer Pdfium library fork [barteksc/PdfiumAndroid](https://github.com/barteksc/P
 ## Simple example
 
 ```kotlin
-fun openPdf(context: Context, file: File) {
+fun openPdf(context: Context, file: File, password: String? = null) {
     val iv: ImageView = findViewById(R.id.imageView)
     val fd: ParcelFileDescriptor =
         ParcelFileDescriptor.open(file, ParcelFileDescriptor.MODE_READ_ONLY)
-    val pageNum = 0
-    val pdfiumCore = PdfiumCore(context)
+    val pageNum: Int = 0
+    val pdfiumCore:PdfiumCore = PdfiumCore(context)
     try {
-        val pdfDocument: PdfDocument = pdfiumCore.newDocument(fd)
-        pdfiumCore.openPage(pdfDocument, pageNum)
-        val width: Int = pdfiumCore.getPageWidthPoint(pdfDocument, pageNum)
-        val height: Int = pdfiumCore.getPageHeightPoint(pdfDocument, pageNum)
+        val pdfDocument: PdfDocument = pdfiumCore.newDocument(fd, password)
+        val pdfPage: PdfPage = pdfDocument.openPage(pageNum)
+        val width: Int = pdfPage.getPageWidthPoint
+        val height: Int = pdfPage.getPageHeightPoint
         // ARGB_8888 - best quality, high memory usage, higher possibility of OutOfMemoryError
         // RGB_565 - little worse quality, twice less memory usage
         val bitmap: Bitmap = Bitmap.createBitmap(width, height, Bitmap.Config.RGB_565)
-        pdfiumCore.renderPageBitmap(pdfDocument, bitmap, pageNum, 0, 0, width, height)
+        pdfPage.renderPageBitmap(bitmap, 0, 0, width, height)
         //if you need to render annotations and form fields, you can use
         //the same method above adding 'true' as last param
         iv.setImageBitmap(bitmap)
-        printInfo(pdfiumCore, pdfDocument)
-        pdfiumCore.closeDocument(pdfDocument); // important!
+        printInfo(pdfDocument)
+        pdfDocument.close() // important!
     } catch (ex: IOException) {
         ex.printStackTrace()
     }
 }
 
-fun printInfo(core: PdfiumCore, doc: PdfDocument) {
-    val meta: PdfDocument.Meta = core.getDocumentMeta(doc)
+fun printInfo(doc: PdfDocument) {
+    val meta: PdfDocument.Meta = doc.getDocumentMeta
     Log.v(TAG, "Title = " + meta.title)
     Log.v(TAG, "Author = " + meta.author)
     Log.v(TAG, "Subject = " + meta.subject)
@@ -43,13 +43,13 @@ fun printInfo(core: PdfiumCore, doc: PdfDocument) {
     Log.v(TAG, "CreationDate = " + meta.creationDate)
     Log.v(TAG, "ModDate = " + meta.modDate)
     Log.v(TAG, "TotalPages = " + meta.totalPages)
-    printBookmarksTree(core.getTableOfContents(doc), "-")
+    printBookmarksTree(doc.getTableOfContents, "-")
 }
 
 fun printBookmarksTree(tree: List<PdfDocument.Bookmark>, sep: String) {
     for (b in tree) {
         Log.v(Constants.LOG_TAG, "Bookmark $sep ${b.title}, Page: ${b.pageIdx}")
-        if (b.hasChildren()) {
+        if (b.hasChildren) {
             printBookmarksTree(b.children, "$sep-")
         }
     }
