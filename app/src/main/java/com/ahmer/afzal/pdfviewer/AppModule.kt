@@ -1,13 +1,15 @@
 package com.ahmer.afzal.pdfviewer
 
-import android.app.Application
+import android.content.Context
+import androidx.datastore.core.DataStore
+import androidx.datastore.preferences.core.PreferenceDataStoreFactory
+import androidx.datastore.preferences.core.Preferences
+import androidx.datastore.preferences.preferencesDataStoreFile
 import dagger.Module
 import dagger.Provides
 import dagger.hilt.InstallIn
+import dagger.hilt.android.qualifiers.ApplicationContext
 import dagger.hilt.components.SingletonComponent
-import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.SupervisorJob
-import javax.inject.Qualifier
 import javax.inject.Singleton
 
 @Module
@@ -16,16 +18,8 @@ object AppModule {
 
     @Provides
     @Singleton
-    fun provideDataStore(application: Application): AppPreferencesManager {
-        return AppPreferencesManager(application)
-    }
-
-    @ApplicationScope
-    @Provides
-    @Singleton
-    fun provideCoroutineScope() = CoroutineScope(SupervisorJob())
+    fun providesDataStore(@ApplicationContext context: Context): DataStore<Preferences> =
+        PreferenceDataStoreFactory.create {
+            context.preferencesDataStoreFile(name = Constants.DATA_STORE_NAME)
+        }
 }
-
-@Retention(AnnotationRetention.RUNTIME)
-@Qualifier
-annotation class ApplicationScope

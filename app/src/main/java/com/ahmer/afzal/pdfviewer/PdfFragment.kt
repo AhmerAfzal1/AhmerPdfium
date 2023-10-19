@@ -27,6 +27,7 @@ import androidx.fragment.app.Fragment
 import androidx.fragment.app.viewModels
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.lifecycleScope
+import androidx.lifecycle.repeatOnLifecycle
 import com.ahmer.afzal.pdfviewer.databinding.FragmentPdfBinding
 import com.ahmer.pdfium.PdfDocument
 import com.ahmer.pdfium.PdfPasswordException
@@ -48,6 +49,7 @@ import io.ahmer.utils.utilcode.KeyboardUtils
 import io.ahmer.utils.utilcode.StringUtils
 import io.ahmer.utils.utilcode.ThrowableUtils
 import io.ahmer.utils.utilcode.ToastUtils
+import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.launch
 import java.util.Locale
@@ -83,11 +85,13 @@ class PdfFragment : Fragment(R.layout.fragment_pdf), MenuProvider, OnPageChangeL
                 requireActivity().onBackPressedDispatcher.onBackPressed()
             }
         }
-        viewLifecycleOwner.lifecycleScope.launch {
-            mIsAutoSpacing = mViewModel.flow.first().isAutoSpacing
-            mIsPageSnap = mViewModel.flow.first().isPageSnap
-            mIsViewHorizontal = mViewModel.flow.first().isViewHorizontal
-            mSpacing = mViewModel.flow.first().spacing
+        lifecycleScope.launch {
+            repeatOnLifecycle(Lifecycle.State.STARTED){
+                mViewModel.isAutoSpacing.collectLatest { mIsAutoSpacing = it }
+                mViewModel.isPageSnap.collectLatest { mIsPageSnap = it }
+                mViewModel.getSpacing.collectLatest { mSpacing = it }
+                mViewModel.isViewHorizontal.collectLatest { mIsViewHorizontal = it }
+            }
         }
         val menuHost: MenuHost = requireActivity()
         menuHost.addMenuProvider(this, viewLifecycleOwner, Lifecycle.State.RESUMED)
@@ -282,7 +286,7 @@ class PdfFragment : Fragment(R.layout.fragment_pdf), MenuProvider, OnPageChangeL
             .onPageScroll(object : OnPageScrollListener {
                 override fun onPageScrolled(page: Int, positionOffset: Float) {
                     Log.v(
-                        Constants.LOG_TAG,
+                        Constants.TAG,
                         "onPageScrolled: Page $page PositionOffset: $positionOffset"
                     )
                 }
@@ -294,7 +298,7 @@ class PdfFragment : Fragment(R.layout.fragment_pdf), MenuProvider, OnPageChangeL
                     } else {
                         ToastUtils.showLong(resources.getString(R.string.error_loading_pdf))
                         t?.printStackTrace()
-                        Log.e(Constants.LOG_TAG, " onError: ${t?.localizedMessage}", t)
+                        Log.e(Constants.TAG, " onError: ${t?.localizedMessage}", t)
                     }
                 }
             })
@@ -303,7 +307,7 @@ class PdfFragment : Fragment(R.layout.fragment_pdf), MenuProvider, OnPageChangeL
                     t?.printStackTrace()
                     ToastUtils.showLong("onPageError")
                     Log.e(
-                        Constants.LOG_TAG,
+                        Constants.TAG,
                         "onPageError: ${t?.localizedMessage} on page: $page",
                         t
                     )
@@ -343,7 +347,7 @@ class PdfFragment : Fragment(R.layout.fragment_pdf), MenuProvider, OnPageChangeL
 
     private fun printBookmarksTree(tree: List<PdfDocument.Bookmark>, sep: String) {
         for (b in tree) {
-            Log.v(Constants.LOG_TAG, "Bookmark $sep ${b.title}, Page: ${b.pageIndex}")
+            Log.v(Constants.TAG, "Bookmark $sep ${b.title}, Page: ${b.pageIndex}")
             if (b.hasChildren) {
                 printBookmarksTree(b.children, "$sep-")
             }
@@ -368,15 +372,15 @@ class PdfFragment : Fragment(R.layout.fragment_pdf), MenuProvider, OnPageChangeL
         menuInflater.inflate(R.menu.pdf, menu)
         val searchItem = menu.findItem(R.id.menuSearch)
         mSearchView = searchItem.actionView as SearchView
-        val pendingSearchQuery = mViewModel.searchDescription.value
+        val pendingSearchQuery = mViewModel.search.value
         if (pendingSearchQuery.isNotEmpty()) {
             searchItem.expandActionView()
             mSearchView.setQuery(pendingSearchQuery, false)
         }
         mSearchView.onQueryTextChanged {
-            mViewModel.searchDescription.value = it
+            mViewModel.search.value = it
             //mPdfView.setSearchQuery(it)
-            Log.v(Constants.LOG_TAG, "Search query: $it")
+            Log.v(Constants.TAG, "Search query: $it")
         }
     }
 
@@ -430,7 +434,7 @@ class PdfFragment : Fragment(R.layout.fragment_pdf), MenuProvider, OnPageChangeL
                     mHorizontal.setIcon(R.drawable.ic_baseline_swipe_horiz)
                     mHorizontal.title = getString(R.string.menu_pdf_view_horizontal)
                 }
-                mViewModel.updateViewHorizontal(mIsViewHorizontal)
+                mViewModel.updateViewChange(mIsViewHorizontal)
                 mPdfFile?.let { displayFromAsset(mPdfView, it) }
                 true
             }
@@ -451,7 +455,7 @@ class PdfFragment : Fragment(R.layout.fragment_pdf), MenuProvider, OnPageChangeL
 
     private fun init() {
         try {
-            if (arguments?.getBoolean(Constants.PDF_IS_NORMAL) == true) {
+            if (arguments?.getBoolean(Constants.PDF_FILE) == true) {
                 mPdfFile = Constants.PDF_SAMPLE_FILE
                 mPassword = "5632"
             } else {
@@ -461,7 +465,7 @@ class PdfFragment : Fragment(R.layout.fragment_pdf), MenuProvider, OnPageChangeL
         } catch (e: Exception) {
             ThrowableUtils.getFullStackTrace(e)
             Log.v(
-                Constants.LOG_TAG, "Calling arguments or getArguments won't work. Ex: ${e.message}"
+                Constants.TAG, "Calling arguments or getArguments won't work. Ex: ${e.message}"
             )
         }
     }

@@ -30,7 +30,7 @@ class MainActivity : AppCompatActivity() {
 
             pdfNormalFragment.setOnClickListener {
                 val bundle = Bundle()
-                bundle.putBoolean(Constants.PDF_IS_NORMAL, true)
+                bundle.putBoolean(Constants.PDF_FILE, true)
                 val fragment = PdfFragment()
                 fragment.arguments = bundle
                 supportFragmentManager.beginTransaction().replace(id, fragment).commitNow()
@@ -38,7 +38,7 @@ class MainActivity : AppCompatActivity() {
 
             pdfNormalActivity.setOnClickListener { v ->
                 val intent = Intent(v.context, PdfActivity::class.java)
-                intent.putExtra(Constants.PDF_IS_NORMAL, true)
+                intent.putExtra(Constants.PDF_FILE, Constants.PDF_FILE_MAIN)
                 intent.flags = Intent.FLAG_ACTIVITY_CLEAR_TOP or Intent.FLAG_ACTIVITY_SINGLE_TOP
                 if (Build.VERSION.SDK_INT < Build.VERSION_CODES.N || Build.VERSION.SDK_INT >= Build.VERSION_CODES.P) {
                     intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
@@ -48,7 +48,7 @@ class MainActivity : AppCompatActivity() {
 
             pdfProtectedFragment.setOnClickListener {
                 val bundle = Bundle()
-                bundle.putBoolean(Constants.PDF_IS_NORMAL, false)
+                bundle.putBoolean(Constants.PDF_FILE, false)
                 val fragment = PdfFragment()
                 fragment.arguments = bundle
                 supportFragmentManager.beginTransaction().replace(id, fragment).commitNow()
@@ -56,7 +56,37 @@ class MainActivity : AppCompatActivity() {
 
             pdfProtectedActivity.setOnClickListener { v ->
                 val intent = Intent(v.context, PdfActivity::class.java)
-                intent.putExtra(Constants.PDF_IS_NORMAL, false)
+                intent.putExtra(Constants.PDF_FILE, Constants.PDF_FILE_PROTECTED)
+                intent.flags = Intent.FLAG_ACTIVITY_CLEAR_TOP or Intent.FLAG_ACTIVITY_SINGLE_TOP
+                if (Build.VERSION.SDK_INT < Build.VERSION_CODES.N || Build.VERSION.SDK_INT >= Build.VERSION_CODES.P) {
+                    intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+                }
+                startActivity(intent)
+            }
+
+            pdfFile1.setOnClickListener { v ->
+                val intent = Intent(v.context, PdfActivity::class.java)
+                intent.putExtra(Constants.PDF_FILE, Constants.PDF_FILE_1)
+                intent.flags = Intent.FLAG_ACTIVITY_CLEAR_TOP or Intent.FLAG_ACTIVITY_SINGLE_TOP
+                if (Build.VERSION.SDK_INT < Build.VERSION_CODES.N || Build.VERSION.SDK_INT >= Build.VERSION_CODES.P) {
+                    intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+                }
+                startActivity(intent)
+            }
+
+            pdfFile2.setOnClickListener { v ->
+                val intent = Intent(v.context, PdfActivity::class.java)
+                intent.putExtra(Constants.PDF_FILE, Constants.PDF_FILE_2)
+                intent.flags = Intent.FLAG_ACTIVITY_CLEAR_TOP or Intent.FLAG_ACTIVITY_SINGLE_TOP
+                if (Build.VERSION.SDK_INT < Build.VERSION_CODES.N || Build.VERSION.SDK_INT >= Build.VERSION_CODES.P) {
+                    intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+                }
+                startActivity(intent)
+            }
+
+            pdfFile3.setOnClickListener { v ->
+                val intent = Intent(v.context, PdfActivity::class.java)
+                intent.putExtra(Constants.PDF_FILE, Constants.PDF_FILE_3)
                 intent.flags = Intent.FLAG_ACTIVITY_CLEAR_TOP or Intent.FLAG_ACTIVITY_SINGLE_TOP
                 if (Build.VERSION.SDK_INT < Build.VERSION_CODES.N || Build.VERSION.SDK_INT >= Build.VERSION_CODES.P) {
                     intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)

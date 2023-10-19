@@ -74,4 +74,48 @@
         app:layout_constraintStart_toEndOf="@+id/pdfNormalActivity"
         app:layout_constraintTop_toBottomOf="@+id/pdfProtectedFragment" />
 
+    <Button
+        android:id="@+id/pdfFile1"
+        style="@style/Widget.AppCompat.Button.Colored"
+        android:layout_width="204dp"
+        android:layout_height="wrap_content"
+        android:text="Sample 1"
+        android:textAllCaps="false"
+        android:textSize="16sp"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toBottomOf="@+id/pdfNormalActivity" />
+
+    <Button
+        android:id="@+id/pdfFile2"
+        style="@style/Widget.AppCompat.Button.Colored"
+        android:layout_width="204dp"
+        android:layout_height="wrap_content"
+        android:text="Sample 2"
+        android:textAllCaps="false"
+        android:textSize="16sp"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toBottomOf="@+id/pdfFile1" />
+
+    <Button
+        android:id="@+id/pdfFile3"
+        style="@style/Widget.AppCompat.Button.Colored"
+        android:layout_width="204dp"
+        android:layout_height="wrap_content"
+        android:text="Sample 3"
+        android:textAllCaps="false"
+        android:textSize="16sp"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toBottomOf="@+id/pdfFile2" />
+
+    <Button
+        android:id="@+id/pdfFile4"
+        style="@style/Widget.AppCompat.Button.Colored"
+        android:layout_width="204dp"
+        android:layout_height="wrap_content"
+        android:text="Sample 4"
+        android:textAllCaps="false"
+        android:textSize="16sp"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toBottomOf="@+id/pdfFile3" />
+
 </androidx.constraintlayout.widget.ConstraintLayout>

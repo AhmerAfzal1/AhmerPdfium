@@ -49,7 +49,7 @@ import io.ahmer.utils.utilcode.StringUtils
 import io.ahmer.utils.utilcode.ThrowableUtils
 import io.ahmer.utils.utilcode.ToastUtils
 import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.flow.first
+import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.launch
 import java.util.Locale
 
@@ -92,10 +92,10 @@ class PdfActivity : AppCompatActivity(), OnPageChangeListener, OnLoadCompleteLis
         }
         lifecycleScope.launch(Dispatchers.Main) {
             repeatOnLifecycle(Lifecycle.State.STARTED) {
-                mIsAutoSpacing = mViewModel.flow.first().isAutoSpacing
-                mIsPageSnap = mViewModel.flow.first().isPageSnap
-                mIsViewHorizontal = mViewModel.flow.first().isViewHorizontal
-                mSpacing = mViewModel.flow.first().spacing
+                mViewModel.isAutoSpacing.collectLatest { mIsAutoSpacing = it }
+                mViewModel.isPageSnap.collectLatest { mIsPageSnap = it }
+                mViewModel.getSpacing.collectLatest { mSpacing = it }
+                mViewModel.isViewHorizontal.collectLatest { mIsViewHorizontal = it }
             }
         }
         val mMenuInfo = mMenu.findItem(R.id.menuInfo)
@@ -287,7 +287,7 @@ class PdfActivity : AppCompatActivity(), OnPageChangeListener, OnLoadCompleteLis
             .onPageScroll(object : OnPageScrollListener {
                 override fun onPageScrolled(page: Int, positionOffset: Float) {
                     Log.v(
-                        Constants.LOG_TAG,
+                        Constants.TAG,
                         "onPageScrolled: Page $page PositionOffset: $positionOffset"
                     )
                 }
@@ -299,7 +299,7 @@ class PdfActivity : AppCompatActivity(), OnPageChangeListener, OnLoadCompleteLis
                     } else {
                         ToastUtils.showLong(resources.getString(R.string.error_loading_pdf))
                         t?.printStackTrace()
-                        Log.v(Constants.LOG_TAG, " onError: $t")
+                        Log.v(Constants.TAG, " onError: $t")
                     }
                 }
             })
@@ -307,7 +307,7 @@ class PdfActivity : AppCompatActivity(), OnPageChangeListener, OnLoadCompleteLis
                 override fun onPageError(page: Int, t: Throwable?) {
                     t?.printStackTrace()
                     ToastUtils.showLong("onPageError")
-                    Log.v(Constants.LOG_TAG, "onPageError: $t on page: $page")
+                    Log.v(Constants.TAG, "onPageError: $t on page: $page")
                 }
             })
             .onRender(object : OnRenderListener {
@@ -358,7 +358,7 @@ class PdfActivity : AppCompatActivity(), OnPageChangeListener, OnLoadCompleteLis
 
     private fun printBookmarksTree(tree: List<PdfDocument.Bookmark>, sep: String) {
         for (b in tree) {
-            Log.v(Constants.LOG_TAG, "Bookmark $sep ${b.title}, Page: ${b.pageIndex}")
+            Log.v(Constants.TAG, "Bookmark $sep ${b.title}, Page: ${b.pageIndex}")
             if (b.hasChildren) {
                 printBookmarksTree(b.children, "$sep-")
             }
@@ -417,7 +417,7 @@ class PdfActivity : AppCompatActivity(), OnPageChangeListener, OnLoadCompleteLis
                         mSpacing = 5
                         mPageSnap.title = getString(R.string.menu_pdf_disable_snap_page)
                     }
-                    mViewModel.updatePdfPageSnap(mIsPageSnap)
+                    mViewModel.updatePageSnap(mIsPageSnap)
                     mPdfFile?.let { displayFromAsset(mPdfView, it) }
                 }
 
@@ -432,7 +432,7 @@ class PdfActivity : AppCompatActivity(), OnPageChangeListener, OnLoadCompleteLis
                         mHorizontal.setIcon(R.drawable.ic_baseline_swipe_horiz)
                         mHorizontal.title = getString(R.string.menu_pdf_view_horizontal)
                     }
-                    mViewModel.updatePdfViewChange(mIsViewHorizontal)
+                    mViewModel.updateViewChange(mIsViewHorizontal)
                     mPdfFile?.let { displayFromAsset(mPdfView, it) }
                 }
 
@@ -458,16 +458,22 @@ class PdfActivity : AppCompatActivity(), OnPageChangeListener, OnLoadCompleteLis
 
     private fun init() {
         try {
-            if (intent.getBooleanExtra(Constants.PDF_IS_NORMAL, true)) {
-                mPdfFile = "example.pdf"
+            if (Constants.PDF_FILE_MAIN == intent.getStringExtra(Constants.PDF_FILE)) {
+                mPdfFile = "grammar.pdf"
                 mPassword = "5632"
-            } else {
-                mPdfFile = Constants.PDF_SAMPLE_FILE_PASSWORD_PROTECTED
+            } else if (Constants.PDF_FILE_1 == intent.getStringExtra(Constants.PDF_FILE)) {
+                mPdfFile = "example.pdf"
+            } else if (Constants.PDF_FILE_2 == intent.getStringExtra(Constants.PDF_FILE)) {
+                mPdfFile = "example1.pdf"
+            } else if (Constants.PDF_FILE_3 == intent.getStringExtra(Constants.PDF_FILE)) {
+                mPdfFile = "example3.pdf"
+            } else if (Constants.PDF_FILE_PROTECTED == intent.getStringExtra(Constants.PDF_FILE)) {
+                mPdfFile = "grammar.pdf"
             }
             mPdfFile?.let { displayFromAsset(mPdfView, it) }
         } catch (e: Exception) {
             ThrowableUtils.getFullStackTrace(e)
-            Log.v(Constants.LOG_TAG, "Calling Intent or getIntent won't work due to ${e.message}")
+            Log.v(Constants.TAG, "Calling Intent or getIntent won't work due to ${e.message}")
         }
     }
 }
