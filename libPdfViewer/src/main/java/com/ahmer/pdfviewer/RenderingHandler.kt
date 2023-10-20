@@ -86,7 +86,7 @@ class RenderingHandler(looper: Looper, private val pdfView: PDFView) : Handler(l
             return null
         }
         calculateBounds(mWidth, mHeight, task.bounds)
-        mPdfFile?.renderPageBitmap(mBitmap, mRoundedBounds, task.isAnnotation)
+        mPdfFile?.renderPageBitmap(task.page, mBitmap, mRoundedBounds, task.isAnnotation)
         if (pdfView.isNightMode()) {
             mBitmap = toNightMode(mBitmap, task.isBestQuality)
         }

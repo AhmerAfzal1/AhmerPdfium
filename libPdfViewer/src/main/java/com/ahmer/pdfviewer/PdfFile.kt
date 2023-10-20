@@ -1,12 +1,11 @@
 package com.ahmer.pdfviewer
 
-import android.content.Context
 import android.graphics.Bitmap
 import android.graphics.Rect
 import android.graphics.RectF
 import android.util.SparseBooleanArray
 import com.ahmer.pdfium.PdfDocument
-import com.ahmer.pdfium.PdfPage
+import com.ahmer.pdfium.PdfiumCore
 import com.ahmer.pdfium.util.Size
 import com.ahmer.pdfium.util.SizeF
 import com.ahmer.pdfviewer.exception.PageRenderingException
@@ -14,9 +13,8 @@ import com.ahmer.pdfviewer.util.FitPolicy
 import com.ahmer.pdfviewer.util.PageSizeCalculator
 
 class PdfFile(
-    private val context: Context,
-    private val pdfDocument: PdfDocument,
-    private val pdfPage: PdfPage,
+    val pdfDocument: PdfDocument,
+    private val pdfiumCore: PdfiumCore,
     private val fitPolicy: FitPolicy,
     size: Size,
     /**
@@ -42,8 +40,6 @@ class PdfFile(
      */
     private val fitEachPage: Boolean
 ) {
-
-    val screenDpi: Int = context.resources.displayMetrics.densityDpi
 
     /**
      * Opened pages with indicator whether opening was successful
@@ -188,8 +184,8 @@ class PdfFile(
     /**
      * @return All links from given page.
      */
-    fun getPageLinks(mSize: SizeF, posX: Float, posY: Float): List<PdfDocument.Link> {
-        return pdfPage.getPageLinks(mSize, posX, posY)
+    fun getPageLinks(pageIndex: Int, mSize: SizeF, posX: Float, posY: Float): List<PdfDocument.Link> {
+        return pdfiumCore.getPageLinks(pageIndex, mSize, posX, posY)
     }
 
     /**
@@ -202,8 +198,8 @@ class PdfFile(
     /**
      * Get page rotation in degrees.
      */
-    fun getPageRotation(): Int {
-        return pdfPage.getPageRotation
+    fun getPageRotation(pageIndex: Int): Int {
+        return pdfiumCore.getPageRotation(pageIndex)
     }
 
     /**
@@ -216,8 +212,8 @@ class PdfFile(
     /**
      * Get native size of page in pixels.
      */
-    fun getPageSizeNative(): Size {
-        return pdfPage.getPageSize
+    fun getPageSizeNative(pageIndex: Int): Size {
+        return pdfiumCore.getPageSize(pageIndex)
     }
 
     fun getPageSpacing(pageIndex: Int, zoom: Float): Float {
@@ -250,10 +246,10 @@ class PdfFile(
 
     /**
      * @return mapped coordinates
-     * @see PdfPage.mapPageCoordsToDevice
+     * @see PdfiumCore.mapPageCoordsToDevice
      */
-    fun mapRectToDevice(startX: Int, startY: Int, sizeX: Int, sizeY: Int, rect: RectF): RectF {
-        return pdfPage.mapRectToDevice(startX, startY, sizeX, sizeY, 0, rect)
+    fun mapRectToDevice(pageIndex: Int, startX: Int, startY: Int, sizeX: Int, sizeY: Int, rect: RectF): RectF {
+        return pdfiumCore.mapRectToDevice(pageIndex, startX, startY, sizeX, sizeY, 0, rect)
     }
 
     @Throws(PageRenderingException::class)
@@ -339,18 +335,18 @@ class PdfFile(
      * Render page fragment on [Bitmap]. This method allows to render annotations.
      * Page must be opened before rendering.
      *
-     * @see PdfPage.renderPageBitmap
+     * @see PdfiumCore.renderPageBitmap
      */
-    fun renderPageBitmap(bitmap: Bitmap, bounds: Rect, annotation: Boolean) {
-        pdfPage.renderPageBitmap(
-            bitmap, bounds.left, bounds.top, bounds.width(), bounds.height(), annotation
+    fun renderPageBitmap(pageIndex: Int,bitmap: Bitmap, bounds: Rect, annotation: Boolean) {
+        pdfiumCore.renderPageBitmap(
+           pageIndex, bitmap, bounds.left, bounds.top, bounds.width(), bounds.height(), annotation
         )
     }
 
     private fun setup(viewSize: Size) {
         pagesCount = if (userPages.isNotEmpty()) userPages.size else getTotalPagesCount()
         for (i in 0 until pagesCount) {
-            val pageSize: Size = getPageSizeNative()
+            val pageSize: Size = getPageSizeNative(i)
             if (pageSize.width > mOriginalMaxWidthPageSize.width) {
                 mOriginalMaxWidthPageSize = pageSize
             }

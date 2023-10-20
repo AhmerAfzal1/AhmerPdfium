@@ -400,8 +400,8 @@ class PDFView(context: Context?, set: AttributeSet?) : RelativeLayout(context, s
      * @param pageIndex the page index
      * @return the rotation
      */
-    fun getPageRotation(): Int {
-        return pdfFile?.getPageRotation()!!
+    fun getPageRotation(pageIndex: Int): Int {
+        return pdfFile?.getPageRotation(pageIndex)!!
     }
 
     fun getPageSize(pageIndex: Int): SizeF {

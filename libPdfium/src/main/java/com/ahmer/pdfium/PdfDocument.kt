@@ -8,11 +8,12 @@ import java.io.Closeable
 /**
  * PdfDocument represents a PDF file and allows you to load pages from it.
  */
-class PdfDocument(val nativeDocPtr: Long) : Closeable {
-    private val pageMap = mutableMapOf<Int, PageCount>()
-    private val textPageMap = mutableMapOf<Int, PageCount>()
+class PdfDocument : Closeable {
+    private val textPageMap: MutableMap<Int, PageCount> = mutableMapOf()
+    val pageMap: MutableMap<Int, PageCount> = mutableMapOf()
     var isClosed = false
         private set
+    var nativeDocPtr: Long = -1
     var parcelFileDescriptor: ParcelFileDescriptor? = null
 
     private external fun nativeCloseDocument(docPtr: Long)
@@ -61,30 +62,23 @@ class PdfDocument(val nativeDocPtr: Long) : Closeable {
     /**
      * Open page and store native pointer in [PdfDocument]
      * @param pageIndex the page index
-     * @return the opened page [PdfPage]
+     * @return the opened page [Long]
      * @throws IllegalArgumentException if  document is closed or the page cannot be loaded
      */
-    fun openPage(pageIndex: Int): PdfPage {
+    fun openPage(pageIndex: Int): Long {
         check(value = !isClosed) { "Already closed" }
         synchronized(lock = PdfiumCore.lock) {
             if (pageMap.containsKey(key = pageIndex)) {
                 pageMap[pageIndex]?.let {
                     it.count++
                     //Log.v(TAG, "from cache openPage: pageIndex: $pageIndex, count: ${it.count}")
-                    return PdfPage(
-                        document = this,
-                        pageIndex = pageIndex,
-                        pagePtr = it.pagePtr,
-                        pageMap = pageMap
-                    )
+                    return it.pagePtr
                 }
             }
             //Log.v(TAG, "openPage: pageIndex: $pageIndex")
             val pagePtr = nativeLoadPage(docPtr = nativeDocPtr, pageIndex = pageIndex)
             pageMap[pageIndex] = PageCount(pagePtr = pagePtr, count = 1)
-            return PdfPage(
-                document = this, pageIndex = pageIndex, pagePtr = pagePtr, pageMap = pageMap
-            )
+            return pagePtr
         }
     }
 
@@ -92,7 +86,7 @@ class PdfDocument(val nativeDocPtr: Long) : Closeable {
      * Open range of pages and store native pointers in [PdfDocument]
      * @param fromIndex the start index of the range
      * @param toIndex the end index of the range
-     * @return the opened pages [PdfPage]
+     * @return the opened pages [LongArray]
      * @throws IllegalArgumentException if document is closed or the pages cannot be loaded
      */
     fun openPages(fromIndex: Int, toIndex: Int): LongArray {
@@ -112,31 +106,32 @@ class PdfDocument(val nativeDocPtr: Long) : Closeable {
 
     /**
      * Open a text page
-     * @param page the [PdfPage]
+     * @param pageIndex the page index
      * @return the opened [PdfTextPage]
      * @throws IllegalArgumentException if document is closed or the page cannot be loaded
      */
-    fun openTextPage(page: PdfPage): PdfTextPage {
+    fun openTextPage(pageIndex: Int): PdfTextPage {
         check(value = !isClosed) { "Already closed" }
         synchronized(lock = PdfiumCore.lock) {
-            if (textPageMap.containsKey(key = page.pageIndex)) {
-                textPageMap[page.pageIndex]?.let {
+            if (textPageMap.containsKey(key = pageIndex)) {
+                textPageMap[pageIndex]?.let {
                     it.count++
                     //Log.v(TAG,"from cache openTextPage: pageIndex: ${page.pageIndex}, count: ${it.count}")
                     return PdfTextPage(
                         document = this,
-                        pageIndex = page.pageIndex,
+                        pageIndex = pageIndex,
                         pagePtr = it.pagePtr,
                         pageMap = textPageMap
                     )
                 }
             }
             //Log.v(TAG,"openTextPage: pageIndex: ${page.pageIndex}")
-            val textPagePtr = nativeLoadTextPage(docPtr = nativeDocPtr, pagePtr = page.pagePtr)
-            textPageMap[page.pageIndex] = PageCount(pagePtr = textPagePtr, count = 1)
+            val textPagePtr =
+                nativeLoadTextPage(docPtr = nativeDocPtr, pagePtr = pageMap[pageIndex]!!.pagePtr)
+            textPageMap[pageIndex] = PageCount(pagePtr = textPagePtr, count = 1)
             return PdfTextPage(
                 document = this,
-                pageIndex = page.pageIndex,
+                pageIndex = pageIndex,
                 pagePtr = textPagePtr,
                 pageMap = textPageMap
             )
@@ -243,6 +238,7 @@ class PdfDocument(val nativeDocPtr: Long) : Closeable {
         synchronized(lock = PdfiumCore.lock) {
             isClosed = true
             nativeCloseDocument(docPtr = nativeDocPtr)
+            nativeDocPtr = -1
             parcelFileDescriptor?.close()
             parcelFileDescriptor = null
         }
