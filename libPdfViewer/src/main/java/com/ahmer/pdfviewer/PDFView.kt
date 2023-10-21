@@ -1099,8 +1099,8 @@ class PDFView(context: Context?, set: AttributeSet?) : RelativeLayout(context, s
     /**
      * Use an asset file as the pdf source
      */
-    fun fromAsset(assetName: String?): Configurator {
-        return Configurator(AssetSource(assetName!!))
+    fun fromAsset(name: String?): Configurator {
+        return Configurator(AssetSource(name!!))
     }
 
     /**
@@ -1120,16 +1120,16 @@ class PDFView(context: Context?, set: AttributeSet?) : RelativeLayout(context, s
     /**
      * Use custom source as pdf source
      */
-    fun fromSource(docSource: DocumentSource): Configurator {
-        return Configurator(docSource)
+    fun fromSource(documentSource: DocumentSource): Configurator {
+        return Configurator(documentSource)
     }
 
     /**
      * Use stream as the pdf source. Stream will be written to bytearray,
      * because native code does not support Java Streams
      */
-    fun fromStream(stream: InputStream?): Configurator {
-        return Configurator(InputStreamSource(stream!!))
+    fun fromStream(inputStream: InputStream?): Configurator {
+        return Configurator(InputStreamSource(inputStream!!))
     }
 
     /**
@@ -1355,11 +1355,11 @@ class PDFView(context: Context?, set: AttributeSet?) : RelativeLayout(context, s
 
     private fun initPDFView() {
         if (isInEditMode) return
-        pdfiumCore = PdfiumCore(context)
+        pdfiumCore = PdfiumCore(PdfDocument())
         cacheManager = CacheManager()
-        mAnimationManager = AnimationManager(this)
-        mDragPinchManager = DragPinchManager(this, mAnimationManager!!)
-        mPagesLoader = PagesLoader(this)
+        mAnimationManager = AnimationManager(pdfView = this)
+        mDragPinchManager = DragPinchManager(pdfView =this, mAnimationManager!!)
+        mPagesLoader = PagesLoader(pdfView =this)
         mPaint = Paint()
         mDebugPaint = Paint()
         mDebugPaint?.style = Paint.Style.STROKE

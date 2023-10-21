@@ -62,23 +62,23 @@ class PdfDocument : Closeable {
     /**
      * Open page and store native pointer in [PdfDocument]
      * @param pageIndex the page index
-     * @return the opened page [Long]
+     * @return the opened page [PdfiumCore]
      * @throws IllegalArgumentException if  document is closed or the page cannot be loaded
      */
-    fun openPage(pageIndex: Int): Long {
+    fun openPage(pageIndex: Int): PdfiumCore {
         check(value = !isClosed) { "Already closed" }
         synchronized(lock = PdfiumCore.lock) {
             if (pageMap.containsKey(key = pageIndex)) {
                 pageMap[pageIndex]?.let {
                     it.count++
                     //Log.v(TAG, "from cache openPage: pageIndex: $pageIndex, count: ${it.count}")
-                    return it.pagePtr
+                    return PdfiumCore(doc = this)
                 }
             }
             //Log.v(TAG, "openPage: pageIndex: $pageIndex")
             val pagePtr = nativeLoadPage(docPtr = nativeDocPtr, pageIndex = pageIndex)
             pageMap[pageIndex] = PageCount(pagePtr = pagePtr, count = 1)
-            return pagePtr
+            return PdfiumCore(doc = this)
         }
     }
 

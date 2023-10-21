@@ -18,7 +18,7 @@ internal class DecodingTask(
 
     fun execute() {
         try {
-            val document = docSource.createDocument(pdfView.pdfiumCore!!, password)
+            val document = docSource.createDocument(pdfView.context, pdfView.pdfiumCore!!, password)
             val mPdfFile = PdfFile(
                 pdfDocument = document,
                 pdfiumCore = pdfView.pdfiumCore!!,
