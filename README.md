@@ -15,26 +15,25 @@ implementation 'io.github.ahmerafzal1:ahmer-pdfium:1.8.1'
 ## Simple example
 
 ```kotlin
-fun openPdf(context: Context, file: File, password: String? = null) {
+fun openPdf(file: File, password: String? = null) {
     val iv: ImageView = findViewById(R.id.imageView)
-    val fd: ParcelFileDescriptor =
-        ParcelFileDescriptor.open(file, ParcelFileDescriptor.MODE_READ_ONLY)
-    val pageNum = 0
-    val pdfiumCore = PdfiumCore(context)
+    val fd = ParcelFileDescriptor.open(file, ParcelFileDescriptor.MODE_READ_ONLY)
+    val page = 0
     try {
-        val pdfDocument: PdfDocument = pdfiumCore.newDocument(fd, password)
-        val pdfPage: PdfPage = pdfDocument.openPage(pageNum)
-        val width: Int = pdfPage.getPageWidthPoint
-        val height: Int = pdfPage.getPageHeightPoint
-        // ARGB_8888 - best quality, high memory usage, higher possibility of OutOfMemoryError
-        // RGB_565 - little worse quality, twice less memory usage
-        val bitmap: Bitmap = Bitmap.createBitmap(width, height, Bitmap.Config.RGB_565)
-        pdfPage.renderPageBitmap(bitmap, 0, 0, width, height)
-        //if you need to render annotations and form fields, you can use
-        //the same method above adding 'true' as last param
-        iv.setImageBitmap(bitmap)
-        printInfo(pdfDocument)
-        pdfDocument.close() // important!
+        PdfiumCore().use {
+            val pdfDocument: PdfDocument = it.newDocument(fd, password)
+            pdfDocument.openPage(page)
+            val width: Int = it.getPageWidthPoint(page)
+            val height: Int = it.getPageHeightPoint(page)
+            // ARGB_8888 - best quality, high memory usage, higher possibility of OutOfMemoryError
+            // RGB_565 - little worse quality, twice less memory usage
+            val bitmap: Bitmap = Bitmap.createBitmap(width, height, Bitmap.Config.RGB_565)
+            it.renderPageBitmap(page, bitmap, 0, 0, width, height)
+            //If you need to render annotations and form fields, you can use
+            //the same method above adding 'true' as last param
+            iv.setImageBitmap(bitmap)
+            printInfo(pdfDocument)
+        }
     } catch (ex: IOException) {
         Log.e(TAG, ex.localizedMessage, ex)
         ex.printStackTrace()

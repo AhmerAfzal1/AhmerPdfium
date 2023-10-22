@@ -112,7 +112,7 @@
         style="@style/Widget.AppCompat.Button.Colored"
         android:layout_width="204dp"
         android:layout_height="wrap_content"
-        android:text="Sample 4"
+        android:text="Test Pdfium"
         android:textAllCaps="false"
         android:textSize="16sp"
         app:layout_constraintStart_toStartOf="parent"

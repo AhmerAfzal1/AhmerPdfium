@@ -93,6 +93,16 @@ class MainActivity : AppCompatActivity() {
                 }
                 startActivity(intent)
             }
+
+            pdfFile4.setOnClickListener { v ->
+                val intent = Intent(v.context, TestPdfium::class.java)
+                intent.putExtra(Constants.PDF_FILE, Constants.PDF_FILE_MAIN)
+                intent.flags = Intent.FLAG_ACTIVITY_CLEAR_TOP or Intent.FLAG_ACTIVITY_SINGLE_TOP
+                if (Build.VERSION.SDK_INT < Build.VERSION_CODES.N || Build.VERSION.SDK_INT >= Build.VERSION_CODES.P) {
+                    intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+                }
+                startActivity(intent)
+            }
         }
     }
 }

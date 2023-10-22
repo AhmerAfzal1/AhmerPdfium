@@ -1355,7 +1355,7 @@ class PDFView(context: Context?, set: AttributeSet?) : RelativeLayout(context, s
 
     private fun initPDFView() {
         if (isInEditMode) return
-        pdfiumCore = PdfiumCore(PdfDocument())
+        pdfiumCore = PdfiumCore()
         cacheManager = CacheManager()
         mAnimationManager = AnimationManager(pdfView = this)
         mDragPinchManager = DragPinchManager(pdfView =this, mAnimationManager!!)
