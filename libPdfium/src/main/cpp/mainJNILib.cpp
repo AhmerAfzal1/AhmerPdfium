@@ -56,9 +56,9 @@ struct rgb {
 class DocumentFile {
 public:
     FPDF_DOCUMENT pdfDocument = nullptr;
-	
-	public:
-    jbyte *cDataCopy = NULL;
+
+public:
+    jbyte *cDataCopy = nullptr;
 
     DocumentFile() {
         initLibraryIfNeed();
@@ -72,9 +72,9 @@ DocumentFile::~DocumentFile() {
         FPDF_CloseDocument(pdfDocument);
         pdfDocument = nullptr;
     }
-	if (cDataCopy != NULL) {
+    if (cDataCopy != nullptr) {
         free(cDataCopy);
-        cDataCopy = NULL;
+        cDataCopy = nullptr;
     }
     destroyLibraryIfNeed();
 }
@@ -357,7 +357,7 @@ JNI_FUNC(jlong, PdfiumCore, nativeOpenMemDocument)(JNI_ARGS, jbyteArray data, js
         return -1;
     }
     docFile->pdfDocument = document;
-	docFile->cDataCopy = cDataCopy;
+    docFile->cDataCopy = cDataCopy;
     return reinterpret_cast<jlong>(docFile);
 }
 
@@ -439,7 +439,7 @@ JNI_FUNC(jobject, PdfiumCore, nativeGetLinkRect)(JNI_ARGS, jlong linkPtr) {
 }
 
 JNI_FUNC(jobject, PdfiumCore, nativeGetPageSizeByIndex)(JNI_ARGS, jlong docPtr, jint pageIndex,
-                                                     jint dpi) {
+                                                        jint dpi) {
     auto *doc = reinterpret_cast<DocumentFile *>(docPtr);
     if (doc == nullptr) {
         LOGE("Document is null");
@@ -483,8 +483,8 @@ JNI_FUNC(jlongArray, PdfiumCore, nativeGetPageLinks)(JNI_ARGS, jlong pagePtr) {
 }
 
 JNI_FUNC(jobject, PdfiumCore, nativePageCoordsToDevice)(JNI_ARGS, jlong pagePtr, jint startX,
-                                                     jint startY, jint sizeX, jint sizeY,
-                                                     jint rotate, jdouble pageX, jdouble pageY) {
+                                                        jint startY, jint sizeX, jint sizeY,
+                                                        jint rotate, jdouble pageX, jdouble pageY) {
     auto page = reinterpret_cast<FPDF_PAGE>(pagePtr);
     int deviceX, deviceY;
     FPDF_PageToDevice(page, startX, startY, sizeX, sizeY, rotate, pageX, pageY, &deviceX, &deviceY);
@@ -494,8 +494,8 @@ JNI_FUNC(jobject, PdfiumCore, nativePageCoordsToDevice)(JNI_ARGS, jlong pagePtr,
 }
 
 JNI_FUNC(jobject, PdfiumCore, nativeDeviceCoordsToPage)(JNI_ARGS, jlong pagePtr, jint startX,
-                                                     jint startY, jint sizeX, jint sizeY,
-                                                     jint rotate, jint deviceX, jint deviceY) {
+                                                        jint startY, jint sizeX, jint sizeY,
+                                                        jint rotate, jint deviceX, jint deviceY) {
     auto page = reinterpret_cast<FPDF_PAGE>(pagePtr);
     double pageX, pageY;
     FPDF_DeviceToPage(page, startX, startY, sizeX, sizeY, rotate, deviceX, deviceY, &pageX, &pageY);
@@ -505,8 +505,8 @@ JNI_FUNC(jobject, PdfiumCore, nativeDeviceCoordsToPage)(JNI_ARGS, jlong pagePtr,
 }
 
 JNI_FUNC(void, PdfiumCore, nativeRenderPage)(JNI_ARGS, jlong pagePtr, jobject objSurface,
-                                          jint startX, jint startY, jint drawSizeHor,
-                                          jint drawSizeVer, jboolean annotation) {
+                                             jint startX, jint startY, jint drawSizeHor,
+                                             jint drawSizeVer, jboolean annotation) {
     ANativeWindow *nativeWindow = ANativeWindow_fromSurface(env, objSurface);
     if (nativeWindow == nullptr) {
         LOGE("Native window pointer null");
@@ -536,15 +536,17 @@ JNI_FUNC(void, PdfiumCore, nativeRenderPage)(JNI_ARGS, jlong pagePtr, jobject ob
 }
 
 JNI_FUNC(jlong, PdfiumCore, nativeGetLinkAtCoord)(JNI_ARGS, jlong pagePtr, jint width,
-                                               jint height, jint posX, jint posY) {
+                                                  jint height, jint posX, jint posY) {
     double px, py;
     FPDF_DeviceToPage((FPDF_PAGE) pagePtr, 0, 0, width, height, 0, posX, posY, &px, &py);
     return (jlong) FPDFLink_GetLinkAtPoint((FPDF_PAGE) pagePtr, px, py);
 }
 
-JNI_FUNC(void, PdfiumCore, nativeRenderPageBitmapWithMatrix)(JNI_ARGS, jlong pagePtr, jobject bitmap,
-                                                          jfloatArray matrixValues,
-                                                          jobject clipRect, jboolean annotation) {
+JNI_FUNC(void, PdfiumCore, nativeRenderPageBitmapWithMatrix)(JNI_ARGS, jlong pagePtr,
+                                                             jobject bitmap,
+                                                             jfloatArray matrixValues,
+                                                             jobject clipRect,
+                                                             jboolean annotation) {
     auto page = reinterpret_cast<FPDF_PAGE>(pagePtr);
     if (page == nullptr || bitmap == nullptr) {
         LOGE("Render page pointers invalid");
@@ -631,8 +633,8 @@ JNI_FUNC(void, PdfiumCore, nativeRenderPageBitmapWithMatrix)(JNI_ARGS, jlong pag
 }
 
 JNI_FUNC(void, PdfiumCore, nativeRenderPageBitmap)(JNI_ARGS, jlong pagePtr, jobject bitmap,
-                                                jint startX, jint startY, jint drawSizeHor,
-                                                jint drawSizeVer, jboolean annotation) {
+                                                   jint startX, jint startY, jint drawSizeHor,
+                                                   jint drawSizeVer, jboolean annotation) {
     auto page = reinterpret_cast<FPDF_PAGE>(pagePtr);
     if (page == nullptr || bitmap == nullptr) {
         LOGE("Render page pointers invalid");
@@ -755,7 +757,7 @@ JNI_FUNC(jfloatArray, PdfiumCore, nativeGetPageBoundingBox)(JNI_ARGS, jlong page
         rect[2] = fsRect.right;
         rect[3] = fsRect.bottom;
     }
-    env->SetFloatArrayRegion(result, 0, 4, (jfloat*)rect);
+    env->SetFloatArrayRegion(result, 0, 4, (jfloat *) rect);
     return result;
 }
 
@@ -806,7 +808,7 @@ JNI_FUNC(jfloatArray, PdfiumCore, nativeGetPageTrimBox)(JNI_ARGS, jlong pagePtr)
         rect[2] = -1.0f;
         rect[3] = -1.0f;
     }
-    env->SetFloatArrayRegion(result, 0, 4, (jfloat*)rect);
+    env->SetFloatArrayRegion(result, 0, 4, (jfloat *) rect);
     return result;
 }
 

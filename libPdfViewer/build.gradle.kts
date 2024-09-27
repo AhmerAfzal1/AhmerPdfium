@@ -22,8 +22,8 @@ extra["ossrhPassword"] = mOSSRHPassword
 
 android {
     namespace = "com.ahmer.pdfviewer"
-    compileSdk = 34
-    ndkVersion = "26.1.10909125"
+    compileSdk = 35
+    ndkVersion = "27.1.12297006"
 
     defaultConfig {
         minSdk = 21
@@ -60,10 +60,10 @@ android {
 
 dependencies {
     implementation(project(mapOf("path" to ":libPdfium")))
-    implementation("androidx.core:core-ktx:1.12.0")
-    implementation("org.jetbrains.kotlinx:kotlinx-coroutines-android:1.7.3")
-    implementation("org.jetbrains.kotlinx:kotlinx-coroutines-core:1.7.3")
-    implementation("org.jetbrains.kotlinx:kotlinx-coroutines-play-services:1.7.3")
+    implementation("androidx.core:core-ktx:1.13.1")
+    implementation("org.jetbrains.kotlinx:kotlinx-coroutines-android:1.9.0")
+    implementation("org.jetbrains.kotlinx:kotlinx-coroutines-core:1.9.0")
+    implementation("org.jetbrains.kotlinx:kotlinx-coroutines-play-services:1.9.0")
 }
 
 /**
