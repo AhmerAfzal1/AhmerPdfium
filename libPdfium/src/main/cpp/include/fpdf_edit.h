@@ -179,26 +179,28 @@ FPDF_EXPORT int FPDF_CALLCONV FPDFPage_GetRotation(FPDF_PAGE page);
 //              3 - Rotated 270 degrees clockwise.
 FPDF_EXPORT void FPDF_CALLCONV FPDFPage_SetRotation(FPDF_PAGE page, int rotate);
 
-// Insert |page_obj| into |page|.
+// Insert |page_object| into |page|.
 //
-//   page     - handle to a page
-//   page_obj - handle to a page object. The |page_obj| will be automatically
-//              freed.
-FPDF_EXPORT void FPDF_CALLCONV FPDFPage_InsertObject(FPDF_PAGE page,
-                                                     FPDF_PAGEOBJECT page_obj);
+//   page        - handle to a page
+//   page_object - handle to a page object. The |page_object| will be
+//                 automatically freed.
+FPDF_EXPORT void FPDF_CALLCONV
+FPDFPage_InsertObject(FPDF_PAGE page, FPDF_PAGEOBJECT page_object);
 
 // Experimental API.
-// Remove |page_obj| from |page|.
+// Remove |page_object| from |page|.
 //
-//   page     - handle to a page
-//   page_obj - handle to a page object to be removed.
+//   page        - handle to a page
+//   page_object - handle to a page object to be removed.
 //
 // Returns TRUE on success.
 //
 // Ownership is transferred to the caller. Call FPDFPageObj_Destroy() to free
 // it.
+// Note that when removing a |page_object| of type FPDF_PAGEOBJ_TEXT, all
+// FPDF_TEXTPAGE handles for |page| are no longer valid.
 FPDF_EXPORT FPDF_BOOL FPDF_CALLCONV
-FPDFPage_RemoveObject(FPDF_PAGE page, FPDF_PAGEOBJECT page_obj);
+FPDFPage_RemoveObject(FPDF_PAGE page, FPDF_PAGEOBJECT page_object);
 
 // Get number of page objects inside |page|.
 //
@@ -233,14 +235,14 @@ FPDF_EXPORT FPDF_BOOL FPDF_CALLCONV FPDFPage_HasTransparency(FPDF_PAGE page);
 // |FPDFPage_GenerateContent| or any changes to |page| will be lost.
 FPDF_EXPORT FPDF_BOOL FPDF_CALLCONV FPDFPage_GenerateContent(FPDF_PAGE page);
 
-// Destroy |page_obj| by releasing its resources. |page_obj| must have been
-// created by FPDFPageObj_CreateNew{Path|Rect}() or
+// Destroy |page_object| by releasing its resources. |page_object| must have
+// been created by FPDFPageObj_CreateNew{Path|Rect}() or
 // FPDFPageObj_New{Text|Image}Obj(). This function must be called on
 // newly-created objects if they are not added to a page through
 // FPDFPage_InsertObject() or to an annotation through FPDFAnnot_AppendObject().
 //
-//   page_obj - handle to a page object.
-FPDF_EXPORT void FPDF_CALLCONV FPDFPageObj_Destroy(FPDF_PAGEOBJECT page_obj);
+//   page_object - handle to a page object.
+FPDF_EXPORT void FPDF_CALLCONV FPDFPageObj_Destroy(FPDF_PAGEOBJECT page_object);
 
 // Checks if |page_object| contains transparency.
 //
@@ -257,6 +259,38 @@ FPDFPageObj_HasTransparency(FPDF_PAGEOBJECT page_object);
 // Returns one of the FPDF_PAGEOBJ_* values on success, FPDF_PAGEOBJ_UNKNOWN on
 // error.
 FPDF_EXPORT int FPDF_CALLCONV FPDFPageObj_GetType(FPDF_PAGEOBJECT page_object);
+
+// Experimental API.
+// Gets active state for |page_object| within page.
+//
+//   page_object - handle to a page object.
+//   active      - pointer to variable that will receive if the page object is
+//                 active. This is a required parameter. Not filled if FALSE
+//                 is returned.
+//
+// For page objects where |active| is filled with FALSE, the |page_object| is
+// treated as if it wasn't in the document even though it is still held
+// internally.
+//
+// Returns TRUE if the operation succeeded, FALSE if it failed.
+FPDF_EXPORT FPDF_BOOL FPDF_CALLCONV
+FPDFPageObj_GetIsActive(FPDF_PAGEOBJECT page_object, FPDF_BOOL *active);
+
+// Experimental API.
+// Sets if |page_object| is active within page.
+//
+//   page_object - handle to a page object.
+//   active      - a boolean specifying if the object is active.
+//
+// Returns TRUE on success.
+//
+// Page objects all start in the active state by default, and remain in that
+// state unless this function is called.
+//
+// When |active| is false, this makes the |page_object| be treated as if it
+// wasn't in the document even though it is still held internally.
+FPDF_EXPORT FPDF_BOOL FPDF_CALLCONV
+FPDFPageObj_SetIsActive(FPDF_PAGEOBJECT page_object, FPDF_BOOL active);
 
 // Transform |page_object| by the given matrix.
 //
@@ -282,6 +316,21 @@ FPDFPageObj_Transform(FPDF_PAGEOBJECT page_object,
                       double f);
 
 // Experimental API.
+// Transform |page_object| by the given matrix.
+//
+//   page_object - handle to a page object.
+//   matrix      - the transform matrix.
+//
+// Returns TRUE on success.
+//
+// This can be used to scale, rotate, shear and translate the |page_object|.
+// It is an improved version of FPDFPageObj_Transform() that does not do
+// unnecessary double to float conversions, and only uses 1 parameter for the
+// matrix. It also returns whether the operation succeeded or not.
+FPDF_EXPORT FPDF_BOOL FPDF_CALLCONV
+FPDFPageObj_TransformF(FPDF_PAGEOBJECT page_object, const FS_MATRIX *matrix);
+
+// Experimental API.
 // Get the transform matrix of a page object.
 //
 //   page_object - handle to a page object.
@@ -291,6 +340,11 @@ FPDFPageObj_Transform(FPDF_PAGEOBJECT page_object,
 //   |a c e|
 //   |b d f|
 // and used to scale, rotate, shear and translate the page object.
+//
+// For page objects outside form objects, the matrix values are relative to the
+// page that contains it.
+// For page objects inside form objects, the matrix values are relative to the
+// form that contains it.
 //
 // Returns TRUE on success.
 FPDF_EXPORT FPDF_BOOL FPDF_CALLCONV
@@ -309,7 +363,7 @@ FPDFPageObj_GetMatrix(FPDF_PAGEOBJECT page_object, FS_MATRIX *matrix);
 //
 // Returns TRUE on success.
 FPDF_EXPORT FPDF_BOOL FPDF_CALLCONV
-FPDFPageObj_SetMatrix(FPDF_PAGEOBJECT path, const FS_MATRIX *matrix);
+FPDFPageObj_SetMatrix(FPDF_PAGEOBJECT page_object, const FS_MATRIX *matrix);
 
 // Transform all annotations in |page|.
 //
@@ -340,6 +394,15 @@ FPDF_EXPORT void FPDF_CALLCONV FPDFPage_TransformAnnots(FPDF_PAGE page,
 // Returns a handle to a new image object.
 FPDF_EXPORT FPDF_PAGEOBJECT FPDF_CALLCONV
 FPDFPageObj_NewImageObj(FPDF_DOCUMENT document);
+
+// Experimental API.
+// Get the marked content ID for the object.
+//
+//   page_object - handle to a page object.
+//
+// Returns the page object's marked content ID, or -1 on error.
+FPDF_EXPORT int FPDF_CALLCONV
+FPDFPageObj_GetMarkedContentID(FPDF_PAGEOBJECT page_object);
 
 // Experimental API.
 // Get number of content marks in |page_object|.
@@ -393,17 +456,18 @@ FPDFPageObj_RemoveMark(FPDF_PAGEOBJECT page_object, FPDF_PAGEOBJECTMARK mark);
 //
 //   mark       - handle to a content mark.
 //   buffer     - buffer for holding the returned name in UTF-16LE. This is only
-//                modified if |buflen| is longer than the length of the name.
+//                modified if |buflen| is large enough to store the name.
 //                Optional, pass null to just retrieve the size of the buffer
 //                needed.
-//   buflen     - length of the buffer.
+//   buflen     - length of the buffer in bytes.
 //   out_buflen - pointer to variable that will receive the minimum buffer size
-//                to contain the name. Not filled if FALSE is returned.
+//                in bytes to contain the name. This is a required parameter.
+//                Not filled if FALSE is returned.
 //
 // Returns TRUE if the operation succeeded, FALSE if it failed.
 FPDF_EXPORT FPDF_BOOL FPDF_CALLCONV
 FPDFPageObjMark_GetName(FPDF_PAGEOBJECTMARK mark,
-                        void *buffer,
+                        FPDF_WCHAR *buffer,
                         unsigned long buflen,
                         unsigned long *out_buflen);
 
@@ -423,18 +487,19 @@ FPDFPageObjMark_CountParams(FPDF_PAGEOBJECTMARK mark);
 //   mark       - handle to a content mark.
 //   index      - index of the property.
 //   buffer     - buffer for holding the returned key in UTF-16LE. This is only
-//                modified if |buflen| is longer than the length of the key.
+//                modified if |buflen| is large enough to store the key.
 //                Optional, pass null to just retrieve the size of the buffer
 //                needed.
-//   buflen     - length of the buffer.
+//   buflen     - length of the buffer in bytes.
 //   out_buflen - pointer to variable that will receive the minimum buffer size
-//                to contain the key. Not filled if FALSE is returned.
+//                in bytes to contain the name. This is a required parameter.
+//                Not filled if FALSE is returned.
 //
 // Returns TRUE if the operation was successful, FALSE otherwise.
 FPDF_EXPORT FPDF_BOOL FPDF_CALLCONV
 FPDFPageObjMark_GetParamKey(FPDF_PAGEOBJECTMARK mark,
                             unsigned long index,
-                            void *buffer,
+                            FPDF_WCHAR *buffer,
                             unsigned long buflen,
                             unsigned long *out_buflen);
 
@@ -471,19 +536,19 @@ FPDFPageObjMark_GetParamIntValue(FPDF_PAGEOBJECTMARK mark,
 //   mark       - handle to a content mark.
 //   key        - string key of the property.
 //   buffer     - buffer for holding the returned value in UTF-16LE. This is
-//                only modified if |buflen| is longer than the length of the
-//                value.
+//                only modified if |buflen| is large enough to store the value.
 //                Optional, pass null to just retrieve the size of the buffer
 //                needed.
-//   buflen     - length of the buffer.
+//   buflen     - length of the buffer in bytes.
 //   out_buflen - pointer to variable that will receive the minimum buffer size
-//                to contain the value. Not filled if FALSE is returned.
+//                in bytes to contain the name. This is a required parameter.
+//                Not filled if FALSE is returned.
 //
 // Returns TRUE if the key maps to a string/blob value, FALSE otherwise.
 FPDF_EXPORT FPDF_BOOL FPDF_CALLCONV
 FPDFPageObjMark_GetParamStringValue(FPDF_PAGEOBJECTMARK mark,
                                     FPDF_BYTESTRING key,
-                                    void *buffer,
+                                    FPDF_WCHAR *buffer,
                                     unsigned long buflen,
                                     unsigned long *out_buflen);
 
@@ -493,18 +558,19 @@ FPDFPageObjMark_GetParamStringValue(FPDF_PAGEOBJECTMARK mark,
 //   mark       - handle to a content mark.
 //   key        - string key of the property.
 //   buffer     - buffer for holding the returned value. This is only modified
-//                if |buflen| is at least as long as the length of the value.
+//                if |buflen| is large enough to store the value.
 //                Optional, pass null to just retrieve the size of the buffer
 //                needed.
-//   buflen     - length of the buffer.
+//   buflen     - length of the buffer in bytes.
 //   out_buflen - pointer to variable that will receive the minimum buffer size
-//                to contain the value. Not filled if FALSE is returned.
+//                in bytes to contain the name. This is a required parameter.
+//                Not filled if FALSE is returned.
 //
 // Returns TRUE if the key maps to a string/blob value, FALSE otherwise.
 FPDF_EXPORT FPDF_BOOL FPDF_CALLCONV
 FPDFPageObjMark_GetParamBlobValue(FPDF_PAGEOBJECTMARK mark,
                                   FPDF_BYTESTRING key,
-                                  void *buffer,
+                                  unsigned char *buffer,
                                   unsigned long buflen,
                                   unsigned long *out_buflen);
 
@@ -564,7 +630,7 @@ FPDFPageObjMark_SetBlobParam(FPDF_DOCUMENT document,
                              FPDF_PAGEOBJECT page_object,
                              FPDF_PAGEOBJECTMARK mark,
                              FPDF_BYTESTRING key,
-                             void *value,
+                             const unsigned char *value,
                              unsigned long value_len);
 
 // Experimental API.
@@ -775,6 +841,31 @@ FPDF_EXPORT FPDF_BOOL FPDF_CALLCONV
 FPDFImageObj_GetImagePixelSize(FPDF_PAGEOBJECT image_object,
                                unsigned int *width,
                                unsigned int *height);
+
+// Experimental API.
+// Get ICC profile decoded data of |image_object|. If the |image_object| is not
+// an image object or if it does not have an image, then the return value will
+// be false. It also returns false if the |image_object| has no ICC profile.
+// |buffer| is only modified if ICC profile exists and |buflen| is longer than
+// the length of the ICC profile decoded data.
+//
+//   image_object - handle to an image object; must not be NULL.
+//   page         - handle to the page containing |image_object|; must not be
+//                  NULL. Required for retrieving the image's colorspace.
+//   buffer       - Buffer to receive ICC profile data; may be NULL if querying
+//                  required size via |out_buflen|.
+//   buflen       - Length of the buffer in bytes. Ignored if |buffer| is NULL.
+//   out_buflen   - Pointer to receive the ICC profile data size in bytes; must
+//                  not be NULL. Will be set if this API returns true.
+//
+// Returns true if |out_buflen| is not null and an ICC profile exists for the
+// given |image_object|.
+FPDF_EXPORT FPDF_BOOL FPDF_CALLCONV
+FPDFImageObj_GetIccProfileDataDecoded(FPDF_PAGEOBJECT image_object,
+                                      FPDF_PAGE page,
+                                      uint8_t *buffer,
+                                      size_t buflen,
+                                      size_t *out_buflen);
 
 // Create a new path object at an initial position.
 //
@@ -1183,16 +1274,16 @@ FPDFText_SetCharcodes(FPDF_PAGEOBJECT text_object,
                       size_t count);
 
 // Returns a font object loaded from a stream of data. The font is loaded
-// into the document.
+// into the document. Various font data structures, such as the ToUnicode data,
+// are auto-generated based on the inputs.
 //
-// document   - handle to the document.
-// data       - the stream of data, which will be copied by the font object.
-// size       - size of the stream, in bytes.
-// font_type  - FPDF_FONT_TYPE1 or FPDF_FONT_TRUETYPE depending on the font
-// type.
-// cid        - a boolean specifying if the font is a CID font or not.
+// document  - handle to the document.
+// data      - the stream of font data, which will be copied by the font object.
+// size      - the size of the font data, in bytes.
+// font_type - FPDF_FONT_TYPE1 or FPDF_FONT_TRUETYPE depending on the font type.
+// cid       - a boolean specifying if the font is a CID font or not.
 //
-// The loaded font can be closed using FPDFFont_Close.
+// The loaded font can be closed using FPDFFont_Close().
 //
 // Returns NULL on failure
 FPDF_EXPORT FPDF_FONT FPDF_CALLCONV FPDFText_LoadFont(FPDF_DOCUMENT document,
@@ -1209,11 +1300,35 @@ FPDF_EXPORT FPDF_FONT FPDF_CALLCONV FPDFText_LoadFont(FPDF_DOCUMENT document,
 // document   - handle to the document.
 // font       - string containing the font name, without spaces.
 //
-// The loaded font can be closed using FPDFFont_Close.
+// The loaded font can be closed using FPDFFont_Close().
 //
 // Returns NULL on failure.
 FPDF_EXPORT FPDF_FONT FPDF_CALLCONV
 FPDFText_LoadStandardFont(FPDF_DOCUMENT document, FPDF_BYTESTRING font);
+
+// Experimental API.
+// Returns a font object loaded from a stream of data for a type 2 CID font. The
+// font is loaded into the document. Unlike FPDFText_LoadFont(), the ToUnicode
+// data and the CIDToGIDMap data are caller provided, instead of auto-generated.
+//
+// document                 - handle to the document.
+// font_data                - the stream of font data, which will be copied by
+//                            the font object.
+// font_data_size           - the size of the font data, in bytes.
+// to_unicode_cmap          - the ToUnicode data.
+// cid_to_gid_map_data      - the stream of CIDToGIDMap data.
+// cid_to_gid_map_data_size - the size of the CIDToGIDMap data, in bytes.
+//
+// The loaded font can be closed using FPDFFont_Close().
+//
+// Returns NULL on failure.
+FPDF_EXPORT FPDF_FONT FPDF_CALLCONV
+FPDFText_LoadCidType2Font(FPDF_DOCUMENT document,
+                          const uint8_t *font_data,
+                          uint32_t font_data_size,
+                          FPDF_BYTESTRING to_unicode_cmap,
+                          const uint8_t *cid_to_gid_map_data,
+                          uint32_t cid_to_gid_map_data_size);
 
 // Get the font size of a text object.
 //
@@ -1310,20 +1425,39 @@ FPDFTextObj_GetRenderedBitmap(FPDF_DOCUMENT document,
 FPDF_EXPORT FPDF_FONT FPDF_CALLCONV FPDFTextObj_GetFont(FPDF_PAGEOBJECT text);
 
 // Experimental API.
-// Get the font name of a font.
+// Get the base name of a font.
+//
+// font   - the handle to the font object.
+// buffer - the address of a buffer that receives the base font name.
+// length - the size, in bytes, of |buffer|.
+//
+// Returns the number of bytes in the base name (including the trailing NUL
+// character) on success, 0 on error. The base name is typically the font's
+// PostScript name. See descriptions of "BaseFont" in ISO 32000-1:2008 spec.
+//
+// Regardless of the platform, the |buffer| is always in UTF-8 encoding.
+// If |length| is less than the returned length, or |buffer| is NULL, |buffer|
+// will not be modified.
+FPDF_EXPORT size_t FPDF_CALLCONV FPDFFont_GetBaseFontName(FPDF_FONT font,
+                                                          char *buffer,
+                                                          size_t length);
+
+// Experimental API.
+// Get the family name of a font.
 //
 // font   - the handle to the font object.
 // buffer - the address of a buffer that receives the font name.
 // length - the size, in bytes, of |buffer|.
 //
-// Returns the number of bytes in the font name (including the trailing NUL
+// Returns the number of bytes in the family name (including the trailing NUL
 // character) on success, 0 on error.
 //
 // Regardless of the platform, the |buffer| is always in UTF-8 encoding.
 // If |length| is less than the returned length, or |buffer| is NULL, |buffer|
 // will not be modified.
-FPDF_EXPORT unsigned long FPDF_CALLCONV
-FPDFFont_GetFontName(FPDF_FONT font, char *buffer, unsigned long length);
+FPDF_EXPORT size_t FPDF_CALLCONV FPDFFont_GetFamilyName(FPDF_FONT font,
+                                                        char *buffer,
+                                                        size_t length);
 
 // Experimental API.
 // Get the decoded data from the |font| object.

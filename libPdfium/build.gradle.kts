@@ -24,8 +24,8 @@ extra["ossrhPassword"] = mOSSRHPassword
 
 android {
     namespace = "com.ahmer.pdfium"
-    compileSdk = 35
-    ndkVersion = "27.1.12297006"
+    compileSdk = 36
+    ndkVersion = "29.0.13113456"
 
     buildFeatures {
         //noinspection DataBindingWithoutKapt
@@ -39,7 +39,8 @@ android {
         externalNativeBuild {
             cmake {
                 arguments += listOf(
-                    "-DANDROID_STL=c++_static", "-DANDROID_PLATFORM=android-${minSdk.toString()}",
+                    "-DANDROID_STL=c++_static",
+                    "-DANDROID_PLATFORM=android-${minSdk}",
                     "-DANDROID_ARM_NEON=TRUE"
                 )
                 cppFlags += "-std=c++17 -frtti -fexceptions"
@@ -62,8 +63,8 @@ android {
 
     externalNativeBuild {
         cmake {
+            version = "3.31.6"
             path("src/main/cpp/CMakeLists.txt")
-            version = cmake.version
         }
     }
 
@@ -85,10 +86,10 @@ android {
 }
 
 dependencies {
-    implementation("androidx.core:core-ktx:1.13.1")
-    implementation("org.jetbrains.kotlinx:kotlinx-coroutines-android:1.9.0")
-    implementation("org.jetbrains.kotlinx:kotlinx-coroutines-core:1.9.0")
-    implementation("org.jetbrains.kotlinx:kotlinx-coroutines-play-services:1.9.0")
+    implementation("androidx.core:core-ktx:1.16.0")
+    implementation("org.jetbrains.kotlinx:kotlinx-coroutines-android:1.10.2")
+    implementation("org.jetbrains.kotlinx:kotlinx-coroutines-core:1.10.2")
+    implementation("org.jetbrains.kotlinx:kotlinx-coroutines-play-services:1.10.2")
 }
 
 /**
