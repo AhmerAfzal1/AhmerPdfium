@@ -7,11 +7,11 @@ import android.os.ParcelFileDescriptor
 import android.util.Log
 import android.widget.ImageView
 import androidx.appcompat.app.AppCompatActivity
+import androidx.core.graphics.createBitmap
 import com.ahmer.pdfium.PdfDocument
 import com.ahmer.pdfium.PdfiumCore
 import com.ahmer.pdfviewer.util.PdfUtils
 import java.io.File
-import androidx.core.graphics.createBitmap
 import java.io.IOException
 
 class TestPdfium : AppCompatActivity() {

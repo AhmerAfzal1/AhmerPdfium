@@ -5,11 +5,11 @@ import android.os.Handler
 import android.os.Looper
 import android.os.Message
 import android.util.Log
+import androidx.core.graphics.createBitmap
 import com.ahmer.pdfviewer.exception.PageRenderingException
 import com.ahmer.pdfviewer.model.PagePart
 import com.ahmer.pdfviewer.util.PdfConstants
 import kotlin.math.roundToInt
-import androidx.core.graphics.createBitmap
 
 class RenderingHandler(looper: Looper, private val pdfView: PDFView) : Handler(looper) {
     private val mBounds: RectF = RectF()

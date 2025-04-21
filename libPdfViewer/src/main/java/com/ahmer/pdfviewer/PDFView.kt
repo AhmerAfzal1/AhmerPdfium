@@ -1358,8 +1358,8 @@ class PDFView(context: Context?, set: AttributeSet?) : RelativeLayout(context, s
         pdfiumCore = PdfiumCore(context = context)
         cacheManager = CacheManager()
         mAnimationManager = AnimationManager(pdfView = this)
-        mDragPinchManager = DragPinchManager(pdfView =this, mAnimationManager!!)
-        mPagesLoader = PagesLoader(pdfView =this)
+        mDragPinchManager = DragPinchManager(pdfView = this, mAnimationManager!!)
+        mPagesLoader = PagesLoader(pdfView = this)
         mPaint = Paint()
         mDebugPaint = Paint()
         mDebugPaint?.style = Paint.Style.STROKE

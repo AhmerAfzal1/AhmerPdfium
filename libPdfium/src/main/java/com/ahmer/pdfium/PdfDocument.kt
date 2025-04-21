@@ -37,13 +37,13 @@ class PdfDocument : Closeable {
     private external fun nativeLoadTextPage(docPtr: Long, pagePtr: Long): Long
     private external fun nativeRenderPagesSurfaceWithMatrix(
         pages: LongArray, surface: Surface, matrixFloats: FloatArray, clipFloats: FloatArray,
-        renderAnnot: Boolean, canvasColor: Int, pageBackgroundColor: Int,
+        annotation: Boolean, canvasColor: Int, pageBackgroundColor: Int,
     ): Boolean
 
     private external fun nativeRenderPagesWithMatrix(
         pages: LongArray, bufferPtr: Long, drawSizeHor: Int, drawSizeVer: Int,
-        matrixFloats: FloatArray, clipFloats: FloatArray, renderAnnot: Boolean, textMask: Boolean,
-        canvasColor: Int, pageBackgroundColor: Int,
+        matrixFloats: FloatArray, clipFloats: FloatArray, annotation: Boolean, canvasColor: Int,
+        pageBackgroundColor: Int,
     )
 
     private external fun nativeSaveAsCopy(
@@ -314,7 +314,6 @@ class PdfDocument : Closeable {
             matrices: List<Matrix>,
             clipRects: List<RectF>,
             annotation: Boolean = false,
-            textMask: Boolean = false,
             canvasColor: Int = 0xFF848484.toInt(),
             pageBackgroundColor: Int = 0xFFFFFFFF.toInt(),
         ) {
@@ -344,8 +343,7 @@ class PdfDocument : Closeable {
                     drawSizeVer = drawSizeY,
                     matrixFloats = matrixFloats,
                     clipFloats = clipFloats,
-                    renderAnnot = annotation,
-                    textMask = textMask,
+                    annotation = annotation,
                     canvasColor = canvasColor,
                     pageBackgroundColor = pageBackgroundColor,
                 )
@@ -385,7 +383,7 @@ class PdfDocument : Closeable {
                     surface = surface,
                     matrixFloats = matrixFloats,
                     clipFloats = clipFloats,
-                    renderAnnot = annotation,
+                    annotation = annotation,
                     canvasColor = canvasColor,
                     pageBackgroundColor = pageBackgroundColor,
                 )

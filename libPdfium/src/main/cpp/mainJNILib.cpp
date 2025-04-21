@@ -654,12 +654,12 @@ JNI_PdfDocument(jboolean, PdfiumCore, nativeRenderPagesSurfaceWithMatrix)(JNI_AR
         auto startX = (int) leftClip;
         auto startY = (int) topClip;
 
-//            if (drawSizeHor > width || drawSizeVer > height) {
-//                LOGE("Render page clipRect is larger than the surface: %d, %d, clipRect, %d, %d", width, height, drawSizeHor, drawSizeVer);
-//                ANativeWindow_unlockAndPost(nativeWindow);
-//                ANativeWindow_release(nativeWindow);
-//                return false;
-//            }
+//      if (drawSizeHor > width || drawSizeVer > height) {
+//         LOGE("Render page clipRect is larger than the surface: %d, %d, clipRect, %d, %d", width, height, drawSizeHor, drawSizeVer);
+//         ANativeWindow_unlockAndPost(nativeWindow);
+//         ANativeWindow_release(nativeWindow);
+//         return false;
+//      }
         int baseHorSize = (width < drawSizeHor) ? width : drawSizeHor;
         int baseVerSize = (height < drawSizeVer) ? height : drawSizeVer;
         int baseX = (startX < 0) ? 0 : startX;
@@ -727,10 +727,8 @@ JNI_PdfDocument(void, PdfiumCore, nativeRenderPagesWithMatrix)(JNI_ARGS, jlongAr
                                                                jfloatArray matrices,
                                                                jfloatArray clipRect,
                                                                jboolean annotation,
-                                                               jboolean text_mask,
                                                                jint canvasColor,
                                                                jint pageBackgroundColor) {
-
     auto pBuffer = reinterpret_cast<ANativeWindow_Buffer *>(bufferPtr);
     auto buffer = *pBuffer;
     jboolean isCopyPages;
@@ -742,7 +740,6 @@ JNI_PdfDocument(void, PdfiumCore, nativeRenderPagesWithMatrix)(JNI_ARGS, jlongAr
 
     jboolean isCopyMatrices;
     auto matrixFloats = env->GetFloatArrayElements(matrices, &isCopyMatrices);
-
 
     auto canvasHorSize = drawSizeHor;
     auto canvasVerSize = drawSizeVer;
@@ -757,14 +754,12 @@ JNI_PdfDocument(void, PdfiumCore, nativeRenderPagesWithMatrix)(JNI_ARGS, jlongAr
     }
 
     int flags = FPDF_REVERSE_BYTE_ORDER;
-
     if (annotation) {
         flags |= FPDF_ANNOT;
     }
 
     /* from here we process each page */
     for (int pageIndex = 0; pageIndex < numPages; ++pageIndex) {
-
         auto page = reinterpret_cast<FPDF_PAGE>(pagePtrs[pageIndex]);
 
         if (page == nullptr) {
@@ -1255,7 +1250,6 @@ JNI_FUNC(jboolean, PdfiumCore, nativeRenderPageSurfaceWithMatrix)(JNI_ARGS, jlon
                                                                   jfloatArray matrixValues,
                                                                   jfloatArray clipRect,
                                                                   jboolean annotation,
-                                                                  jboolean,
                                                                   jint canvasColor,
                                                                   jint pageBackgroundColor) {
     auto page = reinterpret_cast<FPDF_PAGE>(pagePtr);
@@ -1329,7 +1323,7 @@ JNI_FUNC(jboolean, PdfiumCore, nativeRenderPageSurfaceWithMatrix)(JNI_ARGS, jlon
                                                 (int) (buffer->stride) * 4);
 
     if ((drawSizeHor < width || drawSizeVer < height) && canvasColor != 0) {
-        FPDFBitmap_FillRect(pdfBitmap, 0, 0, width, height,canvasColor); //Gray
+        FPDFBitmap_FillRect(pdfBitmap, 0, 0, width, height, canvasColor); //Gray
     }
 
     int flags = FPDF_REVERSE_BYTE_ORDER;
@@ -1373,8 +1367,8 @@ JNI_FUNC(jboolean, PdfiumCore, nativeRenderPageSurfaceWithMatrix)(JNI_ARGS, jlon
 JNI_FUNC(void, PdfiumCore, nativeRenderPageBitmap)(JNI_ARGS, jlong docPtr, jlong pagePtr,
                                                    jobject bitmap, jint startX, jint startY,
                                                    jint drawSizeHor, jint drawSizeVer,
-                                                   jboolean annotation, jboolean,
-                                                   jint canvasColor, jint pageBackgroundColor) {
+                                                   jboolean annotation, jint canvasColor,
+                                                   jint pageBackgroundColor) {
     auto *doc = reinterpret_cast<DocumentFile *>(docPtr);
     auto page = reinterpret_cast<FPDF_PAGE>(pagePtr);
 

@@ -50,7 +50,6 @@ import io.ahmer.utils.utilcode.StringUtils
 import io.ahmer.utils.utilcode.ThrowableUtils
 import io.ahmer.utils.utilcode.ToastUtils
 import kotlinx.coroutines.flow.collectLatest
-import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.launch
 import java.util.Locale
 
@@ -86,7 +85,7 @@ class PdfFragment : Fragment(R.layout.fragment_pdf), MenuProvider, OnPageChangeL
             }
         }
         lifecycleScope.launch {
-            repeatOnLifecycle(Lifecycle.State.STARTED){
+            repeatOnLifecycle(Lifecycle.State.STARTED) {
                 mViewModel.isAutoSpacing.collectLatest { mIsAutoSpacing = it }
                 mViewModel.isPageSnap.collectLatest { mIsPageSnap = it }
                 mViewModel.getSpacing.collectLatest { mSpacing = it }

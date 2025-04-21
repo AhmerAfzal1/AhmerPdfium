@@ -107,8 +107,7 @@ class PdfiumCore(
 
     private external fun nativeRenderPageBitmap(
         docPtr: Long, pagePtr: Long, bitmap: Bitmap?, startX: Int, startY: Int, drawSizeHor: Int,
-        drawSizeVer: Int, annotation: Boolean, textMask: Boolean, canvasColor: Int,
-        pageBackgroundColor: Int,
+        drawSizeVer: Int, annotation: Boolean, canvasColor: Int, pageBackgroundColor: Int,
     )
 
     private external fun nativeRenderPageWithMatrix(
@@ -124,7 +123,7 @@ class PdfiumCore(
 
     private external fun nativeRenderPageSurfaceWithMatrix(
         pagePtr: Long, surface: Surface, matrix: FloatArray, clipRect: FloatArray,
-        annotation: Boolean, textMask: Boolean = false, canvasColor: Int, pageBackgroundColor: Int,
+        annotation: Boolean, canvasColor: Int, pageBackgroundColor: Int,
     ): Boolean
 
     private external fun nativeRenderPageBitmapWithMatrix(
@@ -434,7 +433,6 @@ class PdfiumCore(
         matrix: Matrix,
         clipRect: RectF,
         annotation: Boolean = false,
-        textMask: Boolean = false,
         canvasColor: Int = 0xFF848484.toInt(),
         pageBackgroundColor: Int = 0xFFFFFFFF.toInt(),
     ): Boolean {
@@ -458,7 +456,6 @@ class PdfiumCore(
                     clipRect.bottom,
                 ),
                 annotation = annotation,
-                textMask = textMask,
                 canvasColor = canvasColor,
                 pageBackgroundColor = pageBackgroundColor,
             )
@@ -473,7 +470,6 @@ class PdfiumCore(
         drawSizeX: Int,
         drawSizeY: Int,
         annotation: Boolean = false,
-        textMask: Boolean = false,
         canvasColor: Int = 0xFF848484.toInt(),
         pageBackgroundColor: Int = 0xFFFFFFFF.toInt(),
     ) {
@@ -488,7 +484,6 @@ class PdfiumCore(
                 drawSizeHor = drawSizeX,
                 drawSizeVer = drawSizeY,
                 annotation = annotation,
-                textMask = textMask,
                 canvasColor = canvasColor,
                 pageBackgroundColor = pageBackgroundColor,
             )

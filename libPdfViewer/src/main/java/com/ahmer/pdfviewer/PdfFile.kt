@@ -184,7 +184,12 @@ class PdfFile(
     /**
      * @return All links from given page.
      */
-    fun getPageLinks(pageIndex: Int, mSize: SizeF, posX: Float, posY: Float): List<PdfDocument.Link> {
+    fun getPageLinks(
+        pageIndex: Int,
+        mSize: SizeF,
+        posX: Float,
+        posY: Float
+    ): List<PdfDocument.Link> {
         return pdfiumCore.getPageLinks(pageIndex, mSize, posX, posY)
     }
 
@@ -248,7 +253,14 @@ class PdfFile(
      * @return mapped coordinates
      * @see PdfiumCore.mapPageCoordsToDevice
      */
-    fun mapRectToDevice(pageIndex: Int, startX: Int, startY: Int, sizeX: Int, sizeY: Int, rect: RectF): RectF {
+    fun mapRectToDevice(
+        pageIndex: Int,
+        startX: Int,
+        startY: Int,
+        sizeX: Int,
+        sizeY: Int,
+        rect: RectF
+    ): RectF {
         return pdfiumCore.mapRectToDevice(pageIndex, startX, startY, sizeX, sizeY, 0, rect)
     }
 
@@ -337,9 +349,9 @@ class PdfFile(
      *
      * @see PdfiumCore.renderPageBitmap
      */
-    fun renderPageBitmap(pageIndex: Int,bitmap: Bitmap, bounds: Rect, annotation: Boolean) {
+    fun renderPageBitmap(pageIndex: Int, bitmap: Bitmap, bounds: Rect, annotation: Boolean) {
         pdfiumCore.renderPageBitmap(
-           pageIndex, bitmap, bounds.left, bounds.top, bounds.width(), bounds.height(), annotation
+            pageIndex, bitmap, bounds.left, bounds.top, bounds.width(), bounds.height(), annotation
         )
     }
 

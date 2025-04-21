@@ -7,10 +7,10 @@ import android.net.Uri
 import android.os.Build
 import android.util.Log
 import android.widget.Toast
+import androidx.core.net.toUri
 import com.ahmer.pdfviewer.PDFView
 import com.ahmer.pdfviewer.model.LinkTapEvent
 import com.ahmer.pdfviewer.util.PdfConstants
-import androidx.core.net.toUri
 
 class DefaultLinkHandler(private val pdfView: PDFView) : LinkHandler {
 
