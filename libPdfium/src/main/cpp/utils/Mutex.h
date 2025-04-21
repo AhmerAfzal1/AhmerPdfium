@@ -47,40 +47,50 @@ namespace android {
         };
 
         Mutex();
-        Mutex(const char* name);
-        Mutex(int type, const char* name = NULL);
+
+        Mutex(const char *name);
+
+        Mutex(int type, const char *name = NULL);
+
         ~Mutex();
 
         // lock or unlock the mutex
-        status_t    lock();
-        void        unlock();
+        status_t lock();
+
+        void unlock();
 
         // lock if possible; returns 0 on success, error otherwise
-        status_t    tryLock();
+        status_t tryLock();
 
         // Manages the mutex automatically. It'll be locked when Autolock is
         // constructed and released when Autolock goes out of scope.
         class Autolock {
         public:
-            inline Autolock(Mutex& mutex) : mLock(mutex)  { mLock.lock(); }
-            inline Autolock(Mutex* mutex) : mLock(*mutex) { mLock.lock(); }
+            inline Autolock(Mutex &mutex) : mLock(mutex) { mLock.lock(); }
+
+            inline Autolock(Mutex *mutex) : mLock(*mutex) { mLock.lock(); }
+
             inline ~Autolock() { mLock.unlock(); }
+
         private:
-            Mutex& mLock;
+            Mutex &mLock;
         };
 
     private:
         friend class Condition;
 
         // A mutex cannot be copied
-        Mutex(const Mutex&);
-        Mutex&      operator = (const Mutex&);
+        Mutex(const Mutex &);
+
+        Mutex &operator=(const Mutex &);
 
 #if defined(HAVE_PTHREADS)
         pthread_mutex_t mMutex;
 #else
-        void    _init();
-        void*   mState;
+
+        void _init();
+
+        void *mState;
 #endif
     };
 

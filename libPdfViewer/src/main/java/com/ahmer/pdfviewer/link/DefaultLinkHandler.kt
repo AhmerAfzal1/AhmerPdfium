@@ -10,6 +10,7 @@ import android.widget.Toast
 import com.ahmer.pdfviewer.PDFView
 import com.ahmer.pdfviewer.model.LinkTapEvent
 import com.ahmer.pdfviewer.util.PdfConstants
+import androidx.core.net.toUri
 
 class DefaultLinkHandler(private val pdfView: PDFView) : LinkHandler {
 
@@ -21,7 +22,7 @@ class DefaultLinkHandler(private val pdfView: PDFView) : LinkHandler {
 
     private fun handleUri(uri: String) {
         val mContext: Context = pdfView.context
-        val mParsedUri: Uri = Uri.parse(uri)
+        val mParsedUri: Uri = uri.toUri()
         val mIntent: Intent = Intent(Intent.ACTION_VIEW, mParsedUri).apply {
             flags = Intent.FLAG_ACTIVITY_CLEAR_TOP or Intent.FLAG_ACTIVITY_SINGLE_TOP
             if (Build.VERSION.SDK_INT < Build.VERSION_CODES.N || Build.VERSION.SDK_INT >= Build.VERSION_CODES.P) {

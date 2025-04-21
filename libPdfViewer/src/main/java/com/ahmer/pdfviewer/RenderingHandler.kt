@@ -9,6 +9,7 @@ import com.ahmer.pdfviewer.exception.PageRenderingException
 import com.ahmer.pdfviewer.model.PagePart
 import com.ahmer.pdfviewer.util.PdfConstants
 import kotlin.math.roundToInt
+import androidx.core.graphics.createBitmap
 
 class RenderingHandler(looper: Looper, private val pdfView: PDFView) : Handler(looper) {
     private val mBounds: RectF = RectF()
@@ -47,7 +48,7 @@ class RenderingHandler(looper: Looper, private val pdfView: PDFView) : Handler(l
         val mBitmapQuality = if (bestQuality) Bitmap.Config.ARGB_8888 else Bitmap.Config.RGB_565
         val mHeight: Int = bmpOriginal.height
         val mWidth: Int = bmpOriginal.width
-        val mNightModeBitmap = Bitmap.createBitmap(mWidth, mHeight, mBitmapQuality)
+        val mNightModeBitmap = createBitmap(mWidth, mHeight, mBitmapQuality)
         val mNightModeCanvas = Canvas(mNightModeBitmap)
         val mPaint = Paint()
         val mInvertMatrix = ColorMatrix(
@@ -80,7 +81,7 @@ class RenderingHandler(looper: Looper, private val pdfView: PDFView) : Handler(l
         val mQuality = if (task.isBestQuality) Bitmap.Config.ARGB_8888 else Bitmap.Config.RGB_565
         var mBitmap: Bitmap
         mBitmap = try {
-            Bitmap.createBitmap(mWidth, mHeight, mQuality)
+            createBitmap(mWidth, mHeight, mQuality)
         } catch (e: IllegalArgumentException) {
             Log.e(PdfConstants.TAG, "Cannot create bitmap", e)
             return null

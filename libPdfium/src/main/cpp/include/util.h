@@ -13,6 +13,8 @@ extern "C" {
 #define JNI_PdfTextPage(retType, bindClass, name)  JNIEXPORT retType JNICALL Java_com_ahmer_pdfium_PdfTextPage_##name
 #define JNI_PdfPage(retType, bindClass, name)  JNIEXPORT retType JNICALL Java_com_ahmer_pdfium_PdfPage_##name
 #define JNI_PdfDocument(retType, bindClass, name)  JNIEXPORT retType JNICALL Java_com_ahmer_pdfium_PdfDocument_##name
+#define JNI_FindResult(retType, bindClass, name)  JNIEXPORT retType JNICALL Java_com_ahmer_pdfium_FindResult_##name
+#define JNI_PdfPageLink(retType, bindClass, name)  JNIEXPORT retType JNICALL Java_com_ahmer_pdfium_PdfPageLink_##name
 
 #define LOG_TAG "AhmerPdfium"
 #define LOGI(...)   __android_log_print(ANDROID_LOG_INFO, LOG_TAG, __VA_ARGS__)

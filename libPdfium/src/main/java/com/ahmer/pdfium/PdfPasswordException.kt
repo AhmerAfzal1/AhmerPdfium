@@ -1,3 +1,8 @@
 package com.ahmer.pdfium
 
-class PdfPasswordException(message: String?) : RuntimeException(message)
+import java.io.IOException
+
+/**
+ * PdfPasswordException is thrown when a password is required to open a document
+ */
+class PdfPasswordException(message: String?) : IOException(message)
