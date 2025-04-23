@@ -1,0 +1,53 @@
+[versions]
+kotlin = "2.1.20"
+ksp = "2.1.20-2.0.0"
+coreKtx = "1.16.0"
+appcompat = "1.7.0"
+material = "1.12.0"
+constraintLayout = "2.2.1"
+lifecycle = "2.8.7"
+navigation = "2.8.9"
+hilt = "2.56.1"
+coroutines = "1.10.2"
+datastore = "1.1.4"
+preference = "1.2.1"
+multidex = "2.0.1"
+ahmerUtils = "1.1.1"
+nexusStaging = "0.30.0"
+dokka = "2.0.0"
+
+[libraries]
+androidx-core-ktx = { group = "androidx.core", name = "core-ktx", version.ref = "coreKtx" }
+androidx-appcompat = { group = "androidx.appcompat", name = "appcompat", version.ref = "appcompat" }
+androidx-material = { group = "com.google.android.material", name = "material", version.ref = "material" }
+androidx-constraintlayout = { group = "androidx.constraintlayout", name = "constraintlayout", version.ref = "constraintLayout" }
+androidx-datastore = { group = "androidx.datastore", name = "datastore", version.ref = "datastore" }
+androidx-datastore-core = { group = "androidx.datastore", name = "datastore-core", version.ref = "datastore" }
+androidx-datastore-preferences = { group = "androidx.datastore", name = "datastore-preferences", version.ref = "datastore" }
+androidx-lifecycle-common = { group = "androidx.lifecycle", name = "lifecycle-common-java8", version.ref = "lifecycle" }
+androidx-lifecycle-livedata = { group = "androidx.lifecycle", name = "lifecycle-livedata-ktx", version.ref = "lifecycle" }
+androidx-lifecycle-viewmodel = { group = "androidx.lifecycle", name = "lifecycle-viewmodel-ktx", version.ref = "lifecycle" }
+androidx-multidex = { group = "androidx.multidex", name = "multidex", version.ref = "multidex" }
+androidx-navigation-fragment = { group = "androidx.navigation", name = "navigation-fragment-ktx", version.ref = "navigation" }
+androidx-navigation-ui = { group = "androidx.navigation", name = "navigation-ui-ktx", version.ref = "navigation" }
+androidx-preference = { group = "androidx.preference", name = "preference-ktx", version.ref = "preference" }
+hilt-android = { group = "com.google.dagger", name = "hilt-android", version.ref = "hilt" }
+hilt-compiler = { group = "com.google.dagger", name = "hilt-compiler", version.ref = "hilt" }
+ahmer-utils = { group = "io.github.ahmerafzal1", name = "ahmer-utils", version.ref = "ahmerUtils" }
+coroutines-android = { group = "org.jetbrains.kotlinx", name = "kotlinx-coroutines-android", version.ref = "coroutines" }
+coroutines-core = { group = "org.jetbrains.kotlinx", name = "kotlinx-coroutines-core", version.ref = "coroutines" }
+coroutines-play-services = { group = "org.jetbrains.kotlinx", name = "kotlinx-coroutines-play-services", version.ref = "coroutines" }
+
+[plugins]
+android-application = { id = "com.android.application", version = "8.9.2" }
+android-library = { id = "com.android.library", version = "8.9.2" }
+kotlin-android = { id = "org.jetbrains.kotlin.android", version.ref = "kotlin" }
+kotlin-jvm = { id = "org.jetbrains.kotlin.jvm", version.ref = "kotlin" }
+hilt-android = { id = "com.google.dagger.hilt.android", version.ref = "hilt" }
+ksp = { id = "com.google.devtools.ksp", version.ref = "ksp" }
+navigation-safe-args = { id = "androidx.navigation.safeargs.kotlin", version.ref = "navigation" }
+kotlin-parcelize = { id = "org.jetbrains.kotlin.plugin.parcelize" }
+maven-publish = { id = "maven-publish", version = "" }
+signing = { id = "signing", version = "" }
+nexus-staging = { id = "io.codearte.nexus-staging", version.ref = "nexusStaging" }
+dokka = { id = "org.jetbrains.dokka", version.ref = "dokka" }

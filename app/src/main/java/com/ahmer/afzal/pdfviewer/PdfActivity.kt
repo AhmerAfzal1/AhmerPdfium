@@ -85,6 +85,7 @@ class PdfActivity : AppCompatActivity(), OnPageChangeListener, OnLoadCompleteLis
                         OVERRIDE_TRANSITION_OPEN, R.anim.left_to_right, R.anim.right_to_left
                     )
                 } else {
+                    @Suppress("DEPRECATION")
                     overridePendingTransition(R.anim.left_to_right, R.anim.right_to_left)
                 }
             }

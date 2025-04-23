@@ -1,21 +1,22 @@
-@file:Suppress("UnstableApiUsage")
-
+import org.jetbrains.dokka.gradle.DokkaTask
 import org.jetbrains.kotlin.gradle.dsl.JvmTarget
 import java.net.URI
 
 plugins {
-    id("com.android.library")
-    id("org.jetbrains.kotlin.android")
-    id("maven-publish")
-    id("signing")
+    alias(libs.plugins.android.library)
+    alias(libs.plugins.kotlin.android)
+    alias(libs.plugins.dokka)
+    alias(libs.plugins.maven.publish)
+    alias(libs.plugins.signing)
 }
 
 group = "io.github.ahmerafzal1"
-version = "1.8.1"
+version = "1.8.2"
 
+// Environment variables for signing and publishing
 val mKeyId: String? = System.getenv("SIGNING_KEY_ID")
 val mPassword: String? = System.getenv("SIGNING_PASSWORD")
-val mSecretKeyRingKey: String? = System.getenv("SIGNING_SECRET_KEY_RING_FILE")
+val mSecretKey: String? = System.getenv("SIGNING_SECRET_KEY")
 val mOSSRHUsername: String? = System.getenv("OSSRH_USERNAME")
 val mOSSRHPassword: String? = System.getenv("OSSRH_PASSWORD")
 
@@ -38,12 +39,15 @@ android {
 
         externalNativeBuild {
             cmake {
-                arguments += listOf(
-                    "-DANDROID_STL=c++_static",
-                    "-DANDROID_PLATFORM=android-${minSdk}",
-                    "-DANDROID_ARM_NEON=TRUE"
+                arguments.addAll(
+                    listOf(
+                        "-DANDROID_STL=c++_static",
+                        "-DANDROID_PLATFORM=android-${minSdk}",
+                        "-DANDROID_ARM_NEON=TRUE"
+                    )
                 )
-                cppFlags += "-std=c++17 -frtti -fexceptions"
+
+                cppFlags("-std=c++17", "-frtti", "-fexceptions")
             }
         }
 
@@ -86,62 +90,38 @@ android {
 }
 
 dependencies {
-    implementation("androidx.core:core-ktx:1.16.0")
-    implementation("org.jetbrains.kotlinx:kotlinx-coroutines-android:1.10.2")
-    implementation("org.jetbrains.kotlinx:kotlinx-coroutines-core:1.10.2")
-    implementation("org.jetbrains.kotlinx:kotlinx-coroutines-play-services:1.10.2")
+    implementation(libs.androidx.core.ktx)
+    implementation(libs.coroutines.android)
+    implementation(libs.coroutines.core)
+    implementation(libs.coroutines.play.services)
 }
 
-/**
- * Retrieves the [sourceSets][SourceSetContainer] extension.
- */
-val Project.sourceSets: SourceSetContainer
-    get() = (this as ExtensionAware).extensions.getByName("sourceSets") as SourceSetContainer
-
-/**
- * Provides the existing [main][SourceSet] element.
- */
-val SourceSetContainer.main: NamedDomainObjectProvider<SourceSet>
-    get() = named<SourceSet>("main")
-
-tasks.withType<GenerateModuleMetadata> {
-    enabled = true
+// =============== Publication Setup ===============
+val javadocJar by tasks.register<Jar>("javadocJar") {
+    dependsOn(tasks.named("dokkaJavadoc"))
+    archiveClassifier.set("javadoc")
+    from(tasks.named("dokkaJavadoc"))
 }
 
-tasks.register<Jar>("releaseSourcesJar") {
-    from(android.sourceSets["main"].java.srcDirs)
+val sourcesJar by tasks.register<Jar>("sourcesJar") {
     archiveClassifier.set("sources")
-}
-
-tasks.register<Jar>("javadocJar") {
-    group = JavaBasePlugin.DOCUMENTATION_GROUP
-    archiveClassifier.value("javadoc")
-    from(tasks.getByName("dokkaJavadoc"))
-}
-
-tasks.named<Jar>("releaseSourcesJar") {
-    duplicatesStrategy = DuplicatesStrategy.EXCLUDE
-}
-
-artifacts {
-    archives(tasks["javadocJar"])
-    archives(tasks["releaseSourcesJar"])
+    from(android.sourceSets["main"].java.srcDirs)
 }
 
 afterEvaluate {
     publishing {
         publications {
             create<MavenPublication>("release") {
-                // The coordinates of the library, being set from variables that we'll set up in a moment
-                artifact(tasks["javadocJar"])
-                artifact(tasks["releaseSourcesJar"])
-                artifact(tasks["bundleReleaseAar"])
+                // Artifact configuration
                 artifactId = "ahmer-pdfium"
+                artifact(layout.buildDirectory.file("outputs/aar/${project.name}-release.aar"))
+                artifact(sourcesJar)
+                artifact(javadocJar)
 
-                // Self-explanatory metadata for the most part
+                // POM configuration
                 pom {
                     name.set("AhmerPdfium")
-                    description.set("Ahmer Pdfium Library for Android (API 19 binding)")
+                    description.set("Ahmer Pdfium Library for Android (API 21 binding)")
                     url.set("https://github.com/AhmerAfzal1/AhmerPdfium")
                     packaging = "aar"
 
@@ -161,43 +141,48 @@ afterEvaluate {
                         }
                     }
 
-                    // Version control info, if you're using GitHub, follow the format as seen here
                     scm {
                         connection.set("scm:git:git://github.com/AhmerAfzal1/AhmerPdfium.git")
                         developerConnection.set("scm:git:ssh://github.com/AhmerAfzal1/AhmerPdfium.git")
                         url.set("https://github.com/AhmerAfzal1/AhmerPdfium/tree/master/Pdfium")
                     }
                 }
+
+                // Dependency info
+                pom.withXml {
+                    val dependenciesNode = asNode().appendNode("dependencies")
+                    configurations["implementation"].allDependencies.forEach {
+                        if (it.name != "unspecified") {
+                            val dependencyNode = dependenciesNode.appendNode("dependency")
+                            dependencyNode.appendNode("groupId", it.group)
+                            dependencyNode.appendNode("artifactId", it.name)
+                            dependencyNode.appendNode("version", it.version)
+                            dependencyNode.appendNode("scope", "implementation")
+                        }
+                    }
+                }
             }
         }
         repositories {
             maven {
-                name = "mavenCentral"
+                name = "MavenCentral"
+                url = URI.create(
+                    if (version.toString().endsWith("SNAPSHOT"))
+                        "https://s01.oss.sonatype.org/content/repositories/snapshots/"
+                    else
+                        "https://s01.oss.sonatype.org/service/local/staging/deploy/maven2/"
+                )
 
-                val releaseUrl = "https://s01.oss.sonatype.org/service/local/staging/deploy/maven2/"
-                val snapshotsUrl = "https://s01.oss.sonatype.org/content/repositories/snapshots/"
-                val releaseRepoUrl = URI.create(releaseUrl)
-                val snapshotsRepoUrl = URI.create(snapshotsUrl)
-                val isSnapshot = version.toString().endsWith("SNAPSHOT")
-                url = if (isSnapshot) snapshotsRepoUrl else releaseRepoUrl
-
-                if (mOSSRHUsername != null && mOSSRHPassword != null) {
-                    credentials {
-                        username = mOSSRHUsername
-                        password = mOSSRHPassword
-                    }
+                credentials {
+                    username = mOSSRHUsername ?: ""
+                    password = mOSSRHPassword ?: ""
                 }
             }
         }
     }
 
-    configure<SigningExtension> {
-        extra["signing.keyId"] = mKeyId
-        extra["signing.password"] = mPassword
-        extra["signing.secretKeyRingFile"] = mSecretKeyRingKey
-
-        val pubExt = checkNotNull(extensions.findByType(PublishingExtension::class.java))
-        val publication = pubExt.publications["release"]
-        sign(publication)
+    signing {
+        useInMemoryPgpKeys(mKeyId, mSecretKey, mPassword)
+        sign(publishing.publications["release"])
     }
 }
