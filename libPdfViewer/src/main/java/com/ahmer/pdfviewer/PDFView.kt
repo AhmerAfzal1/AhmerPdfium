@@ -361,7 +361,7 @@ class PDFView(context: Context?, set: AttributeSet?) : RelativeLayout(context, s
     /**
      * Returns null if document is not loaded
      */
-    fun getDocumentMeta(): PdfDocument.Meta? {
+   suspend fun getDocumentMeta(): PdfDocument.Meta? {
         return pdfFile?.getMetaData()
     }
 
@@ -400,7 +400,7 @@ class PDFView(context: Context?, set: AttributeSet?) : RelativeLayout(context, s
      * @param pageIndex the page index
      * @return the rotation
      */
-    fun getPageRotation(pageIndex: Int): Int {
+  suspend  fun getPageRotation(pageIndex: Int): Int {
         return pdfFile?.getPageRotation(pageIndex)!!
     }
 
@@ -433,11 +433,11 @@ class PDFView(context: Context?, set: AttributeSet?) : RelativeLayout(context, s
     /**
      * Will be empty until document is loaded
      */
-    fun getTableOfContents(): List<PdfDocument.Bookmark> {
+    suspend fun getTableOfContents(): List<PdfDocument.Bookmark> {
         return pdfFile?.getBookmarks() ?: emptyList()
     }
 
-    fun getTotalPagesCount(): Int {
+   suspend fun getTotalPagesCount(): Int {
         return pdfFile?.getTotalPagesCount() ?: 0
     }
 

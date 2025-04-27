@@ -9,6 +9,7 @@ import androidx.core.graphics.createBitmap
 import com.ahmer.pdfviewer.exception.PageRenderingException
 import com.ahmer.pdfviewer.model.PagePart
 import com.ahmer.pdfviewer.util.PdfConstants
+import kotlinx.coroutines.runBlocking
 import kotlin.math.roundToInt
 
 class RenderingHandler(looper: Looper, private val pdfView: PDFView) : Handler(looper) {
@@ -74,7 +75,9 @@ class RenderingHandler(looper: Looper, private val pdfView: PDFView) : Handler(l
     @Throws(PageRenderingException::class)
     private fun proceed(task: RenderingTask): PagePart? {
         val mPdfFile = pdfView.pdfFile
-        mPdfFile?.openPage(task.page)
+        runBlocking {
+            mPdfFile?.openPage(task.page)
+        }
         val mHeight = task.height.roundToInt()
         val mWidth = task.width.roundToInt()
         if (mWidth == 0 || mHeight == 0 || mPdfFile?.pageHasError(task.page) == true) return null
@@ -87,7 +90,9 @@ class RenderingHandler(looper: Looper, private val pdfView: PDFView) : Handler(l
             return null
         }
         calculateBounds(mWidth, mHeight, task.bounds)
-        mPdfFile?.renderPageBitmap(task.page, mBitmap, mRoundedBounds, task.isAnnotation)
+        runBlocking {
+            mPdfFile?.renderPageBitmap(task.page, mBitmap, mRoundedBounds, task.isAnnotation)
+        }
         if (pdfView.isNightMode()) {
             mBitmap = toNightMode(mBitmap, task.isBestQuality)
         }

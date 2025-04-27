@@ -13,31 +13,31 @@ import javax.inject.Inject
 
 @HiltViewModel
 class PdfActivityModel @Inject constructor(
-    private val dataStore: DataStore
+    private val appDataStore: AppDataStore
 ) : ViewModel(), LifecycleObserver {
     private val stopTime: Long = 5000L
 
     val search: MutableStateFlow<String> = MutableStateFlow("")
 
-    val isAutoSpacing: StateFlow<Boolean> = dataStore.isAutoSpacing.stateIn(
+    val isAutoSpacing: StateFlow<Boolean> = appDataStore.isAutoSpacing.stateIn(
         scope = viewModelScope,
         started = SharingStarted.WhileSubscribed(stopTimeoutMillis = stopTime),
         initialValue = true
     )
 
-    val isPageSnap: StateFlow<Boolean> = dataStore.isPageSnap.stateIn(
+    val isPageSnap: StateFlow<Boolean> = appDataStore.isPageSnap.stateIn(
         scope = viewModelScope,
         started = SharingStarted.WhileSubscribed(stopTimeoutMillis = stopTime),
         initialValue = true
     )
 
-    val getSpacing: StateFlow<Int> = dataStore.getSpacing.stateIn(
+    val getSpacing: StateFlow<Int> = appDataStore.getSpacing.stateIn(
         scope = viewModelScope,
         started = SharingStarted.WhileSubscribed(stopTimeoutMillis = stopTime),
         initialValue = 5
     )
 
-    val isViewHorizontal: StateFlow<Boolean> = dataStore.isViewHorizontal.stateIn(
+    val isViewHorizontal: StateFlow<Boolean> = appDataStore.isViewHorizontal.stateIn(
         scope = viewModelScope,
         started = SharingStarted.WhileSubscribed(stopTimeoutMillis = stopTime),
         initialValue = false
@@ -45,25 +45,25 @@ class PdfActivityModel @Inject constructor(
 
     fun updateAutoSpacing(isChecked: Boolean) {
         viewModelScope.launch {
-            dataStore.updateAutoSpacing(isChecked = isChecked)
+            appDataStore.updateAutoSpacing(isChecked = isChecked)
         }
     }
 
     fun updatePageSnap(isChecked: Boolean) {
         viewModelScope.launch {
-            dataStore.updatePageSnap(isChecked = isChecked)
+            appDataStore.updatePageSnap(isChecked = isChecked)
         }
     }
 
     fun updateSpacing(spacing: Int) {
         viewModelScope.launch {
-            dataStore.updateSpacing(px = spacing)
+            appDataStore.updateSpacing(px = spacing)
         }
     }
 
     fun updateViewChange(isChecked: Boolean) {
         viewModelScope.launch {
-            dataStore.updateViewHorizontal(isChecked = isChecked)
+            appDataStore.updateViewHorizontal(isChecked = isChecked)
         }
     }
 }

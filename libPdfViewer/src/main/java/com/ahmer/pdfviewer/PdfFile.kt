@@ -11,6 +11,8 @@ import com.ahmer.pdfium.util.SizeF
 import com.ahmer.pdfviewer.exception.PageRenderingException
 import com.ahmer.pdfviewer.util.FitPolicy
 import com.ahmer.pdfviewer.util.PageSizeCalculator
+import kotlinx.coroutines.sync.Mutex
+import kotlinx.coroutines.sync.withLock
 
 class PdfFile(
     val pdfDocument: PdfDocument,
@@ -148,7 +150,7 @@ class PdfFile(
     /**
      * Get table of contents (bookmarks) for given document.
      */
-    fun getBookmarks(): List<PdfDocument.Bookmark> {
+    suspend fun getBookmarks(): List<PdfDocument.Bookmark> {
         return pdfDocument.getTableOfContents()
     }
 
@@ -159,7 +161,7 @@ class PdfFile(
     /**
      * Get metadata for given document.
      */
-    fun getMetaData(): PdfDocument.Meta {
+    suspend fun getMetaData(): PdfDocument.Meta {
         return pdfDocument.getDocumentMeta()
     }
 
@@ -184,7 +186,7 @@ class PdfFile(
     /**
      * @return All links from given page.
      */
-    fun getPageLinks(
+    suspend fun getPageLinks(
         pageIndex: Int,
         mSize: SizeF,
         posX: Float,
@@ -203,7 +205,7 @@ class PdfFile(
     /**
      * Get page rotation in degrees.
      */
-    fun getPageRotation(pageIndex: Int): Int {
+    suspend fun getPageRotation(pageIndex: Int): Int {
         return pdfiumCore.getPageRotation(pageIndex)
     }
 
@@ -217,7 +219,7 @@ class PdfFile(
     /**
      * Get native size of page in pixels.
      */
-    fun getPageSizeNative(pageIndex: Int): Size {
+    suspend fun getPageSizeNative(pageIndex: Int): Size {
         return pdfiumCore.getPageSize(pageIndex)
     }
 
@@ -245,7 +247,7 @@ class PdfFile(
     /**
      * Get total number of pages in document
      */
-    fun getTotalPagesCount(): Int {
+    suspend fun getTotalPagesCount(): Int {
         return pdfDocument.getPageCount()
     }
 
@@ -253,7 +255,7 @@ class PdfFile(
      * @return mapped coordinates
      * @see PdfiumCore.mapPageCoordsToDevice
      */
-    fun mapRectToDevice(
+    suspend fun mapRectToDevice(
         pageIndex: Int,
         startX: Int,
         startY: Int,
@@ -265,10 +267,10 @@ class PdfFile(
     }
 
     @Throws(PageRenderingException::class)
-    fun openPage(pageIndex: Int): Boolean {
+    suspend fun openPage(pageIndex: Int): Boolean {
         val mDocPage = documentPage(pageIndex)
         if (mDocPage < 0) return false
-        synchronized(lock = lock) {
+        Mutex().withLock {
             if (mOpenedPages.indexOfKey(mDocPage) < 0) {
                 try {
                     pdfDocument.openPage(mDocPage)
@@ -349,13 +351,13 @@ class PdfFile(
      *
      * @see PdfiumCore.renderPageBitmap
      */
-    fun renderPageBitmap(pageIndex: Int, bitmap: Bitmap, bounds: Rect, annotation: Boolean) {
+    suspend fun renderPageBitmap(pageIndex: Int, bitmap: Bitmap, bounds: Rect, annotation: Boolean) {
         pdfiumCore.renderPageBitmap(
             pageIndex, bitmap, bounds.left, bounds.top, bounds.width(), bounds.height(), annotation
         )
     }
 
-    private fun setup(viewSize: Size) {
+    private suspend fun setup(viewSize: Size) {
         pagesCount = if (userPages.isNotEmpty()) userPages.size else getTotalPagesCount()
         for (i in 0 until pagesCount) {
             val pageSize: Size = getPageSizeNative(i)
@@ -371,10 +373,23 @@ class PdfFile(
     }
 
     companion object {
-        private val lock = Any()
-    }
-
-    init {
-        setup(size)
+        suspend fun create(
+            pdfDocument: PdfDocument,
+            pdfiumCore: PdfiumCore,
+            fitPolicy: FitPolicy,
+            size: Size,
+            userPages: IntArray = intArrayOf(),
+            isVertical: Boolean,
+            spacingPx: Int,
+            autoSpacing: Boolean,
+            fitEachPage: Boolean
+        ): PdfFile {
+            val pdfFile = PdfFile(
+                pdfDocument, pdfiumCore, fitPolicy, size, userPages,
+                isVertical, spacingPx, autoSpacing, fitEachPage
+            )
+            pdfFile.setup(size)
+            return pdfFile
+        }
     }
 }

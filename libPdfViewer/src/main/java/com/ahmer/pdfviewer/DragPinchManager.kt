@@ -14,6 +14,8 @@ import com.ahmer.pdfviewer.model.LinkTapEvent
 import com.ahmer.pdfviewer.util.PdfConstants
 import com.ahmer.pdfviewer.util.PdfConstants.Pinch.MAXIMUM_ZOOM
 import com.ahmer.pdfviewer.util.PdfConstants.Pinch.MINIMUM_ZOOM
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.runBlocking
 import kotlin.math.abs
 
 /**
@@ -75,14 +77,23 @@ internal class DragPinchManager(
 
         val mLinkPosX: Float = abs(mMappedX - mPageX)
         val mLinkPosY: Float = abs(mMappedY - mPageY)
-        for (mLink in mPdfFile.getPageLinks(mPage, mPageSize, mLinkPosX, mLinkPosY)) {
+        val links = runBlocking(Dispatchers.IO) {
+            mPdfFile.getPageLinks(mPage, mPageSize, mLinkPosX, mLinkPosY)
+        }
+        for (mLink in links) {
             Log.v(PdfConstants.TAG, "Link Bound: ${mLink.bounds}")
             Log.v(PdfConstants.TAG, "Link Uri: ${mLink.uri}")
             Log.v(PdfConstants.TAG, "Link Page: ${mLink.destPageIndex}")
-            val mMapped = mPdfFile.mapRectToDevice(
-                mPage, mPageX, mPageY, mPageSize.width.toInt(),
-                mPageSize.height.toInt(), mLink.bounds
-            )
+            val mMapped = runBlocking(Dispatchers.IO) {
+                mPdfFile.mapRectToDevice(
+                    mPage,
+                    mPageX,
+                    mPageY,
+                    mPageSize.width.toInt(),
+                    mPageSize.height.toInt(),
+                    mLink.bounds
+                )
+            }
             mMapped.sort()
             if (mMapped.contains(mMappedX, mMappedY)) {
                 val mLinkTapEvent = LinkTapEvent(x, y, mMappedX, mMappedY, mMapped, mLink)

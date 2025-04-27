@@ -8,5 +8,5 @@ import java.io.IOException
 interface DocumentSource {
 
     @Throws(IOException::class)
-    fun createDocument(context: Context, pdfiumCore: PdfiumCore, password: String?): PdfDocument
+   suspend fun createDocument(context: Context, pdfiumCore: PdfiumCore, password: String?): PdfDocument
 }

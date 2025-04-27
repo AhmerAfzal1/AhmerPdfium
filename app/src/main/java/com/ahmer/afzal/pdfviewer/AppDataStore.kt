@@ -11,8 +11,9 @@ import javax.inject.Inject
 import javax.inject.Singleton
 
 @Singleton
-class DataStore @Inject constructor(private val dataStore: DataStore<Preferences>) {
-
+class AppDataStore @Inject constructor(
+    private val dataStore: DataStore<Preferences>
+) {
     private object DataStoreKeys {
         val autoSpacing = booleanPreferencesKey(name = "AutoSpacingKey")
         val pageSnap = booleanPreferencesKey(name = "SnapKey")

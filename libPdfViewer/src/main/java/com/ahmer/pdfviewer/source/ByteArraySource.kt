@@ -8,7 +8,7 @@ import java.io.IOException
 class ByteArraySource(private val data: ByteArray) : DocumentSource {
 
     @Throws(IOException::class)
-    override fun createDocument(
+    override suspend fun createDocument(
         context: Context, pdfiumCore: PdfiumCore, password: String?
     ): PdfDocument {
         return pdfiumCore.newDocument(data, password)

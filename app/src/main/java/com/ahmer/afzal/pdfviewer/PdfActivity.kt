@@ -182,6 +182,10 @@ class PdfActivity : AppCompatActivity(), OnPageChangeListener, OnLoadCompleteLis
 
     private fun showJumpToDialog(pdfView: PDFView) {
         val dialog = Dialog(this)
+        var pages = 0
+        lifecycleScope.launch {
+            pages = pdfView.getTotalPagesCount()
+        }
         try {
             dialog.window!!.requestFeature(Window.FEATURE_NO_TITLE)
             dialog.window!!.setBackgroundDrawableResource(android.R.color.transparent)
@@ -206,7 +210,7 @@ class PdfActivity : AppCompatActivity(), OnPageChangeListener, OnLoadCompleteLis
                         ToastUtils.showShort(getString(R.string.please_enter_number))
                     }
 
-                    number > pdfView.getTotalPagesCount() -> {
+                    number > pages -> {
                         ToastUtils.showShort(getString(R.string.no_page))
                     }
 
@@ -237,45 +241,47 @@ class PdfActivity : AppCompatActivity(), OnPageChangeListener, OnLoadCompleteLis
 
     private fun showMoreInfoDialog(pdfView: PDFView) {
         val dialog = Dialog(this)
-        try {
-            dialog.window!!.requestFeature(Window.FEATURE_NO_TITLE)
-            dialog.window!!.setBackgroundDrawableResource(android.R.color.transparent)
-            dialog.setContentView(R.layout.dialog_pdf_info)
-            dialog.window!!.setLayout(-1, -2)
-            dialog.window!!.setLayout(
-                RelativeLayout.LayoutParams.MATCH_PARENT, RelativeLayout.LayoutParams.WRAP_CONTENT
-            )
-            val tvTitle = dialog.findViewById<TextView>(R.id.dialogTvTitle)
-            val tvAuthor = dialog.findViewById<TextView>(R.id.dialogTvAuthor)
-            val tvTotalPage = dialog.findViewById<TextView>(R.id.dialogTvTotalPage)
-            val tvSubject = dialog.findViewById<TextView>(R.id.dialogTvSubject)
-            val tvKeywords = dialog.findViewById<TextView>(R.id.dialogTvKeywords)
-            val tvCreationDate = dialog.findViewById<TextView>(R.id.dialogTvCreationDate)
-            val tvModifyDate = dialog.findViewById<TextView>(R.id.dialogTvModifyDate)
-            val tvCreator = dialog.findViewById<TextView>(R.id.dialogTvCreator)
-            val tvProducer = dialog.findViewById<TextView>(R.id.dialogTvProducer)
-            val tvFileSize = dialog.findViewById<TextView>(R.id.dialogTvFileSize)
-            val tvFilePath = dialog.findViewById<TextView>(R.id.dialogTvFilePath)
-            val tvOk = dialog.findViewById<TextView>(R.id.btnOk)
-            val meta: PdfDocument.Meta? = pdfView.getDocumentMeta()
-            tvTitle.text = meta!!.title
-            tvAuthor.text = meta.author
-            tvTotalPage.text = String.format(Locale.getDefault(), "%d", meta.totalPages)
-            tvSubject.text = meta.subject
-            tvKeywords.text = meta.keywords
-            tvCreationDate.text = meta.creationDate
-            tvModifyDate.text = meta.modDate
-            tvCreator.text = meta.creator
-            tvProducer.text = meta.producer
-            val file = mPdfFile?.let { PdfUtils.fileFromAsset(this@PdfActivity, it) }
-            tvFileSize.text = FileUtils.getSize(file)
-            tvFilePath.text = file?.path
-            tvOk.setOnClickListener {
-                dialog.dismiss()
+        lifecycleScope.launch {
+            try {
+                dialog.window!!.requestFeature(Window.FEATURE_NO_TITLE)
+                dialog.window!!.setBackgroundDrawableResource(android.R.color.transparent)
+                dialog.setContentView(R.layout.dialog_pdf_info)
+                dialog.window!!.setLayout(-1, -2)
+                dialog.window!!.setLayout(
+                    RelativeLayout.LayoutParams.MATCH_PARENT, RelativeLayout.LayoutParams.WRAP_CONTENT
+                )
+                val tvTitle = dialog.findViewById<TextView>(R.id.dialogTvTitle)
+                val tvAuthor = dialog.findViewById<TextView>(R.id.dialogTvAuthor)
+                val tvTotalPage = dialog.findViewById<TextView>(R.id.dialogTvTotalPage)
+                val tvSubject = dialog.findViewById<TextView>(R.id.dialogTvSubject)
+                val tvKeywords = dialog.findViewById<TextView>(R.id.dialogTvKeywords)
+                val tvCreationDate = dialog.findViewById<TextView>(R.id.dialogTvCreationDate)
+                val tvModifyDate = dialog.findViewById<TextView>(R.id.dialogTvModifyDate)
+                val tvCreator = dialog.findViewById<TextView>(R.id.dialogTvCreator)
+                val tvProducer = dialog.findViewById<TextView>(R.id.dialogTvProducer)
+                val tvFileSize = dialog.findViewById<TextView>(R.id.dialogTvFileSize)
+                val tvFilePath = dialog.findViewById<TextView>(R.id.dialogTvFilePath)
+                val tvOk = dialog.findViewById<TextView>(R.id.btnOk)
+                val meta: PdfDocument.Meta = pdfView.getDocumentMeta()!!
+                tvTitle.text = meta.title
+                tvAuthor.text = meta.author
+                tvTotalPage.text = String.format(Locale.getDefault(), "%d", meta.totalPages)
+                tvSubject.text = meta.subject
+                tvKeywords.text = meta.keywords
+                tvCreationDate.text = meta.creationDate
+                tvModifyDate.text = meta.modDate
+                tvCreator.text = meta.creator
+                tvProducer.text = meta.producer
+                val file = mPdfFile?.let { PdfUtils.fileFromAsset(this@PdfActivity, it) }
+                tvFileSize.text = FileUtils.getSize(file)
+                tvFilePath.text = file?.path
+                tvOk.setOnClickListener {
+                    dialog.dismiss()
+                }
+                dialog.show()
+            } catch (e: Exception) {
+                e.printStackTrace()
             }
-            dialog.show()
-        } catch (e: Exception) {
-            e.printStackTrace()
         }
     }
 
@@ -350,7 +356,9 @@ class PdfActivity : AppCompatActivity(), OnPageChangeListener, OnLoadCompleteLis
 
     override fun loadComplete(nbPages: Int) {
         mProgressBar.visibility = View.GONE
-        printBookmarksTree(mPdfView.getTableOfContents(), "-")
+        lifecycleScope.launch{
+            printBookmarksTree(mPdfView.getTableOfContents(), "-")
+        }
         mMenu.findItem(R.id.menuInfo).isEnabled = true
         mMenu.findItem(R.id.menuJumpTo).isEnabled = true
         mMenu.findItem(R.id.menuSwitchView).isEnabled = true

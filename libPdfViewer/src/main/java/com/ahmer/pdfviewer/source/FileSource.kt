@@ -10,7 +10,7 @@ import java.io.IOException
 class FileSource(private val file: File) : DocumentSource {
 
     @Throws(IOException::class)
-    override fun createDocument(
+    override suspend fun createDocument(
         context: Context, pdfiumCore: PdfiumCore, password: String?
     ): PdfDocument {
         val mFileDescriptor = ParcelFileDescriptor.open(file, ParcelFileDescriptor.MODE_READ_ONLY)

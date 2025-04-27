@@ -10,7 +10,7 @@ import java.io.InputStream
 class InputStreamSource(private val inputStream: InputStream) : DocumentSource {
 
     @Throws(IOException::class)
-    override fun createDocument(
+    override suspend fun createDocument(
         context: Context, pdfiumCore: PdfiumCore, password: String?
     ): PdfDocument {
         return pdfiumCore.newDocument(PdfUtils.toByteArray(inputStream), password)

@@ -4,6 +4,7 @@ import android.os.Handler
 import android.os.Looper
 import com.ahmer.pdfium.util.Size
 import com.ahmer.pdfviewer.source.DocumentSource
+import kotlinx.coroutines.runBlocking
 import java.util.concurrent.ExecutorService
 import java.util.concurrent.Executors
 
@@ -18,18 +19,22 @@ internal class DecodingTask(
 
     fun execute() {
         try {
-            val document = docSource.createDocument(pdfView.context, pdfView.pdfiumCore!!, password)
-            val mPdfFile = PdfFile(
-                pdfDocument = document,
-                pdfiumCore = pdfView.pdfiumCore!!,
-                fitPolicy = pdfView.getPageFitPolicy(),
-                size = Size(pdfView.width, pdfView.height),
-                userPages = userPages ?: intArrayOf(),
-                isVertical = pdfView.isSwipeVertical(),
-                spacingPx = pdfView.getSpacingPx(),
-                autoSpacing = pdfView.isAutoSpacingEnabled(),
-                fitEachPage = pdfView.isFitEachPage()
-            )
+            val document = runBlocking {
+                docSource.createDocument(pdfView.context, pdfView.pdfiumCore!!, password)
+            }
+            val mPdfFile = runBlocking {
+                PdfFile.create(
+                    pdfDocument = document,
+                    pdfiumCore = pdfView.pdfiumCore!!,
+                    fitPolicy = pdfView.getPageFitPolicy(),
+                    size = Size(pdfView.width, pdfView.height),
+                    userPages = userPages ?: intArrayOf(),
+                    isVertical = pdfView.isSwipeVertical(),
+                    spacingPx = pdfView.getSpacingPx(),
+                    autoSpacing = pdfView.isAutoSpacingEnabled(),
+                    fitEachPage = pdfView.isFitEachPage()
+                )
+            }
             mExecutor.execute {
                 mHandler.post {
                     pdfView.loadComplete(mPdfFile)
