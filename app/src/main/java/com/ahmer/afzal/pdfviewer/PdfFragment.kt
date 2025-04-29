@@ -1,6 +1,7 @@
 package com.ahmer.afzal.pdfviewer
 
 import android.app.Dialog
+import android.content.Context
 import android.graphics.Color
 import android.os.Bundle
 import android.text.Editable
@@ -19,8 +20,11 @@ import android.widget.EditText
 import android.widget.ProgressBar
 import android.widget.RelativeLayout
 import android.widget.TextView
+import android.widget.Toast
 import androidx.appcompat.app.AppCompatActivity
+import androidx.appcompat.app.AppCompatActivity.INPUT_METHOD_SERVICE
 import androidx.appcompat.widget.SearchView
+import androidx.core.content.ContextCompat.getSystemService
 import androidx.core.view.MenuHost
 import androidx.core.view.MenuProvider
 import androidx.fragment.app.Fragment
@@ -44,13 +48,9 @@ import com.ahmer.pdfviewer.scroll.DefaultScrollHandle
 import com.ahmer.pdfviewer.util.FitPolicy
 import com.ahmer.pdfviewer.util.PdfUtils
 import dagger.hilt.android.AndroidEntryPoint
-import io.ahmer.utils.utilcode.FileUtils
-import io.ahmer.utils.utilcode.KeyboardUtils
-import io.ahmer.utils.utilcode.StringUtils
-import io.ahmer.utils.utilcode.ThrowableUtils
-import io.ahmer.utils.utilcode.ToastUtils
 import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.launch
+import java.io.File
 import java.util.Locale
 
 @AndroidEntryPoint
@@ -141,13 +141,11 @@ class PdfFragment : Fragment(R.layout.fragment_pdf), MenuProvider, OnPageChangeL
             open.setOnClickListener { v: View ->
                 when {
                     inputPass.text.toString() == "" -> {
-                        ToastUtils.showShort(v.context.getString(R.string.password_not_empty))
+                        showToast(v.context.getString(R.string.password_not_empty))
                     }
 
-                    StringUtils.isSpace(
-                        inputPass.text.toString()
-                    ) -> {
-                        ToastUtils.showShort(v.context.getString(R.string.password_not_space))
+                    isSpace(inputPass.text.toString()) -> {
+                        showToast(v.context.getString(R.string.password_not_space))
                     }
 
                     else -> {
@@ -159,7 +157,7 @@ class PdfFragment : Fragment(R.layout.fragment_pdf), MenuProvider, OnPageChangeL
             }
             val cancel = dialog.findViewById<TextView>(R.id.btnCancel)
             cancel.setOnClickListener {
-                KeyboardUtils.hideSoftInput(it)
+                hideKeyboard()
                 dialog.dismiss()
                 super.requireActivity().onBackPressedDispatcher.onBackPressed()
             }
@@ -180,7 +178,7 @@ class PdfFragment : Fragment(R.layout.fragment_pdf), MenuProvider, OnPageChangeL
         val dialog = Dialog(requireContext())
         var pages = 0
         viewLifecycleOwner.lifecycleScope.launch{
-            pages= pdfView.getTotalPagesCount()
+            pages= pdfView.pagesCount()
         }
         try {
             dialog.window!!.requestFeature(Window.FEATURE_NO_TITLE)
@@ -204,15 +202,15 @@ class PdfFragment : Fragment(R.layout.fragment_pdf), MenuProvider, OnPageChangeL
                 val number: Int = pageNumber.toInt()
                 when {
                     pageNumber == "" -> {
-                        ToastUtils.showShort(getString(R.string.please_enter_number))
+                        showToast(getString(R.string.please_enter_number))
                     }
 
                     number > pages -> {
-                        ToastUtils.showShort(getString(R.string.no_page))
+                        showToast(getString(R.string.no_page))
                     }
 
                     else -> {
-                        KeyboardUtils.hideSoftInput(it)
+                        hideKeyboard()
                         pdfView.jumpTo(number - 1, true)
                         dialog.dismiss()
                     }
@@ -220,7 +218,7 @@ class PdfFragment : Fragment(R.layout.fragment_pdf), MenuProvider, OnPageChangeL
             }
             val cancel = dialog.findViewById<Button>(R.id.btnCancel)
             cancel.setOnClickListener {
-                KeyboardUtils.hideSoftInput(it)
+                hideKeyboard()
                 dialog.dismiss()
             }
             inputPageNo.addTextChangedListener(object : TextWatcher {
@@ -259,7 +257,7 @@ class PdfFragment : Fragment(R.layout.fragment_pdf), MenuProvider, OnPageChangeL
                 val tvFileSize = dialog.findViewById<TextView>(R.id.dialogTvFileSize)
                 val tvFilePath = dialog.findViewById<TextView>(R.id.dialogTvFilePath)
                 val tvOk = dialog.findViewById<TextView>(R.id.btnOk)
-                val meta: PdfDocument.Meta? = pdfView.getDocumentMeta()
+                val meta: PdfDocument.Meta? = pdfView.documentMeta()
                 tvTitle.text = meta!!.title
                 tvAuthor.text = meta.author
                 tvTotalPage.text = String.format(Locale.getDefault(), "%d", meta.totalPages)
@@ -270,7 +268,7 @@ class PdfFragment : Fragment(R.layout.fragment_pdf), MenuProvider, OnPageChangeL
                 tvCreator.text = meta.creator
                 tvProducer.text = meta.producer
                 val file = mPdfFile?.let { PdfUtils.fileFromAsset(requireContext(), it) }
-                tvFileSize.text = FileUtils.getSize(file)
+                tvFileSize.text = file?.let { formatFileSize(it) }
                 tvFilePath.text = file?.path
                 tvOk.setOnClickListener {
                     dialog.dismiss()
@@ -301,7 +299,7 @@ class PdfFragment : Fragment(R.layout.fragment_pdf), MenuProvider, OnPageChangeL
                     if (t is PdfPasswordException) {
                         showPasswordDialog()
                     } else {
-                        ToastUtils.showLong(resources.getString(R.string.error_loading_pdf))
+                        showToast(resources.getString(R.string.error_loading_pdf))
                         t?.printStackTrace()
                         Log.e(Constants.TAG, " onError: ${t?.localizedMessage}", t)
                     }
@@ -310,7 +308,7 @@ class PdfFragment : Fragment(R.layout.fragment_pdf), MenuProvider, OnPageChangeL
             .onPageError(object : OnPageErrorListener {
                 override fun onPageError(page: Int, t: Throwable?) {
                     t?.printStackTrace()
-                    ToastUtils.showLong("onPageError")
+                    showToast("onPageError")
                     Log.e(
                         Constants.TAG,
                         "onPageError: ${t?.localizedMessage} on page: $page",
@@ -367,7 +365,7 @@ class PdfFragment : Fragment(R.layout.fragment_pdf), MenuProvider, OnPageChangeL
     override fun loadComplete(nbPages: Int) {
         mProgressBar.visibility = View.GONE
         viewLifecycleOwner.lifecycleScope.launch {
-            printBookmarksTree(mPdfView.getTableOfContents(), "-")
+            printBookmarksTree(mPdfView.bookmarks(), "-")
         }
         mMenu.findItem(R.id.menuInfo).isEnabled = true
         mMenu.findItem(R.id.menuJumpTo).isEnabled = true
@@ -460,6 +458,43 @@ class PdfFragment : Fragment(R.layout.fragment_pdf), MenuProvider, OnPageChangeL
         mSearchView.setOnQueryTextListener(null)
     }
 
+    private fun showKeyboard(view: View) {
+        (requireContext().getSystemService(Context.INPUT_METHOD_SERVICE) as? InputMethodManager)
+            ?.showSoftInput(view, InputMethodManager.SHOW_IMPLICIT)
+    }
+
+    private fun hideKeyboard() {
+        val view = requireView() // or use activity?.window?.decorView
+        (requireContext().getSystemService(Context.INPUT_METHOD_SERVICE) as? InputMethodManager)
+            ?.hideSoftInputFromWindow(view.windowToken, 0)
+    }
+
+    private fun showToast(msg: String) {
+        Toast.makeText(requireContext(), msg, Toast.LENGTH_LONG).show()
+    }
+
+    fun formatFileSize(file: File): String {
+        val units = listOf("B", "KB", "MB", "GB")
+        var size = file.length().toDouble()
+        var unitIndex = 0
+
+        while (size >= 1024 && unitIndex < units.lastIndex) {
+            size /= 1024
+            unitIndex++
+        }
+        return "%.2f %s".format(size, units[unitIndex])
+    }
+
+    fun isSpace(s: String?): Boolean {
+        if (s == null) return true
+        for (element in s) {
+            if (!element.isWhitespace()) {
+                return false
+            }
+        }
+        return true
+    }
+
     private fun init() {
         try {
             if (arguments?.getBoolean(Constants.PDF_FILE) == true) {
@@ -470,7 +505,7 @@ class PdfFragment : Fragment(R.layout.fragment_pdf), MenuProvider, OnPageChangeL
             }
             mPdfFile?.let { displayFromAsset(mPdfView, it) }
         } catch (e: Exception) {
-            ThrowableUtils.getFullStackTrace(e)
+            e.printStackTrace()
             Log.v(
                 Constants.TAG, "Calling arguments or getArguments won't work. Ex: ${e.message}"
             )

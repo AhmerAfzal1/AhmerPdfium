@@ -11,17 +11,10 @@ import android.os.ParcelFileDescriptor
 import android.util.Log
 import android.view.Surface
 import androidx.annotation.ColorInt
-import com.ahmer.pdfium.util.Config
 import com.ahmer.pdfium.util.Size
 import com.ahmer.pdfium.util.SizeF
-import com.ahmer.pdfium.util.handleAlreadyClosed
-import com.ahmer.pdfium.util.pdfiumConfig
 import dalvik.annotation.optimization.FastNative
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.runBlocking
 import kotlinx.coroutines.sync.Mutex
-import kotlinx.coroutines.sync.withLock
-import kotlinx.coroutines.withContext
 import java.io.Closeable
 import java.io.IOException
 
@@ -29,21 +22,15 @@ import java.io.IOException
  * Core PDF processing class handling document operations, rendering, and coordinate transformations.
  *
  * @property context Android context for resource access
- * @property config Configuration parameters for PDF processing
  */
 class PdfiumCore(
-    val context: Context,
-    private val config: Config = Config(),
+    val context: Context
 ) : Closeable {
-    private var isClosed = false
     private val doc: PdfDocument = PdfDocument()
-
-    private val currentDpi: Int by lazy {
-        context.resources?.displayMetrics?.densityDpi ?: -1
-    }
+    private var currentDpi: Int = 0
 
     init {
-        pdfiumConfig = config
+        currentDpi = context.resources?.displayMetrics?.densityDpi ?: -1
         Log.d(TAG, "Starting AhmerPdfium...")
     }
 
@@ -66,17 +53,17 @@ class PdfiumCore(
      * @throws IllegalStateException If the document is already closed.
      */
     @Throws(IOException::class)
-    suspend fun newDocument(
-        parcelFileDescriptor: ParcelFileDescriptor, password: String? = null
-    ): PdfDocument = withContext(context = Dispatchers.IO) {
+    fun newDocument(
+        parcelFileDescriptor: ParcelFileDescriptor,
+        password: String? = null
+    ): PdfDocument {
         doc.parcelFileDescriptor = parcelFileDescriptor
-        mutexLock.withLock {
-            check(!isClosed && !doc.isClosed) { "Document is already closed" }
+        synchronized(lock = lock) {
             doc.nativeDocPtr = nativeOpenDocument(
                 parcelFileDescriptor = parcelFileDescriptor.fd, password = password
             )
         }
-        doc
+        return doc
     }
 
     /**
@@ -89,14 +76,12 @@ class PdfiumCore(
      * @throws IllegalStateException If the document is already closed
      */
     @Throws(IOException::class)
-    suspend fun newDocument(data: ByteArray, password: String? = null): PdfDocument =
-        withContext(context = Dispatchers.IO) {
-            mutexLock.withLock {
-                check(!isClosed && !doc.isClosed) { "Document is already closed" }
-                doc.nativeDocPtr = nativeOpenMemDocument(data = data, password = password)
-            }
-            doc
+    fun newDocument(data: ByteArray, password: String? = null): PdfDocument {
+        synchronized(lock = lock) {
+            doc.nativeDocPtr = nativeOpenMemDocument(data = data, password = password)
         }
+        return doc
+    }
 
     /**
      * Opens a text page for text extraction and operations
@@ -105,9 +90,8 @@ class PdfiumCore(
      * @return [PdfTextPage] instance for the specified page
      * @throws IllegalStateException If the document is closed
      */
-    suspend fun openTextPage(pageIndex: Int): PdfTextPage = withContext(context = Dispatchers.IO) {
-        return@withContext doc.openTextPage(pageIndex = pageIndex)
-    }
+    fun openTextPage(pageIndex: Int): PdfTextPage = doc.openTextPage(pageIndex = pageIndex)
+
 
     /**
      * Gets page width in pixels at current DPI
@@ -115,10 +99,9 @@ class PdfiumCore(
      * @param pageIndex Index of the page
      * @return Page width in pixels or -1 if closed
      */
-    suspend fun getPageWidthPixel(pageIndex: Int): Int = withContext(context = Dispatchers.IO) {
-        mutexLock.withLock {
-            if (handleAlreadyClosed(isClosed = isClosed || doc.isClosed)) return@withLock -1
-            nativeGetPageWidthPixel(pagePtr = pagePtr(index = pageIndex), dpi = currentDpi)
+    fun getPageWidthPixel(pageIndex: Int): Int {
+        synchronized(lock = lock) {
+            return nativeGetPageWidthPixel(pagePtr = pagePtr(index = pageIndex), dpi = currentDpi)
         }
     }
 
@@ -128,10 +111,9 @@ class PdfiumCore(
      * @param pageIndex Index of the page
      * @return Page height in pixels or -1 if closed
      */
-    suspend fun getPageHeightPixel(pageIndex: Int): Int = withContext(context = Dispatchers.IO) {
-        mutexLock.withLock {
-            if (handleAlreadyClosed(isClosed = isClosed || doc.isClosed)) return@withLock -1
-            nativeGetPageHeightPixel(pagePtr = pagePtr(index = pageIndex), dpi = currentDpi)
+    fun getPageHeightPixel(pageIndex: Int): Int {
+        synchronized(lock = lock) {
+            return nativeGetPageHeightPixel(pagePtr = pagePtr(index = pageIndex), dpi = currentDpi)
         }
     }
 
@@ -141,10 +123,9 @@ class PdfiumCore(
      * @param pageIndex Index of the page
      * @return Page width in points or -1 if closed
      */
-    suspend fun getPageWidthPoint(pageIndex: Int): Int = withContext(context = Dispatchers.IO) {
-        mutexLock.withLock {
-            if (handleAlreadyClosed(isClosed = isClosed || doc.isClosed)) return@withLock -1
-            nativeGetPageWidthPoint(pagePtr = pagePtr(index = pageIndex))
+    fun getPageWidthPoint(pageIndex: Int): Int {
+        synchronized(lock = lock) {
+            return nativeGetPageWidthPoint(pagePtr = pagePtr(index = pageIndex))
         }
     }
 
@@ -154,10 +135,9 @@ class PdfiumCore(
      * @param pageIndex Index of the page
      * @return Page height in pixels or -1 if closed
      */
-    suspend fun getPageHeightPoint(pageIndex: Int): Int = withContext(context = Dispatchers.IO) {
-        mutexLock.withLock {
-            if (handleAlreadyClosed(isClosed = isClosed || doc.isClosed)) return@withLock -1
-            nativeGetPageHeightPoint(pagePtr = pagePtr(index = pageIndex))
+    fun getPageHeightPoint(pageIndex: Int): Int {
+        synchronized(lock = lock) {
+            return nativeGetPageHeightPoint(pagePtr = pagePtr(index = pageIndex))
         }
     }
 
@@ -173,10 +153,9 @@ class PdfiumCore(
      * - 3: 270° clockwise
      * @throws IllegalStateException If document is closed
      */
-    suspend fun getPageRotation(pageIndex: Int): Int = withContext(context = Dispatchers.IO) {
-        mutexLock.withLock {
-            check(!isClosed && !doc.isClosed) { "Document is already closed" }
-            nativeGetPageRotation(pagePtr = pagePtr(index = pageIndex))
+    fun getPageRotation(pageIndex: Int): Int {
+        synchronized(lock = lock) {
+            return nativeGetPageRotation(pagePtr = pagePtr(index = pageIndex))
         }
     }
 
@@ -187,10 +166,9 @@ class PdfiumCore(
      * @return [RectF] representing crop box
      * @throws IllegalStateException If document is closed
      */
-    suspend fun getPageCropBox(pageIndex: Int): RectF = withContext(context = Dispatchers.IO) {
-        mutexLock.withLock {
-            check(!isClosed && !doc.isClosed) { "Document is already closed" }
-            buildRect(values = nativeGetPageCropBox(pagePtr = pagePtr(index = pageIndex)))
+    fun getPageCropBox(pageIndex: Int): RectF {
+        synchronized(lock = lock) {
+            return buildRect(values = nativeGetPageCropBox(pagePtr = pagePtr(index = pageIndex)))
         }
     }
 
@@ -201,10 +179,9 @@ class PdfiumCore(
      * @return [RectF] representing media box.
      * @throws IllegalStateException If document is closed.
      */
-    suspend fun getPageMediaBox(pageIndex: Int): RectF = withContext(context = Dispatchers.IO) {
-        mutexLock.withLock {
-            check(!isClosed && !doc.isClosed) { "Document is already closed" }
-            buildRect(values = nativeGetPageMediaBox(pagePtr = pagePtr(index = pageIndex)))
+    fun getPageMediaBox(pageIndex: Int): RectF {
+        synchronized(lock = lock) {
+            return buildRect(values = nativeGetPageMediaBox(pagePtr = pagePtr(index = pageIndex)))
         }
     }
 
@@ -215,10 +192,9 @@ class PdfiumCore(
      * @return [RectF] representing bleed box.
      * @throws IllegalStateException If document is closed.
      */
-    suspend fun getPageBleedBox(pageIndex: Int): RectF = withContext(context = Dispatchers.IO) {
-        mutexLock.withLock {
-            check(!isClosed && !doc.isClosed) { "Document is already closed" }
-            buildRect(values = nativeGetPageBleedBox(pagePtr = pagePtr(index = pageIndex)))
+    fun getPageBleedBox(pageIndex: Int): RectF {
+        synchronized(lock = lock) {
+            return buildRect(values = nativeGetPageBleedBox(pagePtr = pagePtr(index = pageIndex)))
         }
     }
 
@@ -229,10 +205,9 @@ class PdfiumCore(
      * @return [RectF] representing trim box.
      * @throws IllegalStateException If document is closed.
      */
-    suspend fun getPageTrimBox(pageIndex: Int): RectF = withContext(context = Dispatchers.IO) {
-        mutexLock.withLock {
-            check(!isClosed && !doc.isClosed) { "Document is already closed" }
-            buildRect(values = nativeGetPageTrimBox(pagePtr = pagePtr(index = pageIndex)))
+    fun getPageTrimBox(pageIndex: Int): RectF {
+        synchronized(lock = lock) {
+            return buildRect(values = nativeGetPageTrimBox(pagePtr = pagePtr(index = pageIndex)))
         }
     }
 
@@ -243,10 +218,9 @@ class PdfiumCore(
      * @return [RectF] representing art box.
      * @throws IllegalStateException If document is closed.
      */
-    suspend fun getPageArtBox(pageIndex: Int): RectF = withContext(context = Dispatchers.IO) {
-        mutexLock.withLock {
-            check(!isClosed && !doc.isClosed) { "Document is already closed" }
-            buildRect(values = nativeGetPageArtBox(pagePtr = pagePtr(index = pageIndex)))
+    fun getPageArtBox(pageIndex: Int): RectF {
+        synchronized(lock = lock) {
+            return buildRect(values = nativeGetPageArtBox(pagePtr = pagePtr(index = pageIndex)))
         }
     }
 
@@ -257,10 +231,9 @@ class PdfiumCore(
      * @return [RectF] representing bounding box.
      * @throws IllegalStateException If document is closed.
      */
-    suspend fun getPageBoundingBox(pageIndex: Int): RectF = withContext(context = Dispatchers.IO) {
-        mutexLock.withLock {
-            check(!isClosed && !doc.isClosed) { "Document is already closed" }
-            buildRect(values = nativeGetPageBoundingBox(pagePtr = pagePtr(index = pageIndex)))
+    fun getPageBoundingBox(pageIndex: Int): RectF {
+        synchronized(lock = lock) {
+            return buildRect(values = nativeGetPageBoundingBox(pagePtr = pagePtr(index = pageIndex)))
         }
     }
 
@@ -271,10 +244,9 @@ class PdfiumCore(
      * @return [Size] representing page dimensions.
      * @throws IllegalStateException If document is closed.
      */
-    suspend fun getPageSize(pageIndex: Int): Size = withContext(context = Dispatchers.IO) {
-        mutexLock.withLock {
-            check(!isClosed && !doc.isClosed) { "Document is already closed" }
-            nativeGetPageSizeByIndex(
+    fun getPageSize(pageIndex: Int): Size {
+        synchronized(lock = lock) {
+            return nativeGetPageSizeByIndex(
                 docPtr = doc.nativeDocPtr,
                 pageIndex = pageIndex,
                 dpi = currentDpi,
@@ -296,7 +268,7 @@ class PdfiumCore(
      * @param pageBackgroundColor Background color for the page
      * @return true if rendering succeeded
      */
-    suspend fun renderPage(
+    fun renderPage(
         pageIndex: Int,
         bufferPtr: Long,
         startX: Int,
@@ -306,11 +278,10 @@ class PdfiumCore(
         annotation: Boolean = false,
         @ColorInt canvasColor: Int = 0xFF848484.toInt(),
         @ColorInt pageBackgroundColor: Int = 0xFFFFFFFF.toInt(),
-    ): Boolean = withContext(context = Dispatchers.IO) {
-        mutexLock.withLock {
-            if (handleAlreadyClosed(isClosed = isClosed || doc.isClosed)) return@withLock false
+    ): Boolean {
+        synchronized(lock = lock) {
             try {
-                return@withLock nativeRenderPage(
+                return nativeRenderPage(
                     pagePtr = pagePtr(index = pageIndex),
                     bufferPtr = bufferPtr,
                     startX = startX,
@@ -323,10 +294,10 @@ class PdfiumCore(
                 )
             } catch (e: NullPointerException) {
                 Log.e(TAG, "Context may be null", e)
-                return@withLock false
+                return false
             } catch (e: Exception) {
                 Log.e(TAG, "Exception throw from native", e)
-                return@withLock false
+                return false
             }
         }
     }
@@ -346,7 +317,7 @@ class PdfiumCore(
      * @param pageBackgroundColor Background color for the page.
      * @return true if rendering succeeded.
      */
-    suspend fun renderPage(
+    fun renderPage(
         pageIndex: Int,
         bufferPtr: Long,
         drawSizeX: Int,
@@ -357,20 +328,19 @@ class PdfiumCore(
         textMask: Boolean = false,
         @ColorInt canvasColor: Int = 0xFF848484.toInt(),
         @ColorInt pageBackgroundColor: Int = 0xFFFFFFFF.toInt(),
-    ): Boolean = withContext(context = Dispatchers.IO) {
-        mutexLock.withLock {
-            if (handleAlreadyClosed(isClosed = isClosed || doc.isClosed)) return@withLock false
-            val matrixValues = FloatArray(size = THREE_BY_THREE).apply { matrix.getValues(this) }
-            nativeRenderPageWithMatrix(
+    ): Boolean {
+        synchronized(lock = lock) {
+            val values = FloatArray(size = THREE_BY_THREE).apply { matrix.getValues(this) }
+            return nativeRenderPageWithMatrix(
                 pagePtr = pagePtr(index = pageIndex),
                 bufferPtr = bufferPtr,
                 drawSizeHor = drawSizeX,
                 drawSizeVer = drawSizeY,
                 matrix = floatArrayOf(
-                    matrixValues[Matrix.MSCALE_X],
-                    matrixValues[Matrix.MSCALE_Y],
-                    matrixValues[Matrix.MTRANS_X],
-                    matrixValues[Matrix.MTRANS_Y],
+                    values[Matrix.MSCALE_X],
+                    values[Matrix.MSCALE_Y],
+                    values[Matrix.MTRANS_X],
+                    values[Matrix.MTRANS_Y],
                 ),
                 clipRect = floatArrayOf(
                     clipRect.left,
@@ -398,7 +368,7 @@ class PdfiumCore(
      * @param pageBackgroundColor Background color for the page
      * @return true if rendering succeeded
      */
-    suspend fun renderPage(
+    fun renderPage(
         pageIndex: Int,
         surface: Surface,
         matrix: Matrix,
@@ -406,18 +376,17 @@ class PdfiumCore(
         annotation: Boolean = false,
         @ColorInt canvasColor: Int = 0xFF848484.toInt(),
         @ColorInt pageBackgroundColor: Int = 0xFFFFFFFF.toInt(),
-    ): Boolean = withContext(context = Dispatchers.IO) {
-        mutexLock.withLock {
-            if (handleAlreadyClosed(isClosed = isClosed || doc.isClosed)) return@withLock false
-            val matrixValues = FloatArray(THREE_BY_THREE).apply { matrix.getValues(this) }
-            return@withLock nativeRenderPageSurfaceWithMatrix(
+    ): Boolean {
+        synchronized(lock = lock) {
+            val values = FloatArray(size = THREE_BY_THREE).apply { matrix.getValues(this) }
+            return nativeRenderPageSurfaceWithMatrix(
                 pagePtr = pagePtr(index = pageIndex),
                 surface = surface,
                 matrix = floatArrayOf(
-                    matrixValues[Matrix.MSCALE_X],
-                    matrixValues[Matrix.MSCALE_Y],
-                    matrixValues[Matrix.MTRANS_X],
-                    matrixValues[Matrix.MTRANS_Y],
+                    values[Matrix.MSCALE_X],
+                    values[Matrix.MSCALE_Y],
+                    values[Matrix.MTRANS_X],
+                    values[Matrix.MTRANS_Y],
                 ),
                 clipRect = floatArrayOf(
                     clipRect.left,
@@ -445,7 +414,7 @@ class PdfiumCore(
      * @param canvasColor Background color for the canvas
      * @param pageBackgroundColor Background color for the page
      */
-    suspend fun renderPageBitmap(
+    fun renderPageBitmap(
         pageIndex: Int,
         bitmap: Bitmap?,
         startX: Int,
@@ -455,10 +424,9 @@ class PdfiumCore(
         annotation: Boolean = false,
         @ColorInt canvasColor: Int = 0xFF848484.toInt(),
         @ColorInt pageBackgroundColor: Int = 0xFFFFFFFF.toInt(),
-    ) = withContext(context = Dispatchers.IO) {
-        mutexLock.withLock {
-            if (handleAlreadyClosed(isClosed = isClosed || doc.isClosed)) return@withLock
-            nativeRenderPageBitmap(
+    ) {
+        synchronized(lock = lock) {
+            return nativeRenderPageBitmap(
                 docPtr = doc.nativeDocPtr,
                 pagePtr = pagePtr(index = pageIndex),
                 bitmap = bitmap,
@@ -483,25 +451,24 @@ class PdfiumCore(
      * @param annotation Whether to render annotations
      * @param pageBackgroundColor Background color for the page
      */
-    suspend fun renderPageBitmap(
+    fun renderPageBitmap(
         pageIndex: Int,
         bitmap: Bitmap?,
         matrix: Matrix,
         clipRect: RectF,
         annotation: Boolean = false,
         @ColorInt pageBackgroundColor: Int = 0xFFFFFFFF.toInt(),
-    ) = withContext(context = Dispatchers.IO) {
-        mutexLock.withLock {
-            if (handleAlreadyClosed(isClosed = isClosed || doc.isClosed)) return@withLock
-            val matrixValues = FloatArray(THREE_BY_THREE).apply { matrix.getValues(this) }
+    ) {
+        synchronized(lock = lock) {
+            val values = FloatArray(size = THREE_BY_THREE).apply { matrix.getValues(this) }
             nativeRenderPageBitmapWithMatrix(
                 pagePtr = pagePtr(index = pageIndex),
                 bitmap = bitmap,
                 matrix = floatArrayOf(
-                    matrixValues[Matrix.MSCALE_X],
-                    matrixValues[Matrix.MSCALE_Y],
-                    matrixValues[Matrix.MTRANS_X],
-                    matrixValues[Matrix.MTRANS_Y],
+                    values[Matrix.MSCALE_X],
+                    values[Matrix.MSCALE_Y],
+                    values[Matrix.MTRANS_X],
+                    values[Matrix.MTRANS_Y],
                 ),
                 clipRect = clipRect,
                 annotation = annotation,
@@ -519,16 +486,15 @@ class PdfiumCore(
      * @param posY Y coordinate for link detection
      * @return List of detected [PdfDocument.Link] objects
      */
-    suspend fun getPageLinks(
+    fun getPageLinks(
         pageIndex: Int,
         size: SizeF,
         posX: Float,
         posY: Float
-    ): List<PdfDocument.Link> = withContext(context = Dispatchers.IO) {
-        mutexLock.withLock {
-            if (handleAlreadyClosed(isClosed = isClosed || doc.isClosed)) return@withLock emptyList()
+    ): List<PdfDocument.Link> {
+        synchronized(lock = lock) {
             val pagePtr: Long = pagePtr(index = pageIndex)
-            return@withLock nativeGetPageLinks(pagePtr = pagePtr)
+            return nativeGetPageLinks(pagePtr = pagePtr)
                 .toList()
                 .mapNotNull { linkPtr ->
                     try {
@@ -573,7 +539,7 @@ class PdfiumCore(
      * @return Converted [Point] in device coordinates
      * @throws IllegalStateException If document is closed
      */
-    suspend fun mapPageCoordsToDevice(
+    fun mapPageCoordsToDevice(
         pageIndex: Int,
         startX: Int,
         startY: Int,
@@ -582,20 +548,17 @@ class PdfiumCore(
         rotate: Int,
         pageX: Double,
         pageY: Double,
-    ): Point = withContext(context = Dispatchers.IO) {
-        mutexLock.withLock {
-            check(!isClosed && !doc.isClosed) { "Document is already closed" }
-            return@withLock nativePageCoordsToDevice(
-                pagePtr = pagePtr(index = pageIndex),
-                startX = startX,
-                startY = startY,
-                sizeX = sizeX,
-                sizeY = sizeY,
-                rotate = rotate,
-                pageX = pageX,
-                pageY = pageY
-            )
-        }
+    ): Point {
+        return nativePageCoordsToDevice(
+            pagePtr = pagePtr(index = pageIndex),
+            startX = startX,
+            startY = startY,
+            sizeX = sizeX,
+            sizeY = sizeY,
+            rotate = rotate,
+            pageX = pageX,
+            pageY = pageY
+        )
     }
 
     /**
@@ -612,7 +575,7 @@ class PdfiumCore(
      * @return Converted [PointF] in page coordinates
      * @throws IllegalStateException If document is closed
      */
-    suspend fun mapDeviceCoordsToPage(
+    fun mapDeviceCoordsToPage(
         pageIndex: Int,
         startX: Int,
         startY: Int,
@@ -621,20 +584,17 @@ class PdfiumCore(
         rotate: Int,
         deviceX: Int,
         deviceY: Int,
-    ): PointF = withContext(context = Dispatchers.IO) {
-        mutexLock.withLock {
-            check(!isClosed && !doc.isClosed) { "Document is already closed" }
-            return@withLock nativeDeviceCoordsToPage(
-                pagePtr = pagePtr(index = pageIndex),
-                startX = startX,
-                startY = startY,
-                sizeX = sizeX,
-                sizeY = sizeY,
-                rotate = rotate,
-                deviceX = deviceX,
-                deviceY = deviceY,
-            )
-        }
+    ): PointF {
+        return nativeDeviceCoordsToPage(
+            pagePtr = pagePtr(index = pageIndex),
+            startX = startX,
+            startY = startY,
+            sizeX = sizeX,
+            sizeY = sizeY,
+            rotate = rotate,
+            deviceX = deviceX,
+            deviceY = deviceY,
+        )
     }
 
     /**
@@ -650,7 +610,7 @@ class PdfiumCore(
      * @return Converted [RectF] in device coordinates
      * @throws IllegalStateException If document is closed
      */
-    suspend fun mapRectToDevice(
+    fun mapRectToDevice(
         pageIndex: Int,
         startX: Int,
         startY: Int,
@@ -658,36 +618,33 @@ class PdfiumCore(
         sizeY: Int,
         rotate: Int,
         coords: RectF,
-    ): RectF = withContext(context = Dispatchers.IO) {
-        mutexLock.withLock {
-            check(!isClosed && !doc.isClosed) { "Document is already closed" }
-            val leftTop = mapPageCoordsToDevice(
-                pageIndex = pageIndex,
-                startX = startX,
-                startY = startY,
-                sizeX = sizeX,
-                sizeY = sizeY,
-                rotate = rotate,
-                pageX = coords.left.toDouble(),
-                pageY = coords.top.toDouble(),
-            )
-            val rightBottom = mapPageCoordsToDevice(
-                pageIndex = pageIndex,
-                startX = startX,
-                startY = startY,
-                sizeX = sizeX,
-                sizeY = sizeY,
-                rotate = rotate,
-                pageX = coords.right.toDouble(),
-                pageY = coords.bottom.toDouble(),
-            )
-            RectF(
-                leftTop.x.toFloat(),
-                leftTop.y.toFloat(),
-                rightBottom.x.toFloat(),
-                rightBottom.y.toFloat(),
-            )
-        }
+    ): RectF {
+        val leftTop = mapPageCoordsToDevice(
+            pageIndex = pageIndex,
+            startX = startX,
+            startY = startY,
+            sizeX = sizeX,
+            sizeY = sizeY,
+            rotate = rotate,
+            pageX = coords.left.toDouble(),
+            pageY = coords.top.toDouble(),
+        )
+        val rightBottom = mapPageCoordsToDevice(
+            pageIndex = pageIndex,
+            startX = startX,
+            startY = startY,
+            sizeX = sizeX,
+            sizeY = sizeY,
+            rotate = rotate,
+            pageX = coords.right.toDouble(),
+            pageY = coords.bottom.toDouble(),
+        )
+        return RectF(
+            leftTop.x.toFloat(),
+            leftTop.y.toFloat(),
+            rightBottom.x.toFloat(),
+            rightBottom.y.toFloat(),
+        )
     }
 
     /**
@@ -703,7 +660,7 @@ class PdfiumCore(
      * @return Converted [RectF] in page coordinates
      * @throws IllegalStateException If document is closed
      */
-    suspend fun mapRectToPage(
+    fun mapRectToPage(
         pageIndex: Int,
         startX: Int,
         startY: Int,
@@ -711,63 +668,56 @@ class PdfiumCore(
         sizeY: Int,
         rotate: Int,
         coords: Rect,
-    ): RectF = withContext(context = Dispatchers.IO) {
-        mutexLock.withLock {
-            check(!isClosed && !doc.isClosed) { "Document is already closed" }
-            val leftTop = mapDeviceCoordsToPage(
-                pageIndex = pageIndex,
-                startX = startX,
-                startY = startY,
-                sizeX = sizeX,
-                sizeY = sizeY,
-                rotate = rotate,
-                deviceX = coords.left,
-                deviceY = coords.top,
-            )
-            val rightBottom = mapDeviceCoordsToPage(
-                pageIndex = pageIndex,
-                startX = startX,
-                startY = startY,
-                sizeX = sizeX,
-                sizeY = sizeY,
-                rotate = rotate,
-                deviceX = coords.right,
-                deviceY = coords.bottom,
-            )
-            RectF(
-                leftTop.x,
-                leftTop.y,
-                rightBottom.x,
-                rightBottom.y
-            )
-        }
+    ): RectF {
+
+        val leftTop = mapDeviceCoordsToPage(
+            pageIndex = pageIndex,
+            startX = startX,
+            startY = startY,
+            sizeX = sizeX,
+            sizeY = sizeY,
+            rotate = rotate,
+            deviceX = coords.left,
+            deviceY = coords.top,
+        )
+        val rightBottom = mapDeviceCoordsToPage(
+            pageIndex = pageIndex,
+            startX = startX,
+            startY = startY,
+            sizeX = sizeX,
+            sizeY = sizeY,
+            rotate = rotate,
+            deviceX = coords.right,
+            deviceY = coords.bottom,
+        )
+        return RectF(
+            leftTop.x,
+            leftTop.y,
+            rightBottom.x,
+            rightBottom.y
+        )
     }
 
     override fun close() {
-        runBlocking(context = Dispatchers.IO) {
-            mutexLock.withLock {
-                if (handleAlreadyClosed(isClosed = isClosed || doc.isClosed)) return@withLock
-                isClosed = true
-                Log.v(TAG, "Closing PdfDocument")
-                doc.pageMap.keys.forEach { index ->
-                    doc.pageMap[index]?.let { page ->
-                        if (page.count > 1) {
-                            page.count--
-                        } else {
-                            nativeClosePage(pagePtr = page.pagePtr)
-                            doc.pageMap.remove(key = index)
-                        }
-                    }
+        Log.v(TAG, "Closing PdfDocument")
+        doc.pageMap.keys.forEach { index ->
+            doc.pageMap[index]?.let { page ->
+                if (page.count > 1) {
+                    page.count--
+                    return
                 }
-                doc.close()
+                doc.pageMap.remove(key = index)
+                doc.pageMap[index]?.let {
+                    nativeClosePage(pagePtr = it.pagePtr)
+                }
             }
         }
+        doc.close()
     }
 
     companion object {
         private const val THREE_BY_THREE: Int = 9
         val lock: Any = Any()
-        val mutexLock: Mutex = Mutex()
         val surfaceMutex: Mutex = Mutex()
         val TAG: String = PdfiumCore::class.java.name
 

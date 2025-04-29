@@ -37,7 +37,7 @@ class TestPdfium : AppCompatActivity() {
         }
     }
 
-    suspend fun openPdf(context: Context, file: File, password: String? = null) {
+    private fun openPdf(context: Context, file: File, password: String? = null) {
         val iv: ImageView = findViewById(R.id.imageView)
         val fd = ParcelFileDescriptor.open(file, ParcelFileDescriptor.MODE_READ_ONLY)
         val page = 0
@@ -62,8 +62,8 @@ class TestPdfium : AppCompatActivity() {
         }
     }
 
-    suspend fun printInfo(doc: PdfDocument) {
-        val meta: PdfDocument.Meta = doc.getDocumentMeta()
+    private fun printInfo(doc: PdfDocument) {
+        val meta: PdfDocument.Meta = doc.documentMeta
         Log.v(TAG, "Title = " + meta.title)
         Log.v(TAG, "Author = " + meta.author)
         Log.v(TAG, "Subject = " + meta.subject)
@@ -73,10 +73,10 @@ class TestPdfium : AppCompatActivity() {
         Log.v(TAG, "CreationDate = " + meta.creationDate)
         Log.v(TAG, "ModDate = " + meta.modDate)
         Log.v(TAG, "TotalPages = " + meta.totalPages)
-        printBookmarksTree(doc.getTableOfContents(), "-")
+        printBookmarksTree(doc.tableOfContents, "-")
     }
 
-    fun printBookmarksTree(tree: List<PdfDocument.Bookmark>, sep: String) {
+    private fun printBookmarksTree(tree: List<PdfDocument.Bookmark>, sep: String) {
         for (b in tree) {
             Log.v(TAG, "Bookmark $sep ${b.title}, Page: ${b.pageIndex}")
             if (b.hasChildren()) {

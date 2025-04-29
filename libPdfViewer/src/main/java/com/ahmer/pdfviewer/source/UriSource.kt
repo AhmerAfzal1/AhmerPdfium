@@ -9,7 +9,7 @@ import java.io.IOException
 class UriSource(private val uri: Uri) : DocumentSource {
 
     @Throws(IOException::class)
-    override suspend fun createDocument(
+    override fun createDocument(
         context: Context, pdfiumCore: PdfiumCore, password: String?
     ): PdfDocument {
         var mPdfDocument = PdfDocument()

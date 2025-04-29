@@ -3,10 +3,10 @@ import org.jetbrains.kotlin.gradle.dsl.JvmTarget
 plugins {
     alias(libs.plugins.android.application)
     alias(libs.plugins.kotlin.android)
-    alias(libs.plugins.hilt.android)
     alias(libs.plugins.kotlin.parcelize)
     alias(libs.plugins.navigation.safe.args)
     alias(libs.plugins.ksp)
+    alias(libs.plugins.hilt.android)
 }
 
 android {
@@ -68,7 +68,6 @@ dependencies {
     implementation(libs.androidx.preference)
     implementation(libs.hilt.android)
     ksp(libs.hilt.compiler)
-    implementation(libs.ahmer.utils)
     implementation(libs.coroutines.android)
     implementation(libs.coroutines.core)
     implementation(libs.coroutines.play.services)

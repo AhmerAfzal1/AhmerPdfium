@@ -11,11 +11,9 @@ import com.ahmer.pdfium.util.SizeF
 import com.ahmer.pdfviewer.exception.PageRenderingException
 import com.ahmer.pdfviewer.util.FitPolicy
 import com.ahmer.pdfviewer.util.PageSizeCalculator
-import kotlinx.coroutines.sync.Mutex
-import kotlinx.coroutines.sync.withLock
 
 class PdfFile(
-    val pdfDocument: PdfDocument,
+    private val pdfDocument: PdfDocument,
     private val pdfiumCore: PdfiumCore,
     private val fitPolicy: FitPolicy,
     size: Size,
@@ -150,8 +148,8 @@ class PdfFile(
     /**
      * Get table of contents (bookmarks) for given document.
      */
-    suspend fun getBookmarks(): List<PdfDocument.Bookmark> {
-        return pdfDocument.getTableOfContents()
+    fun bookmarks(): List<PdfDocument.Bookmark> {
+        return pdfDocument.tableOfContents
     }
 
     fun getDocLen(zoom: Float): Float {
@@ -161,8 +159,8 @@ class PdfFile(
     /**
      * Get metadata for given document.
      */
-    suspend fun getMetaData(): PdfDocument.Meta {
-        return pdfDocument.getDocumentMeta()
+    fun metaData(): PdfDocument.Meta {
+        return pdfDocument.documentMeta
     }
 
     fun getPageAtOffset(offset: Float, zoom: Float): Int {
@@ -186,7 +184,7 @@ class PdfFile(
     /**
      * @return All links from given page.
      */
-    suspend fun getPageLinks(
+    fun getPageLinks(
         pageIndex: Int,
         mSize: SizeF,
         posX: Float,
@@ -205,7 +203,7 @@ class PdfFile(
     /**
      * Get page rotation in degrees.
      */
-    suspend fun getPageRotation(pageIndex: Int): Int {
+    fun getPageRotation(pageIndex: Int): Int {
         return pdfiumCore.getPageRotation(pageIndex)
     }
 
@@ -219,7 +217,7 @@ class PdfFile(
     /**
      * Get native size of page in pixels.
      */
-    suspend fun getPageSizeNative(pageIndex: Int): Size {
+    fun getPageSizeNative(pageIndex: Int): Size {
         return pdfiumCore.getPageSize(pageIndex)
     }
 
@@ -247,15 +245,15 @@ class PdfFile(
     /**
      * Get total number of pages in document
      */
-    suspend fun getTotalPagesCount(): Int {
-        return pdfDocument.getPageCount()
+    fun totalPagesCount(): Int {
+        return pdfDocument.pageCount
     }
 
     /**
      * @return mapped coordinates
      * @see PdfiumCore.mapPageCoordsToDevice
      */
-    suspend fun mapRectToDevice(
+    fun mapRectToDevice(
         pageIndex: Int,
         startX: Int,
         startY: Int,
@@ -267,10 +265,10 @@ class PdfFile(
     }
 
     @Throws(PageRenderingException::class)
-    suspend fun openPage(pageIndex: Int): Boolean {
+    fun openPage(pageIndex: Int): Boolean {
         val mDocPage = documentPage(pageIndex)
         if (mDocPage < 0) return false
-        Mutex().withLock {
+        synchronized(lock = lock) {
             if (mOpenedPages.indexOfKey(mDocPage) < 0) {
                 try {
                     pdfDocument.openPage(mDocPage)
@@ -351,14 +349,19 @@ class PdfFile(
      *
      * @see PdfiumCore.renderPageBitmap
      */
-    suspend fun renderPageBitmap(pageIndex: Int, bitmap: Bitmap, bounds: Rect, annotation: Boolean) {
+    fun renderPageBitmap(
+        pageIndex: Int,
+        bitmap: Bitmap,
+        bounds: Rect,
+        annotation: Boolean
+    ) {
         pdfiumCore.renderPageBitmap(
             pageIndex, bitmap, bounds.left, bounds.top, bounds.width(), bounds.height(), annotation
         )
     }
 
-    private suspend fun setup(viewSize: Size) {
-        pagesCount = if (userPages.isNotEmpty()) userPages.size else getTotalPagesCount()
+    private fun setup(viewSize: Size) {
+        pagesCount = if (userPages.isNotEmpty()) userPages.size else totalPagesCount()
         for (i in 0 until pagesCount) {
             val pageSize: Size = getPageSizeNative(i)
             if (pageSize.width > mOriginalMaxWidthPageSize.width) {
@@ -373,7 +376,8 @@ class PdfFile(
     }
 
     companion object {
-        suspend fun create(
+        private val lock = Any()
+        fun create(
             pdfDocument: PdfDocument,
             pdfiumCore: PdfiumCore,
             fitPolicy: FitPolicy,

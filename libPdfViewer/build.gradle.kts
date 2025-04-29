@@ -61,9 +61,6 @@ android {
 dependencies {
     implementation(project(":libPdfium"))
     implementation(libs.androidx.core.ktx)
-    implementation(libs.coroutines.android)
-    implementation(libs.coroutines.core)
-    implementation(libs.coroutines.play.services)
 }
 
 // =============== Publication Setup ===============

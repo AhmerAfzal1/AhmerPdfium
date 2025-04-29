@@ -6,20 +6,17 @@ import android.content.Context
 import android.graphics.Color
 import android.os.Build
 import android.os.Bundle
-import android.text.Editable
-import android.text.TextUtils
-import android.text.TextWatcher
 import android.util.Log
 import android.view.Menu
 import android.view.MotionEvent
 import android.view.View
-import android.view.Window
 import android.view.inputmethod.InputMethodManager
 import android.widget.Button
 import android.widget.EditText
 import android.widget.ProgressBar
 import android.widget.RelativeLayout
 import android.widget.TextView
+import android.widget.Toast
 import androidx.activity.viewModels
 import androidx.appcompat.app.AppCompatActivity
 import androidx.appcompat.widget.SearchView
@@ -43,15 +40,10 @@ import com.ahmer.pdfviewer.util.FitPolicy
 import com.ahmer.pdfviewer.util.PdfUtils
 import com.google.android.material.appbar.MaterialToolbar
 import dagger.hilt.android.AndroidEntryPoint
-import io.ahmer.utils.utilcode.FileUtils
-import io.ahmer.utils.utilcode.KeyboardUtils
-import io.ahmer.utils.utilcode.StringUtils
-import io.ahmer.utils.utilcode.ThrowableUtils
-import io.ahmer.utils.utilcode.ToastUtils
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.launch
-import java.util.Locale
+import java.io.File
 
 @AndroidEntryPoint
 class PdfActivity : AppCompatActivity(), OnPageChangeListener, OnLoadCompleteListener {
@@ -124,167 +116,6 @@ class PdfActivity : AppCompatActivity(), OnPageChangeListener, OnLoadCompleteLis
         init()
     }
 
-    private fun showPasswordDialog() {
-        val dialog = Dialog(this)
-        try {
-            dialog.window!!.requestFeature(Window.FEATURE_NO_TITLE)
-            dialog.window!!.setBackgroundDrawableResource(android.R.color.transparent)
-            dialog.setContentView(R.layout.dialog_pdf_password)
-            dialog.window!!.setLayout(-1, -2)
-            dialog.window!!.setLayout(
-                RelativeLayout.LayoutParams.MATCH_PARENT, RelativeLayout.LayoutParams.WRAP_CONTENT
-            )
-            val inputPass = dialog.findViewById<EditText>(R.id.inputPassword)
-            inputPass.requestFocus()
-            inputPass.postDelayed({
-                val imm = (getSystemService(INPUT_METHOD_SERVICE) as InputMethodManager)
-                imm.showSoftInput(inputPass, InputMethodManager.SHOW_IMPLICIT)
-            }, 100)
-            val open = dialog.findViewById<TextView>(R.id.btnOpen)
-            open.isClickable = false
-            open.setOnClickListener { v: View ->
-                when {
-                    inputPass.text.toString() == "" -> {
-                        ToastUtils.showShort(v.context.getString(R.string.password_not_empty))
-                    }
-
-                    StringUtils.isSpace(
-                        inputPass.text.toString()
-                    ) -> {
-                        ToastUtils.showShort(v.context.getString(R.string.password_not_space))
-                    }
-
-                    else -> {
-                        mPassword = inputPass.text.toString()
-                        mPdfFile?.let { displayFromAsset(mPdfView, it) }
-                        dialog.dismiss()
-                    }
-                }
-            }
-            val cancel = dialog.findViewById<TextView>(R.id.btnCancel)
-            cancel.setOnClickListener {
-                KeyboardUtils.hideSoftInput(it)
-                dialog.dismiss()
-                super.onBackPressedDispatcher.onBackPressed()
-            }
-            inputPass.addTextChangedListener(object : TextWatcher {
-                override fun beforeTextChanged(s: CharSequence, srt: Int, count: Int, after: Int) {}
-                override fun onTextChanged(s: CharSequence, start: Int, before: Int, count: Int) {}
-                override fun afterTextChanged(s: Editable) {
-                    open.isClickable = !TextUtils.isEmpty(s)
-                }
-            })
-            dialog.show()
-        } catch (e: Exception) {
-            e.printStackTrace()
-        }
-    }
-
-    private fun showJumpToDialog(pdfView: PDFView) {
-        val dialog = Dialog(this)
-        var pages = 0
-        lifecycleScope.launch {
-            pages = pdfView.getTotalPagesCount()
-        }
-        try {
-            dialog.window!!.requestFeature(Window.FEATURE_NO_TITLE)
-            dialog.window!!.setBackgroundDrawableResource(android.R.color.transparent)
-            dialog.setContentView(R.layout.dialog_pdf_jumpto)
-            dialog.window!!.setLayout(-1, -2)
-            dialog.window!!.setLayout(
-                RelativeLayout.LayoutParams.MATCH_PARENT, RelativeLayout.LayoutParams.WRAP_CONTENT
-            )
-            val inputPageNo = dialog.findViewById<EditText>(R.id.inputPageNumber)
-            inputPageNo.requestFocus()
-            inputPageNo.postDelayed({
-                val imm = (getSystemService(INPUT_METHOD_SERVICE) as InputMethodManager)
-                imm.showSoftInput(inputPageNo, InputMethodManager.SHOW_IMPLICIT)
-            }, 100)
-            val goTo = dialog.findViewById<Button>(R.id.btnGoTo)
-            goTo.isClickable = false
-            goTo.setOnClickListener {
-                val pageNumber: String = inputPageNo.text.toString()
-                val number: Int = pageNumber.toInt()
-                when {
-                    pageNumber == "" -> {
-                        ToastUtils.showShort(getString(R.string.please_enter_number))
-                    }
-
-                    number > pages -> {
-                        ToastUtils.showShort(getString(R.string.no_page))
-                    }
-
-                    else -> {
-                        KeyboardUtils.hideSoftInput(it)
-                        pdfView.jumpTo(number - 1, true)
-                        dialog.dismiss()
-                    }
-                }
-            }
-            val cancel = dialog.findViewById<Button>(R.id.btnCancel)
-            cancel.setOnClickListener {
-                KeyboardUtils.hideSoftInput(it)
-                dialog.dismiss()
-            }
-            inputPageNo.addTextChangedListener(object : TextWatcher {
-                override fun beforeTextChanged(s: CharSequence, srt: Int, count: Int, after: Int) {}
-                override fun onTextChanged(s: CharSequence, start: Int, before: Int, count: Int) {}
-                override fun afterTextChanged(s: Editable) {
-                    goTo.isClickable = !TextUtils.isEmpty(s)
-                }
-            })
-            dialog.show()
-        } catch (e: Exception) {
-            e.printStackTrace()
-        }
-    }
-
-    private fun showMoreInfoDialog(pdfView: PDFView) {
-        val dialog = Dialog(this)
-        lifecycleScope.launch {
-            try {
-                dialog.window!!.requestFeature(Window.FEATURE_NO_TITLE)
-                dialog.window!!.setBackgroundDrawableResource(android.R.color.transparent)
-                dialog.setContentView(R.layout.dialog_pdf_info)
-                dialog.window!!.setLayout(-1, -2)
-                dialog.window!!.setLayout(
-                    RelativeLayout.LayoutParams.MATCH_PARENT, RelativeLayout.LayoutParams.WRAP_CONTENT
-                )
-                val tvTitle = dialog.findViewById<TextView>(R.id.dialogTvTitle)
-                val tvAuthor = dialog.findViewById<TextView>(R.id.dialogTvAuthor)
-                val tvTotalPage = dialog.findViewById<TextView>(R.id.dialogTvTotalPage)
-                val tvSubject = dialog.findViewById<TextView>(R.id.dialogTvSubject)
-                val tvKeywords = dialog.findViewById<TextView>(R.id.dialogTvKeywords)
-                val tvCreationDate = dialog.findViewById<TextView>(R.id.dialogTvCreationDate)
-                val tvModifyDate = dialog.findViewById<TextView>(R.id.dialogTvModifyDate)
-                val tvCreator = dialog.findViewById<TextView>(R.id.dialogTvCreator)
-                val tvProducer = dialog.findViewById<TextView>(R.id.dialogTvProducer)
-                val tvFileSize = dialog.findViewById<TextView>(R.id.dialogTvFileSize)
-                val tvFilePath = dialog.findViewById<TextView>(R.id.dialogTvFilePath)
-                val tvOk = dialog.findViewById<TextView>(R.id.btnOk)
-                val meta: PdfDocument.Meta = pdfView.getDocumentMeta()!!
-                tvTitle.text = meta.title
-                tvAuthor.text = meta.author
-                tvTotalPage.text = String.format(Locale.getDefault(), "%d", meta.totalPages)
-                tvSubject.text = meta.subject
-                tvKeywords.text = meta.keywords
-                tvCreationDate.text = meta.creationDate
-                tvModifyDate.text = meta.modDate
-                tvCreator.text = meta.creator
-                tvProducer.text = meta.producer
-                val file = mPdfFile?.let { PdfUtils.fileFromAsset(this@PdfActivity, it) }
-                tvFileSize.text = FileUtils.getSize(file)
-                tvFilePath.text = file?.path
-                tvOk.setOnClickListener {
-                    dialog.dismiss()
-                }
-                dialog.show()
-            } catch (e: Exception) {
-                e.printStackTrace()
-            }
-        }
-    }
-
     private fun displayFromAsset(pdfView: PDFView, file: String) {
         pdfView.setBackgroundColor(Color.LTGRAY)
         pdfView.fromAsset(file)
@@ -304,7 +135,7 @@ class PdfActivity : AppCompatActivity(), OnPageChangeListener, OnLoadCompleteLis
                     if (t is PdfPasswordException) {
                         showPasswordDialog()
                     } else {
-                        ToastUtils.showLong(resources.getString(R.string.error_loading_pdf))
+                        showToast(resources.getString(R.string.error_loading_pdf))
                         t?.printStackTrace()
                         Log.v(Constants.TAG, " onError: $t")
                     }
@@ -313,7 +144,7 @@ class PdfActivity : AppCompatActivity(), OnPageChangeListener, OnLoadCompleteLis
             .onPageError(object : OnPageErrorListener {
                 override fun onPageError(page: Int, t: Throwable?) {
                     t?.printStackTrace()
-                    ToastUtils.showLong("onPageError")
+                    showToast("onPageError")
                     Log.v(Constants.TAG, "onPageError: $t on page: $page")
                 }
             })
@@ -356,8 +187,8 @@ class PdfActivity : AppCompatActivity(), OnPageChangeListener, OnLoadCompleteLis
 
     override fun loadComplete(nbPages: Int) {
         mProgressBar.visibility = View.GONE
-        lifecycleScope.launch{
-            printBookmarksTree(mPdfView.getTableOfContents(), "-")
+        lifecycleScope.launch {
+            printBookmarksTree(mPdfView.bookmarks(), "-")
         }
         mMenu.findItem(R.id.menuInfo).isEnabled = true
         mMenu.findItem(R.id.menuJumpTo).isEnabled = true
@@ -410,7 +241,7 @@ class PdfActivity : AppCompatActivity(), OnPageChangeListener, OnLoadCompleteLis
                 }
 
                 R.id.menuJumpTo -> {
-                    showJumpToDialog(mPdfView)
+                    showJumpToDialog()
                 }
 
                 R.id.menuPageSnap -> {
@@ -446,11 +277,152 @@ class PdfActivity : AppCompatActivity(), OnPageChangeListener, OnLoadCompleteLis
                 }
 
                 R.id.menuInfo -> {
-                    showMoreInfoDialog(mPdfView)
+                    showInfoDialog()
                 }
             }
             true
         }
+    }
+
+    private fun showPasswordDialog() {
+        val dialog = Dialog(this).apply {
+            setContentView(R.layout.dialog_pdf_password)
+            window?.setLayout(
+                RelativeLayout.LayoutParams.MATCH_PARENT,
+                RelativeLayout.LayoutParams.WRAP_CONTENT
+            )
+        }
+
+        dialog.apply {
+            val etPassword = findViewById<EditText>(R.id.inputPassword)
+            val btnOpen = findViewById<Button>(R.id.btnOpen)
+
+            etPassword.postDelayed({ showKeyboard(etPassword) }, 100)
+
+            btnOpen.setOnClickListener {
+                when {
+                    etPassword.text.isNullOrEmpty() -> showToast(getString(R.string.password_not_empty))
+                    etPassword.text.isBlank() -> showToast(getString(R.string.password_not_space))
+                    else -> {
+                        mPassword = etPassword.text.toString()
+                        mPdfFile?.let { displayFromAsset(mPdfView, it) }
+                        dismiss()
+                    }
+                }
+            }
+
+            findViewById<Button>(R.id.btnCancel).setOnClickListener {
+                hideKeyboard()
+                dismiss()
+                finishWithTransition()
+            }
+        }.show()
+    }
+
+    private fun showJumpToDialog() {
+        val dialog = Dialog(this).apply {
+            setContentView(R.layout.dialog_pdf_jumpto)
+            window?.setLayout(
+                RelativeLayout.LayoutParams.MATCH_PARENT,
+                RelativeLayout.LayoutParams.WRAP_CONTENT
+            )
+        }
+
+        dialog.apply {
+            val etPage = findViewById<EditText>(R.id.inputPageNumber)
+            val totalPages = mPdfView.getPageCount()
+
+            etPage.postDelayed({ showKeyboard(etPage) }, 100)
+
+            findViewById<Button>(R.id.btnGoTo).setOnClickListener {
+                etPage.text.toString().toIntOrNull()?.let { page ->
+                    when {
+                        page > totalPages -> showToast(getString(R.string.no_page))
+                        else -> {
+                            mPdfView.jumpTo(page - 1)
+                            dismiss()
+                        }
+                    }
+                } ?: showToast(getString(R.string.no_page))
+            }
+
+            findViewById<Button>(R.id.btnCancel).setOnClickListener {
+                hideKeyboard()
+                dismiss()
+            }
+        }.show()
+    }
+
+    private fun showInfoDialog() {
+        lifecycleScope.launch {
+            val file = mPdfFile?.let { PdfUtils.fileFromAsset(this@PdfActivity, it) }
+            mPdfView.documentMeta()?.let { meta ->
+                Dialog(this@PdfActivity).apply {
+                    setContentView(R.layout.dialog_pdf_info)
+                    window?.setLayout(
+                        RelativeLayout.LayoutParams.MATCH_PARENT,
+                        RelativeLayout.LayoutParams.WRAP_CONTENT
+                    )
+
+                    findViewById<TextView>(R.id.dialogTvTitle).text = meta.title
+                    findViewById<TextView>(R.id.dialogTvAuthor).text = meta.author
+                    findViewById<TextView>(R.id.dialogTvTotalPage).text = meta.totalPages.toString()
+                    findViewById<TextView>(R.id.dialogTvSubject).text = meta.subject
+                    findViewById<TextView>(R.id.dialogTvKeywords).text = meta.keywords
+                    findViewById<TextView>(R.id.dialogTvCreationDate).text = meta.creationDate
+                    findViewById<TextView>(R.id.dialogTvModifyDate).text = meta.modDate
+                    findViewById<TextView>(R.id.dialogTvCreator).text = meta.creator
+                    findViewById<TextView>(R.id.dialogTvProducer).text = meta.producer
+                    findViewById<TextView>(R.id.dialogTvFileSize).text = file?.let {
+                        formatFileSize(it)
+                    }
+                    findViewById<TextView>(R.id.dialogTvFilePath).text = file?.path
+
+                    findViewById<Button>(R.id.btnOk).setOnClickListener { dismiss() }
+                }.show()
+            }
+        }
+    }
+
+
+    private fun showToast(msg: String) {
+        Toast.makeText(this@PdfActivity, msg, Toast.LENGTH_LONG).show()
+    }
+
+    private fun enableMenuItems(isEnabled: Boolean) {
+        mBinding.toolbar.menu.apply {
+            findItem(R.id.menuInfo).isEnabled = isEnabled
+            findItem(R.id.menuJumpTo).isEnabled = isEnabled
+            findItem(R.id.menuSwitchView).isEnabled = isEnabled
+            findItem(R.id.menuNightMode).isEnabled = isEnabled
+        }
+    }
+
+    private fun showKeyboard(view: View) {
+        (getSystemService(INPUT_METHOD_SERVICE) as? InputMethodManager)
+            ?.showSoftInput(view, InputMethodManager.SHOW_IMPLICIT)
+    }
+
+    private fun hideKeyboard() {
+        (getSystemService(INPUT_METHOD_SERVICE) as? InputMethodManager)
+            ?.hideSoftInputFromWindow(window.decorView.windowToken, 0)
+    }
+
+    private fun finishWithTransition() {
+        finish()
+        overridePendingTransition(R.anim.left_to_right, R.anim.right_to_left)
+    }
+
+    fun formatFileSize(file: File): String {
+        val units = listOf("B", "KB", "MB", "GB")
+        var size = file.length().toDouble()
+        var unitIndex = 0
+
+        while (size >= 1024 && unitIndex < units.lastIndex) {
+            size /= 1024
+            unitIndex++
+        }
+        return "%.2f %s".format(size, units[unitIndex])
     }
 
     public override fun onResume() {
@@ -481,7 +453,7 @@ class PdfActivity : AppCompatActivity(), OnPageChangeListener, OnLoadCompleteLis
             }
             mPdfFile?.let { displayFromAsset(mPdfView, it) }
         } catch (e: Exception) {
-            ThrowableUtils.getFullStackTrace(e)
+            e.printStackTrace()
             Log.v(Constants.TAG, "Calling Intent or getIntent won't work due to ${e.message}")
         }
     }

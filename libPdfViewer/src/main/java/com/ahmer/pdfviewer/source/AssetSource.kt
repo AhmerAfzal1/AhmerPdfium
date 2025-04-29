@@ -10,7 +10,7 @@ import java.io.IOException
 class AssetSource(private val name: String) : DocumentSource {
 
     @Throws(IOException::class)
-    override suspend fun createDocument(
+    override fun createDocument(
         context: Context, pdfiumCore: PdfiumCore, password: String?
     ): PdfDocument {
         val mFile = PdfUtils.fileFromAsset(context, name)

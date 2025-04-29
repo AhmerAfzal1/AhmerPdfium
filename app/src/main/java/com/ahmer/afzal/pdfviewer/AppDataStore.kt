@@ -20,6 +20,10 @@ class AppDataStore @Inject constructor(
         val spacing = intPreferencesKey(name = "SpacingKey")
         val viewHorizontal = booleanPreferencesKey(name = "ViewKey")
     }
+    suspend fun saveLastPage(fileName: String, page: Int) = dataStore.edit { preferences ->
+        val pageKey = intPreferencesKey("last_page_${fileName.hashCode()}")
+        preferences[pageKey] = page
+    }
 
     suspend fun updateAutoSpacing(isChecked: Boolean) = dataStore.edit { preferences ->
         preferences[DataStoreKeys.autoSpacing] = isChecked
@@ -51,5 +55,10 @@ class AppDataStore @Inject constructor(
 
     val isViewHorizontal: Flow<Boolean> = dataStore.data.map { preference ->
         preference[DataStoreKeys.viewHorizontal] ?: false
+    }
+
+    fun getLastPage(fileName: String): Flow<Int> = dataStore.data.map { preferences ->
+        val pageKey = intPreferencesKey("last_page_${fileName.hashCode()}")
+        preferences[pageKey] ?: 0
     }
 }
