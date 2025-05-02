@@ -14,7 +14,6 @@ import androidx.annotation.ColorInt
 import com.ahmer.pdfium.util.Size
 import com.ahmer.pdfium.util.SizeF
 import dalvik.annotation.optimization.FastNative
-import kotlinx.coroutines.sync.Mutex
 import java.io.Closeable
 import java.io.IOException
 
@@ -35,7 +34,7 @@ class PdfiumCore(
     }
 
     private fun pagePtr(index: Int): Long {
-        return doc.pageMap[index]?.pagePtr ?: -1
+        return doc.pageCache[index]?.pagePtr ?: -1
     }
 
     private fun buildRect(values: FloatArray): RectF = RectF().apply {
@@ -57,9 +56,9 @@ class PdfiumCore(
         parcelFileDescriptor: ParcelFileDescriptor,
         password: String? = null
     ): PdfDocument {
-        doc.parcelFileDescriptor = parcelFileDescriptor
+        doc.fileDescriptor = parcelFileDescriptor
         synchronized(lock = lock) {
-            doc.nativeDocPtr = nativeOpenDocument(
+            doc.nativePtr = nativeOpenDocument(
                 parcelFileDescriptor = parcelFileDescriptor.fd, password = password
             )
         }
@@ -78,7 +77,7 @@ class PdfiumCore(
     @Throws(IOException::class)
     fun newDocument(data: ByteArray, password: String? = null): PdfDocument {
         synchronized(lock = lock) {
-            doc.nativeDocPtr = nativeOpenMemDocument(data = data, password = password)
+            doc.nativePtr = nativeOpenMemDocument(data = data, password = password)
         }
         return doc
     }
@@ -247,7 +246,7 @@ class PdfiumCore(
     fun getPageSize(pageIndex: Int): Size {
         synchronized(lock = lock) {
             return nativeGetPageSizeByIndex(
-                docPtr = doc.nativeDocPtr,
+                docPtr = doc.nativePtr,
                 pageIndex = pageIndex,
                 dpi = currentDpi,
             )
@@ -427,7 +426,7 @@ class PdfiumCore(
     ) {
         synchronized(lock = lock) {
             return nativeRenderPageBitmap(
-                docPtr = doc.nativeDocPtr,
+                docPtr = doc.nativePtr,
                 pagePtr = pagePtr(index = pageIndex),
                 bitmap = bitmap,
                 startX = startX,
@@ -500,14 +499,14 @@ class PdfiumCore(
                     try {
                         val rect: RectF = nativeGetLinkRect(linkPtr = linkPtr)
                         val index: Int = nativeGetDestPageIndex(
-                            docPtr = doc.nativeDocPtr,
+                            docPtr = doc.nativePtr,
                             linkPtr = linkPtr
                         )
                         val uri: String? = nativeGetLinkURI(
-                            docPtr = doc.nativeDocPtr,
+                            docPtr = doc.nativePtr,
                             linkPtr = linkPtr
                         ) ?: nativeGetLinkURI(
-                            docPtr = doc.nativeDocPtr,
+                            docPtr = doc.nativePtr,
                             linkPtr = nativeGetLinkAtCoord(
                                 pagePtr = pagePtr,
                                 width = size.width.toInt(),
@@ -700,14 +699,14 @@ class PdfiumCore(
 
     override fun close() {
         Log.v(TAG, "Closing PdfDocument")
-        doc.pageMap.keys.forEach { index ->
-            doc.pageMap[index]?.let { page ->
+        doc.pageCache.keys.forEach { index ->
+            doc.pageCache[index]?.let { page ->
                 if (page.count > 1) {
                     page.count--
                     return
                 }
-                doc.pageMap.remove(key = index)
-                doc.pageMap[index]?.let {
+                doc.pageCache.remove(key = index)
+                doc.pageCache[index]?.let {
                     nativeClosePage(pagePtr = it.pagePtr)
                 }
             }
@@ -718,7 +717,6 @@ class PdfiumCore(
     companion object {
         private const val THREE_BY_THREE: Int = 9
         val lock: Any = Any()
-        val surfaceMutex: Mutex = Mutex()
         val TAG: String = PdfiumCore::class.java.name
 
         @JvmStatic

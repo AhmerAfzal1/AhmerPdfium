@@ -20,10 +20,11 @@ class PdfPageLink(
      *
      * @return Total count of web links.
      */
-    val webLinkCount: Int
-        get() = synchronized(lock = PdfiumCore.lock) {
+    val webLinksCount: Int by lazy {
+        synchronized(lock = PdfiumCore.lock) {
             nativeCountWebLinks(pageLinkPtr = pageLinkPtr)
         }
+    }
 
     /**
      * Retrieves the URL for a web link at the specified index.

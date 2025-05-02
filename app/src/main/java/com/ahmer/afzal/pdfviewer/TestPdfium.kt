@@ -63,7 +63,7 @@ class TestPdfium : AppCompatActivity() {
     }
 
     private fun printInfo(doc: PdfDocument) {
-        val meta: PdfDocument.Meta = doc.documentMeta
+        val meta: PdfDocument.Meta = doc.metaData
         Log.v(TAG, "Title = " + meta.title)
         Log.v(TAG, "Author = " + meta.author)
         Log.v(TAG, "Subject = " + meta.subject)
@@ -73,7 +73,7 @@ class TestPdfium : AppCompatActivity() {
         Log.v(TAG, "CreationDate = " + meta.creationDate)
         Log.v(TAG, "ModDate = " + meta.modDate)
         Log.v(TAG, "TotalPages = " + meta.totalPages)
-        printBookmarksTree(doc.tableOfContents, "-")
+        printBookmarksTree(doc.bookmarks, "-")
     }
 
     private fun printBookmarksTree(tree: List<PdfDocument.Bookmark>, sep: String) {

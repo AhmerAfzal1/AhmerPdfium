@@ -31,12 +31,11 @@ class PdfTextPage(
      * @return the number of characters on the page
      * @throws IllegalStateException if the page or document is closed
      */
-    val textCharCount: Int
-        get() {
-            synchronized(lock = PdfiumCore.lock) {
-                return nativeTextCountChars(textPagePtr = pagePtr)
-            }
+    val textCharCount: Int by lazy {
+        synchronized(lock = PdfiumCore.lock) {
+            nativeTextCountChars(textPagePtr = pagePtr)
         }
+    }
 
     /**
      * Get the text on the page

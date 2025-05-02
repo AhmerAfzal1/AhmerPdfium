@@ -149,7 +149,7 @@ class PdfFile(
      * Get table of contents (bookmarks) for given document.
      */
     fun bookmarks(): List<PdfDocument.Bookmark> {
-        return pdfDocument.tableOfContents
+        return pdfDocument.bookmarks
     }
 
     fun getDocLen(zoom: Float): Float {
@@ -160,7 +160,7 @@ class PdfFile(
      * Get metadata for given document.
      */
     fun metaData(): PdfDocument.Meta {
-        return pdfDocument.documentMeta
+        return pdfDocument.metaData
     }
 
     fun getPageAtOffset(offset: Float, zoom: Float): Int {
@@ -246,7 +246,7 @@ class PdfFile(
      * Get total number of pages in document
      */
     fun totalPagesCount(): Int {
-        return pdfDocument.pageCount
+        return pdfDocument.totalPages
     }
 
     /**
