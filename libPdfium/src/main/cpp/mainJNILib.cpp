@@ -1826,7 +1826,7 @@ JNI_FindResult(void, PdfiumCore, nativeCloseFind)(JNI_ARGS, jlong findHandle) {
     FPDFText_FindClose(handle);
 }
 
-JNI_PdfPageLink(jfloatArray, PdfiumCore, nativeGetRect)(JNI_ARGS, jlong pageLinkPtr, jint linkIndex,
+JNI_PdfTextPage(jfloatArray, PdfiumCore, nativeGetRect)(JNI_ARGS, jlong pageLinkPtr, jint linkIndex,
                                                         jint rectIndex) {
     auto pageLink = reinterpret_cast<FPDF_PAGELINK>(pageLinkPtr);
 
@@ -1852,7 +1852,7 @@ JNI_PdfPageLink(jfloatArray, PdfiumCore, nativeGetRect)(JNI_ARGS, jlong pageLink
     return nullptr;
 }
 
-JNI_PdfPageLink(jintArray, PdfiumCore, nativeGetTextRange)(JNI_ARGS, jlong pageLinkPtr,
+JNI_PdfTextPage(jintArray, PdfiumCore, nativeGetTextRange)(JNI_ARGS, jlong pageLinkPtr,
                                                            jint index) {
     auto pageLink = reinterpret_cast<FPDF_PAGELINK>(pageLinkPtr);
 
@@ -1881,19 +1881,19 @@ JNI_PdfPageLink(jintArray, PdfiumCore, nativeGetTextRange)(JNI_ARGS, jlong pageL
     return retVal;
 }
 
-JNI_PdfPageLink(void, PdfiumCore, nativeClosePageLink)(JNI_ARGS, jlong pageLinkPtr) {
+JNI_PdfTextPage(void, PdfiumCore, nativeClosePageLink)(JNI_ARGS, jlong pageLinkPtr) {
     auto pageLink = reinterpret_cast<FPDF_PAGELINK>(pageLinkPtr);
     FPDFLink_CloseWebLinks(pageLink);
 }
 
-JNI_PdfPageLink(jint, PdfiumCore, nativeCountWebLinks)(JNI_ARGS, jlong pageLinkPtr) {
+JNI_PdfTextPage(jint, PdfiumCore, nativeCountWebLinks)(JNI_ARGS, jlong pageLinkPtr) {
     auto pageLink = reinterpret_cast<FPDF_PAGELINK>(pageLinkPtr);
     auto result = FPDFLink_CountWebLinks(pageLink);
     LOGE("CountWebLinks result %d", result);
     return result;
 }
 
-JNI_PdfPageLink(jint, PdfiumCore, nativeGetURL)(JNI_ARGS, jlong pageLinkPtr, jint index, jint count,
+JNI_PdfTextPage(jint, PdfiumCore, nativeGetURL)(JNI_ARGS, jlong pageLinkPtr, jint index, jint count,
                                                 jbyteArray result) {
     auto pageLink = reinterpret_cast<FPDF_PAGELINK>(pageLinkPtr);
 
@@ -1921,7 +1921,7 @@ JNI_PdfPageLink(jint, PdfiumCore, nativeGetURL)(JNI_ARGS, jlong pageLinkPtr, jin
     return output;
 }
 
-JNI_PdfPageLink(jint, PdfiumCore, nativeCountRects)(JNI_ARGS, jlong pageLinkPtr, jint index) {
+JNI_PdfTextPage(jint, PdfiumCore, nativeCountRects)(JNI_ARGS, jlong pageLinkPtr, jint index) {
     auto pageLink = reinterpret_cast<FPDF_PAGELINK>(pageLinkPtr);
 
     auto result = FPDFLink_CountRects(pageLink, index);
