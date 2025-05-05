@@ -23,7 +23,7 @@ extra["ossrhPassword"] = mOSSRHPassword
 android {
     namespace = "com.ahmer.pdfviewer"
     compileSdk = 36
-    ndkVersion = "29.0.13113456"
+    ndkVersion = "29.0.13113456 rc1"
 
     defaultConfig {
         minSdk = 21

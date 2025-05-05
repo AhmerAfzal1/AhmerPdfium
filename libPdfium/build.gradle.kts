@@ -25,7 +25,7 @@ extra["ossrhPassword"] = mOSSRHPassword
 android {
     namespace = "com.ahmer.pdfium"
     compileSdk = 36
-    ndkVersion = "29.0.13113456"
+    ndkVersion = "29.0.13113456 rc1"
 
     buildFeatures {
         //noinspection DataBindingWithoutKapt

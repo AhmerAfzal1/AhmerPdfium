@@ -13,6 +13,7 @@ android {
     namespace = "com.ahmer.afzal.pdfviewer"
     compileSdk = 36
     buildToolsVersion = "36.0.0"
+    ndkVersion = "29.0.13113456 rc1"
 
     buildFeatures {
         //noinspection DataBindingWithoutKapt
@@ -28,6 +29,11 @@ android {
 
         multiDexEnabled = true
         vectorDrawables.useSupportLibrary = true
+
+        ndk {
+            abiFilters.clear()
+            abiFilters += listOf("arm64-v8a", "armeabi-v7a", "x86", "x86_64")
+        }
     }
 
     buildTypes {
@@ -46,6 +52,23 @@ android {
 
     kotlinOptions {
         jvmTarget = JvmTarget.JVM_17.target
+    }
+
+    splits {
+        abi {
+            isEnable = true
+            reset()
+            include("arm64-v8a", "armeabi-v7a", "x86", "x86_64")
+            isUniversalApk = true
+        }
+    }
+
+    packaging {
+        jniLibs {
+            useLegacyPackaging = true
+            pickFirsts.add("**/libpdfium_jni.so")
+            pickFirsts.add("**/libpdfium.so")
+        }
     }
 }
 
