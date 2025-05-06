@@ -25,6 +25,7 @@ extra["ossrhPassword"] = mOSSRHPassword
 android {
     namespace = "com.ahmer.pdfium"
     compileSdk = 36
+    buildToolsVersion = "36.0.0"
     ndkVersion = "29.0.13113456 rc1"
 
     buildFeatures {
@@ -34,7 +35,7 @@ android {
     }
 
     defaultConfig {
-        minSdk = 21
+        minSdk = 24
 
         externalNativeBuild {
             cmake {
@@ -120,7 +121,7 @@ afterEvaluate {
                 // POM configuration
                 pom {
                     name.set("AhmerPdfium")
-                    description.set("Ahmer Pdfium Library for Android (API 21 binding)")
+                    description.set("Ahmer Pdfium Library for Android (API 24 binding)")
                     url.set("https://github.com/AhmerAfzal1/AhmerPdfium")
                     packaging = "aar"
 
