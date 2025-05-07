@@ -7,7 +7,7 @@ material = "1.12.0"
 constraintLayout = "2.2.1"
 lifecycle = "2.8.7"
 navigation = "2.8.9"
-hilt = "2.56.1"
+hilt = "2.56.2"
 coroutines = "1.10.2"
 datastore = "1.1.0"
 preference = "1.2.1"
@@ -37,8 +37,8 @@ coroutines-core = { group = "org.jetbrains.kotlinx", name = "kotlinx-coroutines-
 coroutines-play-services = { group = "org.jetbrains.kotlinx", name = "kotlinx-coroutines-play-services", version.ref = "coroutines" }
 
 [plugins]
-android-application = { id = "com.android.application", version = "8.9.2" }
-android-library = { id = "com.android.library", version = "8.9.2" }
+android-application = { id = "com.android.application", version = "8.10.0" }
+android-library = { id = "com.android.library", version = "8.10.0" }
 kotlin-android = { id = "org.jetbrains.kotlin.android", version.ref = "kotlin" }
 kotlin-jvm = { id = "org.jetbrains.kotlin.jvm", version.ref = "kotlin" }
 hilt-android = { id = "com.google.dagger.hilt.android", version.ref = "hilt" }
