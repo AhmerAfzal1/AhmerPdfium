@@ -9,18 +9,15 @@ plugins {
     alias(libs.plugins.signing)
 }
 
-group = "io.github.ahmerafzal1"
-version = "1.8.2"
-
 // Environment variables for signing and publishing
-val mKeyId: String? = System.getenv("SIGNING_KEY_ID")
-val mPassword: String? = System.getenv("SIGNING_PASSWORD")
-val mSecretKey: String? = System.getenv("SIGNING_SECRET_KEY")
-val mOSSRHUsername: String? = System.getenv("OSSRH_USERNAME")
-val mOSSRHPassword: String? = System.getenv("OSSRH_PASSWORD")
+val keyId: String? = System.getenv("SIGNING_KEY_ID")
+val password: String? = System.getenv("SIGNING_PASSWORD")
+val secretKey: String? = System.getenv("SIGNING_SECRET_KEY")
+val centralUsername: String? = System.getenv("CENTRAL_USERNAME")
+val centralPassword: String? = System.getenv("CENTRAL_PASSWORD")
 
-extra["ossrhUsername"] = mOSSRHUsername
-extra["ossrhPassword"] = mOSSRHPassword
+extra["centralUsername"] = centralUsername
+extra["centralPassword"] = centralPassword
 
 android {
     namespace = "com.ahmer.pdfium"
@@ -87,6 +84,13 @@ android {
         abortOnError = false
         disable.addAll(setOf("TypographyFractions", "TypographyQuotes", "Typos"))
     }
+
+    publishing {
+        singleVariant("release") {
+            withSourcesJar()
+            withJavadocJar()
+        }
+    }
 }
 
 dependencies {
@@ -103,86 +107,66 @@ val javadocJar by tasks.register<Jar>("javadocJar") {
     from(tasks.named("dokkaJavadoc"))
 }
 
-val sourcesJar by tasks.register<Jar>("sourcesJar") {
-    archiveClassifier.set("sources")
-    from(android.sourceSets["main"].java.srcDirs)
+tasks.withType<AbstractPublishToMaven>().configureEach {
+    dependsOn(javadocJar)
 }
 
-afterEvaluate {
-    publishing {
-        publications {
-            create<MavenPublication>("release") {
-                // Artifact configuration
-                artifactId = "ahmer-pdfium"
-                artifact(layout.buildDirectory.file("outputs/aar/${project.name}-release.aar"))
-                artifact(sourcesJar)
-                artifact(javadocJar)
-
-                // POM configuration
-                pom {
-                    name.set("AhmerPdfium")
-                    description.set("Ahmer Pdfium Library for Android (API 24 binding)")
-                    url.set("https://github.com/AhmerAfzal1/AhmerPdfium")
-                    packaging = "aar"
-
-                    licenses {
-                        license {
-                            name.set("The Apache License, Version 2.0")
-                            url.set("http://www.apache.org/licenses/LICENSE-2.0.txt")
-                        }
-                    }
-
-                    developers {
-                        developer {
-                            id.set("ahmerafzal1")
-                            name.set("Ahmer Afzal")
-                            email.set("ahmerafzal@yahoo.com")
-                            roles.set(listOf("owner", "developer"))
-                        }
-                    }
-
-                    scm {
-                        connection.set("scm:git:git://github.com/AhmerAfzal1/AhmerPdfium.git")
-                        developerConnection.set("scm:git:ssh://github.com/AhmerAfzal1/AhmerPdfium.git")
-                        url.set("https://github.com/AhmerAfzal1/AhmerPdfium/tree/master/Pdfium")
-                    }
-                }
-
-                // Dependency info
-                pom.withXml {
-                    val dependenciesNode = asNode().appendNode("dependencies")
-                    configurations["implementation"].allDependencies.forEach {
-                        if (it.name != "unspecified") {
-                            val dependencyNode = dependenciesNode.appendNode("dependency")
-                            dependencyNode.appendNode("groupId", it.group)
-                            dependencyNode.appendNode("artifactId", it.name)
-                            dependencyNode.appendNode("version", it.version)
-                            dependencyNode.appendNode("scope", "implementation")
-                        }
-                    }
-                }
+publishing {
+    publications {
+        create<MavenPublication>("release") {
+            groupId = "io.github.ahmerafzal1"
+            artifactId = "ahmer-pdfium"
+            version = "1.8.2"
+            afterEvaluate {
+                from(components["release"])
             }
-        }
-        repositories {
-            maven {
-                name = "MavenCentral"
-                url = URI.create(
-                    if (version.toString().endsWith("SNAPSHOT"))
-                        "https://s01.oss.sonatype.org/content/repositories/snapshots/"
-                    else
-                        "https://s01.oss.sonatype.org/service/local/staging/deploy/maven2/"
-                )
 
-                credentials {
-                    username = mOSSRHUsername ?: ""
-                    password = mOSSRHPassword ?: ""
+            // POM configuration
+            pom {
+                name.set("AhmerPdfium")
+                description.set("Ahmer Pdfium Library for Android (API 24 binding)")
+                url.set("https://github.com/AhmerAfzal1/AhmerPdfium")
+                packaging = "aar"
+
+                licenses {
+                    license {
+                        name.set("The Apache License, Version 2.0")
+                        url.set("http://www.apache.org/licenses/LICENSE-2.0.txt")
+                    }
+                }
+
+                developers {
+                    developer {
+                        id.set("ahmerafzal1")
+                        name.set("Ahmer Afzal")
+                        email.set("ahmerafzal@yahoo.com")
+                        roles.set(listOf("owner", "developer"))
+                    }
+                }
+
+                scm {
+                    connection.set("scm:git:git://github.com/AhmerAfzal1/AhmerPdfium.git")
+                    developerConnection.set("scm:git:ssh://github.com/AhmerAfzal1/AhmerPdfium.git")
+                    url.set("https://github.com/AhmerAfzal1/AhmerPdfium/tree/master/libPdfium/")
                 }
             }
         }
     }
 
-    signing {
-        useInMemoryPgpKeys(mKeyId, mSecretKey, mPassword)
-        sign(publishing.publications["release"])
+    repositories {
+        maven {
+            name = "central"
+            url = URI.create("https://central.sonatype.com/")
+
+            credentials {
+                username = centralUsername ?: ""
+                password = centralPassword ?: ""
+            }
+        }
     }
+}
+
+signing {
+    useGpgCmd()
+    sign(publishing.publications["release"])
 }
