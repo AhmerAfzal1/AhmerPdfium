@@ -1,21 +1,13 @@
+import com.vanniktech.maven.publish.AndroidSingleVariantLibrary
 import org.jetbrains.kotlin.gradle.dsl.JvmTarget
-import java.net.URI
+import com.vanniktech.maven.publish.SonatypeHost
 
 plugins {
     alias(libs.plugins.android.library)
     alias(libs.plugins.kotlin.android)
-    alias(libs.plugins.maven.publish)
-    alias(libs.plugins.signing)
+    alias(libs.plugins.dokka)
+    alias(libs.plugins.vanniktech.maven.publish)
 }
-
-val keyId: String? = System.getenv("SIGNING_KEY_ID")
-val password: String? = System.getenv("SIGNING_PASSWORD")
-val secretKey: String? = System.getenv("SIGNING_SECRET_KEY")
-val centralUsername: String? = System.getenv("CENTRAL_USERNAME")
-val centralPassword: String? = System.getenv("CENTRAL_PASSWORD")
-
-extra["centralUsername"] = centralUsername
-extra["centralPassword"] = centralPassword
 
 android {
     namespace = "com.ahmer.pdfviewer"
@@ -54,13 +46,6 @@ android {
             "-opt-in=kotlin.RequiresOptIn", "-opt-in=org.readium.r2.shared.InternalReadiumApi"
         )
     }
-
-    publishing {
-        singleVariant("release") {
-            withSourcesJar()
-            withJavadocJar()
-        }
-    }
 }
 
 dependencies {
@@ -69,73 +54,66 @@ dependencies {
 }
 
 // =============== Publication Setup ===============
-val javadocJar by tasks.register<Jar>("javadocJar") {
-    dependsOn(tasks.named("dokkaJavadoc"))
-    archiveClassifier.set("javadoc")
-    from(tasks.named("dokkaJavadoc"))
-}
+tasks.dokkaHtml.configure {
+    outputDirectory.set(layout.buildDirectory.dir("dokka/html"))
+    moduleName.set("AhmerPdfViewer")
 
-tasks.withType<AbstractPublishToMaven>().configureEach {
-    dependsOn(javadocJar)
-}
-
-publishing {
-    publications {
-        create<MavenPublication>("release") {
-            groupId = "io.github.ahmerafzal1"
-            artifactId = "ahmer-pdfviewer"
-            version = "1.7.3"
-            afterEvaluate {
-                from(components["release"])
-            }
-
-            // POM configuration
-            pom {
-                name.set("AhmerPDFViewer")
-                description.set("Android view for displaying PDFs rendered with PdfiumAndroid")
-                url.set("https://github.com/AhmerAfzal1/AhmerPdfium")
-                packaging = "aar"
-
-                licenses {
-                    license {
-                        name.set("The Apache License, Version 2.0")
-                        url.set("http://www.apache.org/licenses/LICENSE-2.0.txt")
-                    }
-                }
-
-                developers {
-                    developer {
-                        id.set("ahmerafzal1")
-                        name.set("Ahmer Afzal")
-                        email.set("ahmerafzal@yahoo.com")
-                        roles.set(listOf("owner", "developer"))
-                    }
-                }
-
-                // Version control info, if you're using GitHub, follow the format as seen here
-                scm {
-                    connection.set("scm:git:git://github.com/AhmerAfzal1/AhmerPdfium.git")
-                    developerConnection.set("scm:git:ssh://github.com/AhmerAfzal1/AhmerPdfium.git")
-                    url.set("https://github.com/AhmerAfzal1/AhmerPdfium/tree/master/libPdfViewer")
-                }
+    dokkaSourceSets {
+        named("main") {
+            sourceLink {
+                localDirectory.set(file("src/main/java"))
+                remoteUrl.set(uri("https://github.com/AhmerAfzal1/AhmerPdfium/tree/main/libPdfViewer/src/main/java").toURL())
+                remoteLineSuffix.set("#L")
             }
         }
     }
+}
 
-    repositories {
-        maven {
-            name = "central"
-            url = URI.create("https://central.sonatype.com/")
+mavenPublishing {
+    configure(
+        AndroidSingleVariantLibrary(
+            variant = "release",
+            sourcesJar = true,
+            publishJavadocJar = true,
+        )
+    )
+    publishToMavenCentral(SonatypeHost.CENTRAL_PORTAL)
+    signAllPublications()
 
-            credentials {
-                username = centralUsername ?: ""
-                password = centralPassword ?: ""
+    coordinates(
+        groupId = "io.github.ahmerafzal1",
+        artifactId = "ahmer-pdfviewer",
+        version = "1.7.4"
+    )
+
+    pom {
+        name.set("AhmerPDFViewer")
+        description.set("Android view for displaying PDFs rendered with PdfiumAndroid")
+        inceptionYear.set("2023")
+        url.set("https://github.com/AhmerAfzal1/AhmerPdfium/")
+
+        licenses {
+            license {
+                name.set("The Apache License, Version 2.0")
+                url.set("http://www.apache.org/licenses/LICENSE-2.0.txt")
+                distribution.set("http://www.apache.org/licenses/LICENSE-2.0.txt")
             }
         }
-    }
 
-    signing {
-        useGpgCmd()
-        sign(publishing.publications["release"])
+        developers {
+            developer {
+                id.set("ahmerafzal1")
+                name.set("Ahmer Afzal")
+                email.set("ahmerafzal@yahoo.com")
+                url.set("https://github.com/AhmerAfzal1/")
+                roles.set(listOf("owner", "developer"))
+            }
+        }
+
+        scm {
+            url.set("https://github.com/AhmerAfzal1/AhmerPdfium/tree/master/libPdfViewer/")
+            connection.set("scm:git:git://github.com/AhmerAfzal1/AhmerPdfium.git")
+            developerConnection.set("scm:git:ssh://git@github.com/AhmerAfzal1/AhmerPdfium.git")
+        }
     }
 }

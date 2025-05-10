@@ -2,7 +2,7 @@
 
 # PdfViewer
 
-Android view for displaying PDFs rendered with PdfiumAndroid from API 19
+Android view for displaying PDFs rendered with PdfiumAndroid from API 24
 
 ## Include PDFView in your layout
 

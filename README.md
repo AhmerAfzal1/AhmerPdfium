@@ -9,25 +9,25 @@ Ahmer Pdfium library fork [barteksc/PdfiumAndroid](https://github.com/barteksc/P
 Add to _build.gradle_:
 
 ```groovy
-implementation 'io.github.ahmerafzal1:ahmer-pdfium:1.8.1'
+implementation 'io.github.ahmerafzal1:ahmer-pdfium:1.8.2'
 ```
 
 ## Simple example
 
 ```kotlin
-fun openPdf(file: File, password: String? = null) {
+fun openPdf(context: Context, file: File, password: String? = null) {
     val iv: ImageView = findViewById(R.id.imageView)
     val fd = ParcelFileDescriptor.open(file, ParcelFileDescriptor.MODE_READ_ONLY)
     val page = 0
     try {
-        PdfiumCore().use {
+        PdfiumCore(context).use {
             val pdfDocument: PdfDocument = it.newDocument(fd, password)
             pdfDocument.openPage(page)
             val width: Int = it.getPageWidthPoint(page)
             val height: Int = it.getPageHeightPoint(page)
             // ARGB_8888 - best quality, high memory usage, higher possibility of OutOfMemoryError
             // RGB_565 - little worse quality, twice less memory usage
-            val bitmap: Bitmap = Bitmap.createBitmap(width, height, Bitmap.Config.RGB_565)
+            val bitmap: Bitmap = createBitmap(width, height, Bitmap.Config.ARGB_8888)
             it.renderPageBitmap(page, bitmap, 0, 0, width, height)
             //If you need to render annotations and form fields, you can use
             //the same method above adding 'true' as last param
@@ -41,7 +41,7 @@ fun openPdf(file: File, password: String? = null) {
 }
 
 fun printInfo(doc: PdfDocument) {
-    val meta: PdfDocument.Meta = doc.getDocumentMeta
+    val meta: PdfDocument.Meta = doc.metaData
     Log.v(TAG, "Title = " + meta.title)
     Log.v(TAG, "Author = " + meta.author)
     Log.v(TAG, "Subject = " + meta.subject)
@@ -51,7 +51,7 @@ fun printInfo(doc: PdfDocument) {
     Log.v(TAG, "CreationDate = " + meta.creationDate)
     Log.v(TAG, "ModDate = " + meta.modDate)
     Log.v(TAG, "TotalPages = " + meta.totalPages)
-    printBookmarksTree(doc.getTableOfContents, "-")
+    printBookmarksTree(doc.bookmarks, "-")
 }
 
 fun printBookmarksTree(tree: List<PdfDocument.Bookmark>, sep: String) {
@@ -66,14 +66,14 @@ fun printBookmarksTree(tree: List<PdfDocument.Bookmark>, sep: String) {
 
 # PdfViewer
 
-Android view for displaying PDFs rendered with PdfiumAndroid from API 19
+Android view for displaying PDFs rendered with PdfiumAndroid from API 24
 
 ## Installation
 
 Add to _build.gradle_:
 
 ```groovy
-implementation 'io.github.ahmerafzal1:ahmer-pdfviewer:1.7.2'
+implementation 'io.github.ahmerafzal1:ahmer-pdfviewer:1.7.4'
 ```
 
 ## Include PDFView in your layout

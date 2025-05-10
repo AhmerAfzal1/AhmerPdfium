@@ -349,7 +349,7 @@ class PdfFragment : Fragment(R.layout.fragment_pdf), MenuProvider, OnPageChangeL
     private fun printBookmarksTree(tree: List<PdfDocument.Bookmark>, sep: String) {
         for (b in tree) {
             Log.v(Constants.TAG, "Bookmark $sep ${b.title}, Page: ${b.pageIndex}")
-            if (b.hasChildren()) {
+            if (b.hasChildren) {
                 printBookmarksTree(b.children, "$sep-")
             }
         }
