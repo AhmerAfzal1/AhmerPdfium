@@ -7,14 +7,21 @@ import com.ahmer.pdfium.PdfiumCore
 import com.ahmer.pdfviewer.util.PdfUtils
 import java.io.IOException
 
+
 class AssetSource(private val name: String) : DocumentSource {
 
     @Throws(IOException::class)
     override fun createDocument(
-        context: Context, pdfiumCore: PdfiumCore, password: String?
+        context: Context,
+        pdfiumCore: PdfiumCore,
+        password: String?
     ): PdfDocument {
-        val mFile = PdfUtils.fileFromAsset(context, name)
-        val mFileDescriptor = ParcelFileDescriptor.open(mFile, ParcelFileDescriptor.MODE_READ_ONLY)
-        return pdfiumCore.newDocument(mFileDescriptor, password)
+        return pdfiumCore.newDocument(
+            parcelFileDescriptor = ParcelFileDescriptor.open(
+                PdfUtils.fileFromAsset(context = context, assetName = name),
+                ParcelFileDescriptor.MODE_READ_ONLY
+            ),
+            password = password
+        )
     }
 }

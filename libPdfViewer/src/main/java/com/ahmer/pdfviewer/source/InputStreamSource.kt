@@ -11,8 +11,13 @@ class InputStreamSource(private val inputStream: InputStream) : DocumentSource {
 
     @Throws(IOException::class)
     override fun createDocument(
-        context: Context, pdfiumCore: PdfiumCore, password: String?
+        context: Context,
+        pdfiumCore: PdfiumCore,
+        password: String?
     ): PdfDocument {
-        return pdfiumCore.newDocument(PdfUtils.toByteArray(inputStream), password)
+        return pdfiumCore.newDocument(
+            data = PdfUtils.toByteArray(inputStream = inputStream),
+            password = password
+        )
     }
 }

@@ -10,12 +10,12 @@ class UriSource(private val uri: Uri) : DocumentSource {
 
     @Throws(IOException::class)
     override fun createDocument(
-        context: Context, pdfiumCore: PdfiumCore, password: String?
+        context: Context,
+        pdfiumCore: PdfiumCore,
+        password: String?
     ): PdfDocument {
-        var mPdfDocument = PdfDocument()
-        context.contentResolver.openFileDescriptor(uri, "r")?.use {
-            mPdfDocument = pdfiumCore.newDocument(it, password)
-        }
-        return mPdfDocument
+        return context.contentResolver.openFileDescriptor(uri, "r")?.use {
+            pdfiumCore.newDocument(parcelFileDescriptor = it, password = password)
+        } ?: throw IOException("Failed to open PDF from URI")
     }
 }

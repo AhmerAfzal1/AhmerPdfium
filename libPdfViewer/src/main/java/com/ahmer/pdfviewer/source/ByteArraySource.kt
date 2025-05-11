@@ -9,8 +9,10 @@ class ByteArraySource(private val data: ByteArray) : DocumentSource {
 
     @Throws(IOException::class)
     override fun createDocument(
-        context: Context, pdfiumCore: PdfiumCore, password: String?
+        context: Context,
+        pdfiumCore: PdfiumCore,
+        password: String?
     ): PdfDocument {
-        return pdfiumCore.newDocument(data, password)
+        return pdfiumCore.newDocument(data = data, password = password)
     }
 }

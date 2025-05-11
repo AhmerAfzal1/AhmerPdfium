@@ -11,9 +11,16 @@ class FileSource(private val file: File) : DocumentSource {
 
     @Throws(IOException::class)
     override fun createDocument(
-        context: Context, pdfiumCore: PdfiumCore, password: String?
+        context: Context,
+        pdfiumCore: PdfiumCore,
+        password: String?
     ): PdfDocument {
-        val mFileDescriptor = ParcelFileDescriptor.open(file, ParcelFileDescriptor.MODE_READ_ONLY)
-        return pdfiumCore.newDocument(mFileDescriptor, password)
+        return pdfiumCore.newDocument(
+            parcelFileDescriptor = ParcelFileDescriptor.open(
+                file,
+                ParcelFileDescriptor.MODE_READ_ONLY
+            ),
+            password = password
+        )
     }
 }

@@ -14,34 +14,67 @@ import com.ahmer.pdfviewer.util.PdfConstants
 
 class DefaultLinkHandler(private val pdfView: PDFView) : LinkHandler {
 
+    /**
+     * Processes a link tap event, delegating to URI or page handling as appropriate.
+     *
+     * @param event The link tap event containing navigation details, may be null
+     */
     override fun handleLinkEvent(event: LinkTapEvent?) {
-        val mUri = event?.link?.uri
-        val mPage = event?.link?.destPageIndex
-        if (!mUri.isNullOrBlank()) handleUri(mUri) else mPage?.let { handlePage(it) }
+        if (event == null) return
+        val uri: String? = event.link.uri
+        val pageIndex: Int? = event.link.destPage
+
+        when {
+            !uri.isNullOrBlank() -> handleUri(uri = uri)
+            pageIndex != null -> handlePage(pageNumber = pageIndex)
+        }
     }
 
-    private fun handleUri(uri: String) {
-        val mContext: Context = pdfView.context
-        val mParsedUri: Uri = uri.toUri()
-        val mIntent: Intent = Intent(Intent.ACTION_VIEW, mParsedUri).apply {
+    /**
+     * Creates a configured intent for viewing URIs.
+     *
+     * @param uri The parsed URI to view
+     * @return Configured Intent ready for launch
+     */
+    private fun createUriIntent(uri: Uri): Intent {
+        return Intent(Intent.ACTION_VIEW, uri).apply {
             flags = Intent.FLAG_ACTIVITY_CLEAR_TOP or Intent.FLAG_ACTIVITY_SINGLE_TOP
-            if (Build.VERSION.SDK_INT < Build.VERSION_CODES.N || Build.VERSION.SDK_INT >= Build.VERSION_CODES.P) {
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.P
+            ) {
                 addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
             }
         }
-        val mTitle = "Select app for open link"
+    }
 
-        // Try to invoke the intent.
+    /**
+     * Handles external URI navigation attempts.
+     *
+     * @param uri The non-null URI string to navigate to
+     */
+    private fun handleUri(uri: String) {
+        val context: Context = pdfView.context
+
         try {
-            mContext.startActivity(Intent.createChooser(mIntent, mTitle))
+            createUriIntent(uri = uri.toUri()).let { intent ->
+                context.startActivity(Intent.createChooser(intent, CHOOSER_TITLE))
+            }
         } catch (e: ActivityNotFoundException) {
-            // Define what your app should do if no activity can handle the intent.
-            Log.e(PdfConstants.TAG, e.localizedMessage ?: "NULL", e)
-            Toast.makeText(mContext, "No apps can open for this link", Toast.LENGTH_LONG).show()
+            Log.e(PdfConstants.TAG, e.localizedMessage ?: "Failed to open link", e)
+            Toast.makeText(context, ERROR_MESSAGE_NO_APPS, Toast.LENGTH_LONG).show()
         }
     }
 
-    private fun handlePage(page: Int) {
-        pdfView.jumpTo(page, true)
+    /**
+     * Handles internal page navigation within the PDF view.
+     *
+     * @param pageNumber The non-null page index to navigate to
+     */
+    private fun handlePage(pageNumber: Int) {
+        pdfView.jumpTo(page = pageNumber, withAnimation =  true)
+    }
+
+    companion object {
+        private const val CHOOSER_TITLE = "Select app for open link"
+        private const val ERROR_MESSAGE_NO_APPS = "No apps can open for this link"
     }
 }
