@@ -119,7 +119,6 @@ class PdfDocument : Closeable {
         }
     }
 
-
     private fun recursiveGetBookmark(
         tree: MutableList<Bookmark>,
         bookmarkPtr: Long,
@@ -277,12 +276,12 @@ class PdfDocument : Closeable {
         var pageIndex: Long = 0L,
         val children: MutableList<Bookmark> = mutableListOf(),
     ) {
-        fun hasChildren() = children.isNotEmpty()
+        val hasChildren = children.isNotEmpty()
     }
 
     data class Link(
         val bounds: RectF,
-        val destPageIndex: Int?,
+        val destPage: Int?,
         val uri: String?,
     )
 

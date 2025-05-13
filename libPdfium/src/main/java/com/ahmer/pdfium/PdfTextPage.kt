@@ -31,23 +31,47 @@ class PdfTextPage(
      * @return the number of characters on the page
      * @throws IllegalStateException if the page or document is closed
      */
-    val textCharCount: Int by lazy {
+    val charCount: Int by lazy {
         synchronized(lock = PdfiumCore.lock) {
-            nativeTextCountChars(textPagePtr = pagePtr)
+            nativeTextCountChars(textPagePtr = pagePtr).also {
+                if (it < 0) throw IllegalStateException("Failed to get character count")
+            }
+        }
+    }
+
+    private val pageLinkPtr: Long by lazy {
+        synchronized(lock = PdfiumCore.lock) {
+            nativeLoadWebLink(textPagePtr = pagePtr).also {
+                if (it == 0L) throw IllegalStateException("Failed to load page links")
+            }
         }
     }
 
     /**
-     * Get the text on the page
+     * Gets the number of web links present in the PDF page.
+     *
+     * @return Total count of web links.
+     */
+    val webLinksCount: Int by lazy {
+        synchronized(lock = PdfiumCore.lock) {
+            nativeCountWebLinks(pageLinkPtr = pageLinkPtr)
+        }
+    }
+
+    /**
+     * Retrieves text content from the page using legacy buffer approach.
      *
      * @param startIndex the index of the first character to get
      * @param length the number of characters to get
      * @return the extracted text
      * @throws IllegalStateException if the page or document is closed
      */
-    fun textPageGetTextLegacy(startIndex: Int, length: Int): String? {
+    fun getTextLegacy(startIndex: Int, length: Int): String? {
+        require(value = startIndex >= 0) { "Start index cannot be negative" }
+        require(value = length >= 0) { "Length cannot be negative" }
+        require(value = startIndex + length <= charCount) { "Requested range exceeds character count" }
         synchronized(lock = PdfiumCore.lock) {
-            try {
+            return try {
                 val buffer = ShortArray(size = length + 1)
                 val chars = nativeTextGetText(
                     textPagePtr = pagePtr,
@@ -56,55 +80,63 @@ class PdfTextPage(
                     result = buffer
                 )
 
-                if (chars <= 0) return ""
-
-                ByteBuffer.allocate((chars - 1) * 2).apply {
-                    order(ByteOrder.LITTLE_ENDIAN)
-                    buffer.take(n = chars - 1).forEach { putShort(it) }
-                }.let {
-                    return String(bytes = it.array(), charset = StandardCharsets.UTF_16LE)
-                }
-            } catch (e: NullPointerException) {
-                Log.e(TAG, "Context may be null", e)
-                return null
+                if (chars > 0) {
+                    ByteBuffer.allocate((chars - 1) * 2).apply {
+                        order(ByteOrder.LITTLE_ENDIAN)
+                        buffer.take(n = chars - 1).forEach { putShort(it) }
+                    }.array().let {
+                        String(bytes = it, charset = StandardCharsets.UTF_16LE)
+                    }
+                } else ""
             } catch (e: Exception) {
-                Log.e(TAG, "Exception throw from native", e)
-                return null
-            }
-        }
-    }
-
-    fun textPageGetText(startIndex: Int, length: Int): String? {
-        synchronized(lock = PdfiumCore.lock) {
-            try {
-                val bytes = ByteArray(size = length * 2)
-                val chars = nativeTextGetTextByteArray(
-                    textPagePtr = pagePtr,
-                    startIndex = startIndex,
-                    count = length,
-                    result = bytes
-                )
-
-                if (chars <= 0) return ""
-                return String(bytes = bytes, charset = StandardCharsets.UTF_16LE)
-            } catch (e: NullPointerException) {
-                Log.e(TAG, "Context may be null", e)
-                return null
-            } catch (e: Exception) {
-                Log.e(TAG, "Exception throw from native", e)
-                return null
+                Log.e(TAG, "Error retrieving text (legacy): ${e.message}", e)
+                null
             }
         }
     }
 
     /**
-     * Get a unicode character on the page
+     * Retrieves text content from the page using optimized byte array approach.
      *
-     * @param index the index of the character to get
-     * @return the character
+     * @param startIndex the index of the first character to get
+     * @param length the number of characters to get
+     * @return the extracted text
      * @throws IllegalStateException if the page or document is closed
      */
-    fun textPageGetUnicode(index: Int): Char {
+    fun getText(startIndex: Int = 0, length: Int = charCount): String? {
+        require(value = startIndex >= 0) { "Start index cannot be negative" }
+        require(value = length >= 0) { "Length cannot be negative" }
+        require(value = startIndex + length <= charCount) { "Requested range exceeds character count" }
+
+        synchronized(lock = PdfiumCore.lock) {
+            return try {
+                ByteArray(size = length * 2).let { buffer ->
+                    val chars = nativeTextGetTextByteArray(
+                        textPagePtr = pagePtr,
+                        startIndex = startIndex,
+                        count = length,
+                        result = buffer
+                    )
+                    if (chars <= 0) return ""
+                    String(bytes = buffer, charset = StandardCharsets.UTF_16LE)
+                }
+
+            } catch (e: Exception) {
+                Log.e(TAG, "Error retrieving text: ${e.message}", e)
+                null
+            }
+        }
+    }
+
+    /**
+     * Gets the Unicode character at specified index.
+     *
+     * @param index the index of the character to get
+     * @return the unicode character
+     * @throws IllegalStateException if the page or document is closed
+     */
+    fun getUnicodeChar(index: Int): Char {
+        require(value = index in 0 until charCount) { "Index $index out of bounds [0, $charCount)" }
         synchronized(lock = PdfiumCore.lock) {
             return nativeTextGetUnicode(textPagePtr = pagePtr, index = index).toChar()
         }
@@ -117,22 +149,21 @@ class PdfTextPage(
      * @return the bounding box
      * @throws IllegalStateException if the page or document is closed
      */
-    fun textPageGetCharBox(index: Int): RectF? {
+    fun getCharBox(index: Int): RectF? {
+        require(value = index in 0 until charCount) { "Index $index out of bounds [0, $charCount)" }
         synchronized(lock = PdfiumCore.lock) {
-            try {
-                val charBoxData = nativeTextGetCharBox(textPagePtr = pagePtr, index = index)
-                return RectF().apply {
-                    left = charBoxData[0].toFloat()
-                    right = charBoxData[1].toFloat()
-                    bottom = charBoxData[2].toFloat()
-                    top = charBoxData[3].toFloat()
+            return try {
+                nativeTextGetCharBox(textPagePtr = pagePtr, index = index).let { data ->
+                    RectF().apply {
+                        left = data[0].toFloat()
+                        right = data[1].toFloat()
+                        bottom = data[2].toFloat()
+                        top = data[3].toFloat()
+                    }
                 }
-            } catch (e: NullPointerException) {
-                Log.e(TAG, "Context may be null", e)
-                return null
             } catch (e: Exception) {
-                Log.e(TAG, "Exception throw from native", e)
-                return null
+                Log.e(TAG, "Error getting character bounds: ${e.message}", e)
+                null
             }
         }
     }
@@ -140,22 +171,19 @@ class PdfTextPage(
     /**
      * Finds character index at specified position.
      *
-     * @param x the x position
-     * @param y the y position
-     * @param xTolerance the x tolerance
-     * @param yTolerance the y tolerance
-     * @return the index of the character at the position
+     * @param x horizontal page coordinate
+     * @param y vertical page coordinate
+     * @param xTolerance horizontal search radius (must be ≥ 0)
+     * @param yTolerance vertical search radius (must be ≥ 0)
+     * @return character index or -1 if not found/error
      * @throws IllegalStateException if the page or document is closed
      */
-    fun textPageGetCharIndexAtPos(
-        x: Double,
-        y: Double,
-        xTolerance: Double,
-        yTolerance: Double
-    ): Int {
+    fun findCharIndexAtPos(x: Double, y: Double, xTolerance: Double, yTolerance: Double): Int {
+        require(value = xTolerance >= 0) { "X tolerance cannot be negative" }
+        require(value = yTolerance >= 0) { "Y tolerance cannot be negative" }
         synchronized(lock = PdfiumCore.lock) {
-            try {
-                return nativeTextGetCharIndexAtPos(
+            return try {
+                nativeTextGetCharIndexAtPos(
                     textPagePtr = pagePtr,
                     x = x,
                     y = y,
@@ -163,8 +191,8 @@ class PdfTextPage(
                     yTolerance = yTolerance
                 )
             } catch (e: Exception) {
-                Log.e(TAG, "Exception throw from native", e)
-                return -1
+                Log.e(TAG, "Failed to find character at position ($x,$y): ${e.message}", e)
+                -1
             }
         }
     }
@@ -177,19 +205,20 @@ class PdfTextPage(
      * @return the number of rectangles
      * @throws IllegalStateException if the page or document is closed
      */
-    fun textPageCountRects(startIndex: Int, count: Int): Int {
+    fun countTextRects(startIndex: Int, count: Int): Int {
+        require(value = startIndex >= 0) { "Start index cannot be negative" }
+        require(value = count > 0) { "Count must be positive" }
         synchronized(lock = PdfiumCore.lock) {
-            try {
-                return nativeTextCountRects(
+            return try {
+                nativeTextCountRects(
                     textPagePtr = pagePtr,
                     startIndex = startIndex,
                     count = count
                 )
-            } catch (e: NullPointerException) {
-                Log.e(TAG, "Context may be null", e)
-                return -1
             } catch (e: Exception) {
-                Log.e(TAG, "Exception throw from native", e)
+                val msg =
+                    "Failed to count rectangles for range [$startIndex, ${startIndex + count}]: ${e.message}"
+                Log.e(TAG, msg, e)
                 return -1
             }
         }
@@ -202,22 +231,20 @@ class PdfTextPage(
      * @return the bounding box
      * @throws IllegalStateException if the page or document is closed
      */
-    fun textPageGetRect(rectIndex: Int): RectF? {
+    fun getTextRect(rectIndex: Int): RectF? {
         synchronized(lock = PdfiumCore.lock) {
-            try {
-                val rectData = nativeTextGetRect(textPagePtr = pagePtr, rectIndex = rectIndex)
-                return RectF().apply {
-                    left = rectData[0].toFloat()
-                    top = rectData[1].toFloat()
-                    right = rectData[2].toFloat()
-                    bottom = rectData[3].toFloat()
+            return try {
+                nativeTextGetRect(textPagePtr = pagePtr, rectIndex = rectIndex).let { data ->
+                    RectF().apply {
+                        left = data[0].toFloat()
+                        top = data[1].toFloat()
+                        right = data[2].toFloat()
+                        bottom = data[3].toFloat()
+                    }
                 }
-            } catch (e: NullPointerException) {
-                Log.e(TAG, "Context may be null", e)
-                return null
             } catch (e: Exception) {
-                Log.e(TAG, "Exception throw from native", e)
-                return null
+                Log.e(TAG, "Failed to get rectangle at index $rectIndex: ${e.message}", e)
+                null
             }
         }
     }
@@ -230,47 +257,42 @@ class PdfTextPage(
      * @return list of bounding boxes with their start and length
      * @throws IllegalStateException if the page or document is closed
      */
-    fun textPageGetRectsForRanges(wordRanges: IntArray): List<WordRangeRect>? {
+    fun getTextRangeRects(wordRanges: IntArray): List<WordRangeRect>? {
         synchronized(lock = PdfiumCore.lock) {
-            try {
-                val data: DoubleArray = nativeTextGetRects(
-                    textPagePtr = pagePtr,
-                    wordRanges = wordRanges
-                ) ?: return null
-                val results = mutableListOf<WordRangeRect>()
-
-                for (i in data.indices step RANGE_RECT_DATA_SIZE) {
-                    results.add(
+            return try {
+                nativeTextGetRects(textPagePtr = pagePtr, wordRanges = wordRanges)?.let { data ->
+                    List(size = data.size / 6) { i ->
+                        val offset = i * 6
                         WordRangeRect(
-                            rangeStart = data[i + RANGE_START_OFFSET].toInt(),
-                            rangeLength = data[i + RANGE_LENGTH_OFFSET].toInt(),
-                            rect = RectF().apply {
-                                left = data[i + LEFT_OFFSET].toFloat()
-                                top = data[i + TOP_OFFSET].toFloat()
-                                right = data[i + RIGHT_OFFSET].toFloat()
-                                bottom = data[i + BOTTOM_OFFSET].toFloat()
-                            }
+                            rangeStart = data[offset + 4].toInt(),
+                            rangeLength = data[offset + 5].toInt(),
+                            rect = RectF(
+                                data[offset].toFloat(),
+                                data[offset + 1].toFloat(),
+                                data[offset + 2].toFloat(),
+                                data[offset + 3].toFloat()
+                            )
                         )
-                    )
+                    }
                 }
-                return results
             } catch (e: Exception) {
-                Log.e(TAG, "Exception throw from native: ${e.message}", e)
-                return null
+                Log.e(TAG, "Failed to get range rectangles: ${e.message}", e)
+                null
             }
         }
     }
 
     /**
      * Get the text bounded by the given rectangle
+     *
      * @param rect the rectangle to bound the text
      * @param length the maximum number of characters to get
      * @return the text bounded by the rectangle
      * @throws IllegalStateException if the page or document is closed
      */
-    fun textPageGetBoundedText(rect: RectF, length: Int): String? {
+    fun extractTextInArea(rect: RectF, length: Int): String? {
         synchronized(lock = PdfiumCore.lock) {
-            try {
+            return try {
                 val buffer = ShortArray(size = length + 1)
                 val textRect = nativeTextGetBoundedText(
                     textPagePtr = pagePtr,
@@ -280,107 +302,86 @@ class PdfTextPage(
                     bottom = rect.bottom.toDouble(),
                     arr = buffer
                 )
-                if (textRect <= 0) return ""
-
-                val byteBuffer = ByteBuffer.allocate((textRect - 1) * 2)
-                byteBuffer.order(ByteOrder.LITTLE_ENDIAN)
-                for (i in 0 until textRect - 1) {
-                    byteBuffer.putShort(buffer[i])
-                }
-                return String(bytes = byteBuffer.array(), charset = StandardCharsets.UTF_16LE)
-            } catch (e: NullPointerException) {
-                Log.e(TAG, "Context may be null", e)
-                return null
+                if (textRect > 0) {
+                    ByteBuffer.allocate((textRect - 1) * 2).apply {
+                        order(ByteOrder.LITTLE_ENDIAN)
+                        for (i in 0 until textRect - 1) {
+                            putShort(buffer[i])
+                        }
+                    }.array().let {
+                        String(bytes = it, charset = StandardCharsets.UTF_16LE)
+                    }
+                } else ""
             } catch (e: Exception) {
-                Log.e(TAG, "Exception throw from native", e)
-                return null
+                Log.e(TAG, "Failed to extract text in area $rect: ${e.message}", e)
+                null
             }
         }
     }
 
     /**
      * Get character font size in PostScript points (1/72th of an inch).
+     *
      * @param charIndex the index of the character to get
      * @return the font size
      * @throws IllegalStateException if the page or document is closed
      */
     fun getFontSize(charIndex: Int): Double {
+        require(value = charIndex in 0 until charCount) { "Invalid character index" }
         synchronized(lock = PdfiumCore.lock) {
-            return nativeGetFontSize(pagePtr = pagePtr, charIndex = charIndex)
+            return try {
+                nativeGetFontSize(pagePtr = pagePtr, charIndex = charIndex)
+            } catch (e: Exception) {
+                Log.e(TAG, "Failed to get font size for character $charIndex: ${e.message}", e)
+                Double.NaN
+            }
         }
     }
 
     /**
      * Starts text search operation.
      *
-     * @param findWhat Text to search for
-     * @param flags Search configuration flags
-     * @param startIndex Starting character index
-     * @return Search result handle or null on error
+     * @param query text to search for
+     * @param flags search configuration flags
+     * @param startIndex starting character index
+     * @return search result handle or null on error
      */
-    fun findStart(
-        findWhat: String,
-        flags: Set<FindFlags>,
-        startIndex: Int,
+    fun startTextSearch(
+        query: String,
+        flags: Set<FindFlags> = emptySet(),
+        startIndex: Int = 0
     ): FindResult? {
+        require(value = query.isNotEmpty()) { "Search query cannot be empty" }
+        require(value = startIndex >= 0) { "Start index cannot be negative" }
         synchronized(lock = PdfiumCore.lock) {
-            try {
+            return try {
                 val flag = flags.fold(initial = 0) { acc, flag -> acc or flag.value }
-                return FindResult(
-                    nativeFindStart(
-                        textPagePtr = pagePtr,
-                        findWhat = findWhat,
-                        flags = flag,
-                        startIndex = startIndex
-                    )
-                )
+                nativeFindStart(
+                    textPagePtr = pagePtr,
+                    findWhat = query,
+                    flags = flag,
+                    startIndex = startIndex
+                ).takeIf { it != 0L }?.let { FindResult(handle = it) }
+
             } catch (e: Exception) {
-                Log.e(TAG, "Error in findStart: ${e.message}")
-                return null
+                Log.e(TAG, "Failed to start search for '$query': ${e.message}", e)
+                null
             }
         }
     }
 
-    /**
-     * Get character count of the page
-     *
-     * @return the number of characters on the page
-     * @throws IllegalStateException if the page or document is closed
-     */
-    val textPageCountChars: Int by lazy {
-        synchronized(lock = PdfiumCore.lock) {
-            nativeTextCountChars(textPagePtr = pagePtr)
-        }
-    }
-
-    private val pageLinkPtr: Long by lazy {
-        synchronized(PdfiumCore.lock) {
-            nativeLoadWebLink(textPagePtr =pagePtr)
-        }
-    }
-
 
     /**
-     * Retrieves the number of web links present in the PDF page.
+     * Retrieves the URL text for a given web link on this PDF page.
      *
-     * @return Total count of web links.
+     * @param linkIndex index of the web link to query.
+     * @param charCount expected number of characters in the URL.
+     * @return url string if successful, empty string for invalid links, or null on error.
      */
-    val webLinksCount: Int by lazy {
+    fun getLinkUrl(linkIndex: Int, charCount: Int): String? {
+        require(value = linkIndex in 0 until webLinksCount) { "Invalid web link index" }
         synchronized(lock = PdfiumCore.lock) {
-            nativeCountWebLinks(pageLinkPtr = pageLinkPtr)
-        }
-    }
-
-    /**
-     * Retrieves the URL for a web link at the specified index.
-     *
-     * @param linkIndex Index of the web link to query.
-     * @param charCount Expected number of characters in the URL.
-     * @return URL string if successful, empty string for invalid links, or null on error.
-     */
-    fun getURL(linkIndex: Int, charCount: Int): String? {
-        synchronized(lock = PdfiumCore.lock) {
-            try {
+            return try {
                 val buffer = ByteArray(size = charCount * 2)
                 val bytesWritten = nativeGetURL(
                     pageLinkPtr = pageLinkPtr,
@@ -388,16 +389,13 @@ class PdfTextPage(
                     count = charCount,
                     result = buffer,
                 )
-                return when {
+                when {
                     bytesWritten <= 0 -> ""
                     else -> String(bytes = buffer, charset = StandardCharsets.UTF_16LE)
                 }
-            } catch (e: NullPointerException) {
-                Log.e(TAG, "Context reference missing", e)
-                return null
             } catch (e: Exception) {
-                Log.e(TAG, "Native operation failed", e)
-                return null
+                Log.e(TAG, "Failed to get URL for link $linkIndex: ${e.message}", e)
+                null
             }
         }
     }
@@ -409,8 +407,14 @@ class PdfTextPage(
      * @return Count of rectangular regions for the specified link.
      */
     fun countRects(linkIndex: Int): Int {
+        require(value = linkIndex in 0 until webLinksCount) { "Invalid web link index" }
         synchronized(lock = PdfiumCore.lock) {
-            return nativeCountRects(pageLinkPtr = pageLinkPtr, index = linkIndex)
+            return try {
+                nativeCountRects(pageLinkPtr = pageLinkPtr, index = linkIndex)
+            } catch (e: Exception) {
+                Log.e(TAG, "Failed to count regions for link $linkIndex: ${e.message}", e)
+                -1
+            }
         }
     }
 
@@ -421,19 +425,26 @@ class PdfTextPage(
      * @param rectIndex Index of the rectangular region within the link.
      * @return [RectF] representing the link's bounding box.
      */
-    fun getRect(linkIndex: Int, rectIndex: Int): RectF {
+    fun getLinkRect(linkIndex: Int, rectIndex: Int): RectF? {
+        require(value = linkIndex in 0 until webLinksCount) { "Invalid web link index" }
+        require(value = rectIndex in 0 until countRects(linkIndex)) { "Rect index cannot be negative" }
         synchronized(lock = PdfiumCore.lock) {
-            val rectValues = nativeGetRect(
-                pageLinkPtr = pageLinkPtr,
-                linkIndex = linkIndex,
-                rectIndex = rectIndex
-            )
-
-            return RectF().apply {
-                left = rectValues[0]
-                top = rectValues[1]
-                right = rectValues[2]
-                bottom = rectValues[3]
+            return try {
+                nativeGetRect(
+                    pageLinkPtr = pageLinkPtr,
+                    linkIndex = linkIndex,
+                    rectIndex = rectIndex
+                ).let { data ->
+                    RectF().apply {
+                        left = data[0]
+                        top = data[1]
+                        right = data[2]
+                        bottom = data[3]
+                    }
+                }
+            } catch (e: Exception) {
+                Log.e(TAG, "Failed to get region $rectIndex for link $linkIndex: ${e.message}", e)
+                null
             }
         }
     }
@@ -444,10 +455,16 @@ class PdfTextPage(
      * @param linkIndex Index of the target link.
      * @return Pair representing the start and end indices of the linked text.
      */
-    fun getTextRange(linkIndex: Int): Pair<Int, Int> {
+    fun getWebLinkTextRange(linkIndex: Int): Pair<Int, Int>? {
+        require(value = linkIndex in 0 until webLinksCount) { "Invalid web link index" }
         synchronized(lock = PdfiumCore.lock) {
-            return nativeGetTextRange(pageLinkPtr = pageLinkPtr, index = linkIndex).let { range ->
-                Pair(first = range[0], second = range[1])
+            return try {
+                nativeGetTextRange(pageLinkPtr = pageLinkPtr, index = linkIndex).let {
+                    if (it.size >= 2) it[0] to it[1] else null
+                }
+            } catch (e: Exception) {
+                Log.e(TAG, "Failed to get text range for link $linkIndex: ${e.message}", e)
+                null
             }
         }
     }
@@ -458,26 +475,16 @@ class PdfTextPage(
     override fun close() {
         synchronized(lock = PdfiumCore.lock) {
             pageMap[pageIndex]?.let {
-                if (it.count > 1) {
-                    it.count--
-                    return
-                }
+                if (--it.count > 0) return
+                pageMap.remove(key = pageIndex)
             }
-            pageMap.remove(key = pageIndex)
             nativeCloseTextPage(pagePtr = pagePtr)
-            nativeClosePageLink(pageLinkPtr = pageLinkPtr)
+            nativeClosePageLink(pageLinkPtr)
             pageMap.clear()
         }
     }
 
     companion object {
-        private const val LEFT_OFFSET = 0
-        private const val TOP_OFFSET = 1
-        private const val RIGHT_OFFSET = 2
-        private const val BOTTOM_OFFSET = 3
-        private const val RANGE_START_OFFSET = 4
-        private const val RANGE_LENGTH_OFFSET = 5
-        private const val RANGE_RECT_DATA_SIZE = 6
         private val TAG: String? = PdfTextPage::class.java.name
 
         @JvmStatic
@@ -579,4 +586,9 @@ data class WordRangeRect(
     val rangeStart: Int,
     val rangeLength: Int,
     val rect: RectF,
-)
+) {
+    init {
+        require(value = rangeStart >= 0) { "Invalid rangeStart: $rangeStart" }
+        require(value = rangeLength > 0) { "Invalid rangeLength: $rangeLength" }
+    }
+}

@@ -515,7 +515,7 @@ class PdfiumCore(
                                 posY = posY.toInt()
                             )
                         )
-                        PdfDocument.Link(bounds = rect, destPageIndex = index, uri = uri)
+                        PdfDocument.Link(bounds = rect, destPage = index, uri = uri)
                     } catch (e: Exception) {
                         Log.e(TAG, "Error processing link", e)
                         null
