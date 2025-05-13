@@ -20,6 +20,7 @@ class AppDataStore @Inject constructor(
         val spacing = intPreferencesKey(name = "SpacingKey")
         val viewHorizontal = booleanPreferencesKey(name = "ViewKey")
     }
+
     suspend fun saveLastPage(fileName: String, page: Int) = dataStore.edit { preferences ->
         val pageKey = intPreferencesKey("last_page_${fileName.hashCode()}")
         preferences[pageKey] = page

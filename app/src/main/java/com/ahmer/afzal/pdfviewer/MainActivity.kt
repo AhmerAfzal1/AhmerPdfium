@@ -3,107 +3,116 @@ package com.ahmer.afzal.pdfviewer
 import android.content.Intent
 import android.os.Build
 import android.os.Bundle
+import android.view.View
+import androidx.activity.OnBackPressedCallback
 import androidx.appcompat.app.AppCompatActivity
+import androidx.core.view.isVisible
+import androidx.fragment.app.commit
 import com.ahmer.afzal.pdfviewer.databinding.ActivityMainBinding
 import dagger.hilt.android.AndroidEntryPoint
 
 @AndroidEntryPoint
 class MainActivity : AppCompatActivity() {
 
+    private lateinit var binding: ActivityMainBinding
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        val mBinding = ActivityMainBinding.inflate(layoutInflater)
-        setContentView(mBinding.root)
-        mBinding.apply {
-            toolbar.title = getString(R.string.app_name)
-            toolbar.setOnClickListener {
-                finish()
-                if (Build.VERSION.SDK_INT >= 34) {
-                    overrideActivityTransition(
-                        OVERRIDE_TRANSITION_OPEN, R.anim.left_to_right, R.anim.right_to_left
-                    )
+        binding = ActivityMainBinding.inflate(layoutInflater)
+        setContentView(binding.root)
+        onBackPressedDispatcher.addCallback(this, object : OnBackPressedCallback(true) {
+            override fun handleOnBackPressed() {
+                if (binding.fragmentContainer.isVisible) {
+                    binding.toolbar.visibility = View.VISIBLE
+                    binding.buttonContainer.visibility = View.VISIBLE
+                    binding.fragmentContainer.visibility = View.GONE
+                    supportFragmentManager.popBackStack()
                 } else {
-                    @Suppress("DEPRECATION")
-                    overridePendingTransition(R.anim.left_to_right, R.anim.right_to_left)
+                    finish()
                 }
             }
-            val id: Int = android.R.id.content
+        })
+        setupToolbar()
+        setupClickListeners()
+    }
 
+    private fun setupToolbar() {
+        binding.toolbar.title = getString(R.string.app_name)
+        binding.toolbar.setNavigationOnClickListener {
+            finishWithTransition()
+        }
+    }
+
+    private fun setupClickListeners() {
+        binding.apply {
+            // Fragment examples
             pdfNormalFragment.setOnClickListener {
-                val bundle = Bundle()
-                bundle.putBoolean(Constants.PDF_FILE, true)
-                val fragment = PdfFragment()
-                fragment.arguments = bundle
-                supportFragmentManager.beginTransaction().replace(id, fragment).commitNow()
-            }
-
-            pdfNormalActivity.setOnClickListener { v ->
-                val intent = Intent(v.context, PdfActivity::class.java)
-                intent.putExtra(Constants.PDF_FILE, Constants.PDF_FILE_MAIN)
-                intent.flags = Intent.FLAG_ACTIVITY_CLEAR_TOP or Intent.FLAG_ACTIVITY_SINGLE_TOP
-                if (Build.VERSION.SDK_INT < Build.VERSION_CODES.N || Build.VERSION.SDK_INT >= Build.VERSION_CODES.P) {
-                    intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
-                }
-                startActivity(intent)
+                showPdfFragment(PdfFragment.TYPE_NORMAL)
             }
 
             pdfProtectedFragment.setOnClickListener {
-                val bundle = Bundle()
-                bundle.putBoolean(Constants.PDF_FILE, false)
-                val fragment = PdfFragment()
-                fragment.arguments = bundle
-                supportFragmentManager.beginTransaction().replace(id, fragment).commitNow()
+                showPdfFragment(PdfFragment.TYPE_PROTECTED)
             }
 
-            pdfProtectedActivity.setOnClickListener { v ->
-                val intent = Intent(v.context, PdfActivity::class.java)
-                intent.putExtra(Constants.PDF_FILE, Constants.PDF_FILE_PROTECTED)
-                intent.flags = Intent.FLAG_ACTIVITY_CLEAR_TOP or Intent.FLAG_ACTIVITY_SINGLE_TOP
-                if (Build.VERSION.SDK_INT < Build.VERSION_CODES.N || Build.VERSION.SDK_INT >= Build.VERSION_CODES.P) {
-                    intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
-                }
-                startActivity(intent)
+            // Activity examples
+            pdfNormalActivity.setOnClickListener {
+                launchPdfActivity(Constants.PDF_FILE_MAIN)
             }
 
-            pdfFile1.setOnClickListener { v ->
-                val intent = Intent(v.context, PdfActivity::class.java)
-                intent.putExtra(Constants.PDF_FILE, Constants.PDF_FILE_1)
-                intent.flags = Intent.FLAG_ACTIVITY_CLEAR_TOP or Intent.FLAG_ACTIVITY_SINGLE_TOP
-                if (Build.VERSION.SDK_INT < Build.VERSION_CODES.N || Build.VERSION.SDK_INT >= Build.VERSION_CODES.P) {
-                    intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
-                }
-                startActivity(intent)
+            pdfProtectedActivity.setOnClickListener {
+                launchPdfActivity(Constants.PDF_FILE_PROTECTED)
             }
 
-            pdfFile2.setOnClickListener { v ->
-                val intent = Intent(v.context, PdfActivity::class.java)
-                intent.putExtra(Constants.PDF_FILE, Constants.PDF_FILE_2)
-                intent.flags = Intent.FLAG_ACTIVITY_CLEAR_TOP or Intent.FLAG_ACTIVITY_SINGLE_TOP
-                if (Build.VERSION.SDK_INT < Build.VERSION_CODES.N || Build.VERSION.SDK_INT >= Build.VERSION_CODES.P) {
-                    intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
-                }
-                startActivity(intent)
-            }
+            // Other PDF examples
+            pdfFile1.setOnClickListener { launchPdfActivity(Constants.PDF_FILE_1) }
+            pdfFile2.setOnClickListener { launchPdfActivity(Constants.PDF_FILE_2) }
+            pdfFile3.setOnClickListener { launchPdfActivity(Constants.PDF_FILE_3) }
+            pdfFile4.setOnClickListener { launchTestPdfiumActivity() }
+        }
+    }
 
-            pdfFile3.setOnClickListener { v ->
-                val intent = Intent(v.context, PdfActivity::class.java)
-                intent.putExtra(Constants.PDF_FILE, Constants.PDF_FILE_3)
-                intent.flags = Intent.FLAG_ACTIVITY_CLEAR_TOP or Intent.FLAG_ACTIVITY_SINGLE_TOP
-                if (Build.VERSION.SDK_INT < Build.VERSION_CODES.N || Build.VERSION.SDK_INT >= Build.VERSION_CODES.P) {
-                    intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
-                }
-                startActivity(intent)
-            }
+    private fun showPdfFragment(pdfType: Int) {
+        binding.toolbar.visibility = View.GONE
+        binding.buttonContainer.visibility = View.GONE
+        binding.fragmentContainer.visibility = View.VISIBLE
 
-            pdfFile4.setOnClickListener { v ->
-                val intent = Intent(v.context, TestPdfium::class.java)
-                intent.putExtra(Constants.PDF_FILE, Constants.PDF_FILE_MAIN)
-                intent.flags = Intent.FLAG_ACTIVITY_CLEAR_TOP or Intent.FLAG_ACTIVITY_SINGLE_TOP
-                if (Build.VERSION.SDK_INT < Build.VERSION_CODES.N || Build.VERSION.SDK_INT >= Build.VERSION_CODES.P) {
-                    intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
-                }
-                startActivity(intent)
+        supportFragmentManager.commit {
+            setReorderingAllowed(true)
+            replace(R.id.fragment_container, PdfFragment.newInstance(pdfType))
+            addToBackStack("pdf_fragment")
+        }
+    }
+
+    private fun launchPdfActivity(pdfFileConstant: String) {
+        val intent = Intent(this, PdfActivity::class.java).apply {
+            putExtra(Constants.PDF_FILE, pdfFileConstant)
+            addFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP or Intent.FLAG_ACTIVITY_SINGLE_TOP)
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.P) {
+                addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
             }
+        }
+        startActivity(intent)
+    }
+
+    private fun launchTestPdfiumActivity() {
+        val intent = Intent(this, TestPdfium::class.java).apply {
+            putExtra(Constants.PDF_FILE, Constants.PDF_FILE_MAIN)
+            addFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP or Intent.FLAG_ACTIVITY_SINGLE_TOP)
+        }
+        startActivity(intent)
+    }
+
+    private fun finishWithTransition() {
+        finish()
+        if (Build.VERSION.SDK_INT >= 34) {
+            overrideActivityTransition(
+                OVERRIDE_TRANSITION_OPEN,
+                R.anim.left_to_right,
+                R.anim.right_to_left
+            )
+        } else {
+            @Suppress("DEPRECATION")
+            overridePendingTransition(R.anim.left_to_right, R.anim.right_to_left)
         }
     }
 }
