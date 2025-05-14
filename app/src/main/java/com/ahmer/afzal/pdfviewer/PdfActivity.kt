@@ -1,6 +1,8 @@
 package com.ahmer.afzal.pdfviewer
 
+import android.graphics.Canvas
 import android.graphics.Color
+import android.graphics.Paint
 import android.os.Bundle
 import android.util.Log
 import android.view.Menu
@@ -19,6 +21,7 @@ import com.ahmer.pdfium.PdfDocument
 import com.ahmer.pdfium.PdfPasswordException
 import com.ahmer.pdfviewer.PDFView
 import com.ahmer.pdfviewer.link.DefaultLinkHandler
+import com.ahmer.pdfviewer.listener.OnDrawListener
 import com.ahmer.pdfviewer.listener.OnErrorListener
 import com.ahmer.pdfviewer.listener.OnLoadCompleteListener
 import com.ahmer.pdfviewer.listener.OnPageChangeListener
@@ -169,12 +172,12 @@ class PdfActivity : AppCompatActivity(), OnPageChangeListener, OnLoadCompleteLis
             Constants.PDF_FILE_1 -> "example.pdf"
             Constants.PDF_FILE_2 -> "example1.pdf"
             Constants.PDF_FILE_3 -> "example3.pdf"
+            Constants.PDF_FILE_4 -> "statement.pdf"
             else -> throw IllegalArgumentException("Unknown PDF file")
         }
 
         pdfFileName?.let { displayFromAsset(it) }
     }
-
 
     private fun displayFromAsset(fileName: String) {
         pdfView.setBackgroundColor(Color.LTGRAY)
@@ -216,6 +219,62 @@ class PdfActivity : AppCompatActivity(), OnPageChangeListener, OnLoadCompleteLis
             .onTap(object : OnTapListener {
                 override fun onTap(e: MotionEvent?): Boolean {
                     return true
+                }
+            })
+            .onDrawAll(object : OnDrawListener {
+                override fun onLayerDrawn(
+                    canvas: Canvas?,
+                    pageWidth: Float,
+                    pageHeight: Float,
+                    currentPage: Int
+                ) {
+                    val pdfFile = pdfView.pdfFile ?: return
+
+                    // Paint for URL text overlay (semi-transparent blue)
+                    val textOverlayPaint = Paint().apply {
+                        color = Color.argb(77, 0, 0, 255) // 70% transparent (30% visible)
+                        style = Paint.Style.FILL
+                        isAntiAlias = true
+                    }
+
+                    // Paint for underline (thicker blue line)
+                    val underlinePaint = Paint().apply {
+                        color = Color.BLUE
+                        style = Paint.Style.STROKE
+                        strokeWidth = 2f // Thicker than default underline
+                        isAntiAlias = true
+                    }
+
+                    val links = pdfFile.getPageLinks(
+                        pageIndex = currentPage,
+                        size = pdfFile.getPageSize(currentPage),
+                        posX = 0f,
+                        posY = 0f
+                    )
+
+                    links.forEach { link ->
+                        val devRect = pdfFile.mapRectToDevice(
+                            pageIndex = currentPage,
+                            startX = 0,
+                            startY = 0,
+                            sizeX = pageWidth.toInt(),
+                            sizeY = pageHeight.toInt(),
+                            rect = link.bounds
+                        ).apply { sort() }
+
+                        // 1. Draw semi-transparent blue overlay (simulates colored text)
+                        canvas?.drawRect(devRect, textOverlayPaint)
+
+                        // 2. Draw custom underline (thicker than default)
+                        val underlineY = devRect.bottom - 2f // Adjust position as needed
+                        canvas?.drawLine(
+                            devRect.left,
+                            underlineY,
+                            devRect.right,
+                            underlineY,
+                            underlinePaint
+                        )
+                    }
                 }
             })
             .fitEachPage(true)

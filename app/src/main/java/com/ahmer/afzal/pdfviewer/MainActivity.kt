@@ -67,7 +67,8 @@ class MainActivity : AppCompatActivity() {
             pdfFile1.setOnClickListener { launchPdfActivity(Constants.PDF_FILE_1) }
             pdfFile2.setOnClickListener { launchPdfActivity(Constants.PDF_FILE_2) }
             pdfFile3.setOnClickListener { launchPdfActivity(Constants.PDF_FILE_3) }
-            pdfFile4.setOnClickListener { launchTestPdfiumActivity() }
+            pdfFile4.setOnClickListener { launchPdfActivity(Constants.PDF_FILE_4) }
+            pdfTest.setOnClickListener { launchTestPdfiumActivity() }
         }
     }
 

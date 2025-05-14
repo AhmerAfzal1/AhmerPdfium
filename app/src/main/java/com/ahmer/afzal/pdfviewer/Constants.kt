@@ -10,6 +10,7 @@ class Constants {
         const val PDF_FILE_1: String = "file1"
         const val PDF_FILE_2: String = "file2"
         const val PDF_FILE_3: String = "file3"
+        const val PDF_FILE_4: String = "file4"
         const val PDF_FILE_PROTECTED: String = "protected"
         const val PDF_SAMPLE_FILE: String = "statement.pdf"
         const val PDF_SAMPLE_FILE_PASSWORD_PROTECTED: String = "grammar.pdf"
