@@ -3,6 +3,7 @@ package com.ahmer.afzal.pdfviewer
 import android.graphics.Canvas
 import android.graphics.Color
 import android.graphics.Paint
+import android.net.Uri
 import android.os.Bundle
 import android.util.Log
 import android.view.Menu
@@ -13,9 +14,7 @@ import android.widget.Toast
 import androidx.activity.viewModels
 import androidx.appcompat.app.AppCompatActivity
 import androidx.appcompat.widget.SearchView
-import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.lifecycleScope
-import androidx.lifecycle.repeatOnLifecycle
 import com.ahmer.afzal.pdfviewer.databinding.ActivityPdfBinding
 import com.ahmer.pdfium.PdfDocument
 import com.ahmer.pdfium.PdfPasswordException
@@ -26,7 +25,6 @@ import com.ahmer.pdfviewer.listener.OnErrorListener
 import com.ahmer.pdfviewer.listener.OnLoadCompleteListener
 import com.ahmer.pdfviewer.listener.OnPageChangeListener
 import com.ahmer.pdfviewer.listener.OnPageErrorListener
-import com.ahmer.pdfviewer.listener.OnPageScrollListener
 import com.ahmer.pdfviewer.listener.OnRenderListener
 import com.ahmer.pdfviewer.listener.OnTapListener
 import com.ahmer.pdfviewer.scroll.DefaultScrollHandle
@@ -34,30 +32,38 @@ import com.ahmer.pdfviewer.util.FitPolicy
 import com.ahmer.pdfviewer.util.PdfUtils
 import dagger.hilt.android.AndroidEntryPoint
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.flow.collectLatest
+import kotlinx.coroutines.flow.first
+import kotlinx.coroutines.flow.onEach
 import kotlinx.coroutines.launch
 
 @AndroidEntryPoint
 class PdfActivity : AppCompatActivity(), OnPageChangeListener, OnLoadCompleteListener {
 
-    private var _binding: ActivityPdfBinding? = null
-    private val binding get() = _binding!!
-
     private lateinit var pdfView: PDFView
     private lateinit var progressBar: ProgressBar
+
+    private var _binding: ActivityPdfBinding? = null
+    private val binding get() = _binding!!
 
     private val viewModel: PdfActivityModel by viewModels()
     private var currentPage: Int = 0
     private var password: String = ""
-    private var pdfFileName: String? = null
+    private var pdfFileName: String = ""
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         _binding = ActivityPdfBinding.inflate(layoutInflater)
         setContentView(binding.root)
 
+        lifecycleScope.launch {
+            viewModel.pdfUiState.collectLatest { state ->
+                updateMenuItems(state)
+            }
+        }
+
         setupUI()
         setupMenu()
-        observeViewModel()
         loadPdf()
     }
 
@@ -74,30 +80,64 @@ class PdfActivity : AppCompatActivity(), OnPageChangeListener, OnLoadCompleteLis
         }
     }
 
+    private fun updateMenuItems(state: PdfUiState) {
+        binding.toolbar.menu?.let { menu ->
+            // Update night mode icon
+            menu.findItem(R.id.menuNightMode)?.setIcon(
+                if (state.isNightMode) R.drawable.ic_baseline_light_mode
+                else R.drawable.ic_baseline_dark_mode
+            )
+
+            // Update page snap
+            menu.findItem(R.id.menuPageSnap)?.title = getString(
+                if (state.isPageSnap) R.string.menu_pdf_disable_snap_page
+                else R.string.menu_pdf_enable_snap_page
+            )
+
+            // Update view orientation
+            menu.findItem(R.id.menuSwitchView)?.apply {
+                setIcon(
+                    if (state.isViewHorizontal) R.drawable.ic_baseline_swipe_vert
+                    else R.drawable.ic_baseline_swipe_horiz
+                )
+                title = getString(
+                    if (state.isViewHorizontal) R.string.menu_pdf_view_vertical
+                    else R.string.menu_pdf_view_horizontal
+                )
+            }
+        }
+    }
+
     private fun setupMenu() {
         binding.toolbar.setOnMenuItemClickListener { menuItem ->
-            Log.d("MENU_CLICK", "Clicked: ${menuItem.title}")
+            menuState(isEnabled = false)
             when (menuItem.itemId) {
                 R.id.menuNightMode -> {
-                    viewModel.toggleNightMode()
-                    pdfFileName?.let { displayFromAsset(it) }
+                    val newNightMode = !viewModel.pdfUiState.value.isNightMode
+                    Log.v("AhmerPdf", "Night mode: $newNightMode")
+                    viewModel.updateNightMode(newNightMode)
+                    reloadPdfViewer()
+                    true
+                }
+
+                R.id.menuPageSnap -> {
+                    val newPageSnap = !viewModel.pdfUiState.value.isPageSnap
+                    viewModel.updatePageSnap(newPageSnap)
+                    viewModel.updateAutoSpacing(newPageSnap)
+                    viewModel.updateSpacing(if (newPageSnap) 5 else 10)
+                    reloadPdfViewer()
+                    true
+                }
+
+                R.id.menuSwitchView -> {
+                    val newViewHorizontal = !viewModel.pdfUiState.value.isViewHorizontal
+                    viewModel.updateViewHorizontal(newViewHorizontal)
+                    reloadPdfViewer()
                     true
                 }
 
                 R.id.menuJumpTo -> {
                     showJumpToDialog()
-                    true
-                }
-
-                R.id.menuPageSnap -> {
-                    viewModel.togglePageSnap()
-                    pdfFileName?.let { displayFromAsset(it) }
-                    true
-                }
-
-                R.id.menuSwitchView -> {
-                    viewModel.toggleViewOrientation()
-                    pdfFileName?.let { displayFromAsset(it) }
                     true
                 }
 
@@ -109,204 +149,152 @@ class PdfActivity : AppCompatActivity(), OnPageChangeListener, OnLoadCompleteLis
                 else -> false
             }
         }
+
         binding.toolbar.menu?.findItem(R.id.menuSearch)?.let { searchItem ->
             (searchItem.actionView as? SearchView)?.apply {
                 queryHint = getString(android.R.string.search_go)
                 setOnQueryTextListener(object : SearchView.OnQueryTextListener {
                     override fun onQueryTextSubmit(query: String?) = true
                     override fun onQueryTextChange(newText: String?) = true.also {
-                        viewModel.setSearchQuery(newText.orEmpty())
+                        viewModel.updateSearchQuery(query = newText.orEmpty())
                     }
                 })
             }
         }
     }
 
-    private fun updateUI(state: PdfUiState) {
+    private fun menuState(isEnabled: Boolean = false) {
         binding.toolbar.menu?.let { menu ->
-            menu.findItem(R.id.menuInfo).isEnabled = state.isPdfLoaded
-            menu.findItem(R.id.menuJumpTo).isEnabled = state.isPdfLoaded
-            menu.findItem(R.id.menuSwitchView).isEnabled = state.isPdfLoaded
-            menu.findItem(R.id.menuNightMode).isEnabled = state.isPdfLoaded
-
-            menu.findItem(R.id.menuNightMode).setIcon(
-                if (state.isNightMode) R.drawable.ic_baseline_light_mode
-                else R.drawable.ic_baseline_dark_mode
-            )
-
-            val switchViewItem = menu.findItem(R.id.menuSwitchView)
-            switchViewItem.setIcon(
-                if (state.isViewHorizontal) R.drawable.ic_baseline_swipe_vert
-                else R.drawable.ic_baseline_swipe_horiz
-            )
-            switchViewItem.title = getString(
-                if (state.isViewHorizontal) R.string.menu_pdf_view_vertical
-                else R.string.menu_pdf_view_horizontal
-            )
-
-            val pageSnapItem = menu.findItem(R.id.menuPageSnap)
-            pageSnapItem.title = getString(
-                if (state.isPageSnap) R.string.menu_pdf_disable_snap_page
-                else R.string.menu_pdf_enable_snap_page
-            )
-        }
-    }
-
-    private fun observeViewModel() {
-        lifecycleScope.launch {
-            repeatOnLifecycle(Lifecycle.State.STARTED) {
-                viewModel.uiState.collect { state ->
-                    updateUI(state)
-                }
-            }
+            menu.findItem(R.id.menuInfo).isEnabled = isEnabled
+            menu.findItem(R.id.menuJumpTo).isEnabled = isEnabled
+            menu.findItem(R.id.menuSwitchView).isEnabled = isEnabled
+            menu.findItem(R.id.menuNightMode).isEnabled = isEnabled
         }
     }
 
     private fun loadPdf() {
-        pdfFileName = when (intent.getStringExtra(Constants.PDF_FILE)) {
-            Constants.PDF_FILE_MAIN, Constants.PDF_FILE_PROTECTED -> {
-                password = "5632"
-                "grammar.pdf"
+        when {
+            intent.data != null -> {
+                try {
+                    val uri = intent.data!!
+                    pdfFileName = PdfHelper.getFileNameFromUri(
+                        context = this@PdfActivity,
+                        uri = uri
+                    ).toString()
+                    lifecycleScope.launch {
+                        viewModel.loadLastPage(fileName = pdfFileName)
+                            .onEach { currentPage = it }
+                            .first()
+                        displayFromUri(uri = uri)
+                    }
+                } catch (e: Exception) {
+                    showToast(msg = "Error loading PDF from URI: ${e.message ?: "Unknown error"}")
+                    finish()
+                }
             }
 
-            Constants.PDF_FILE_1 -> "example.pdf"
-            Constants.PDF_FILE_2 -> "example1.pdf"
-            Constants.PDF_FILE_3 -> "example3.pdf"
-            Constants.PDF_FILE_4 -> "statement.pdf"
-            else -> throw IllegalArgumentException("Unknown PDF file")
-        }
+            intent.hasExtra(Constants.PDF_FILE) -> {
+                try {
+                    val pdfFileExtra = intent.getStringExtra(Constants.PDF_FILE)!!
+                    pdfFileName = when (pdfFileExtra) {
+                        Constants.PDF_FILE_MAIN, Constants.PDF_FILE_PROTECTED -> {
+                            password = "5632" // Set password for protected PDFs
+                            "grammar.pdf"
+                        }
 
-        pdfFileName?.let { displayFromAsset(it) }
+                        Constants.PDF_FILE_1 -> "example.pdf"
+                        Constants.PDF_FILE_2 -> "example1.pdf"
+                        Constants.PDF_FILE_3 -> "example3.pdf"
+                        Constants.PDF_FILE_4 -> "statement.pdf"
+                        else -> throw IllegalArgumentException("Unknown PDF file")
+                    }
+                    displayFromAsset(fileName = pdfFileName)
+                } catch (e: Exception) {
+                    showToast(msg = "Error loading PDF from assets: ${e.message ?: "Unknown error"}")
+                    finish()
+                }
+            }
+
+            else -> {
+                showToast(msg = "No PDF selected")
+                finish()
+            }
+        }
     }
 
     private fun displayFromAsset(fileName: String) {
+        lifecycleScope.launch {
+            val lastPage: Int = viewModel.loadLastPage(fileName = pdfFileName).first()
+            val pdfState: PdfUiState = viewModel.pdfUiState.first()
+
+            currentPage = lastPage
+            pdfView.setBackgroundColor(Color.LTGRAY)
+
+            pdfView.fromAsset(name = fileName)
+                .applyPdfViewConfig(state = pdfState)
+                .load()
+
+            applyPdfViewQualitySettings()
+        }
+    }
+
+    private fun displayFromUri(uri: Uri) {
         pdfView.setBackgroundColor(Color.LTGRAY)
-        pdfView.fromAsset(fileName)
-            .defaultPage(currentPage)
-            .onLoad(this)
-            .onPageChange(this)
-            .onPageScroll(object : OnPageScrollListener {
-                override fun onPageScrolled(page: Int, positionOffset: Float) {
-                    Log.v(
-                        Constants.TAG,
-                        "onPageScrolled: Page $page PositionOffset: $positionOffset"
-                    )
-                }
-            })
-            .onError(object : OnErrorListener {
-                override fun onError(t: Throwable?) {
-                    if (t is PdfPasswordException) {
-                        showPasswordDialog()
-                    } else {
-                        showToast(resources.getString(R.string.error_loading_pdf))
-                        t?.printStackTrace()
-                        Log.v(Constants.TAG, " onError: $t")
-                    }
-                }
-            })
-            .onPageError(object : OnPageErrorListener {
-                override fun onPageError(page: Int, t: Throwable?) {
-                    t?.printStackTrace()
-                    showToast("onPageError")
-                    Log.v(Constants.TAG, "onPageError: $t on page: $page")
-                }
-            })
-            .onRender(object : OnRenderListener {
-                override fun onInitiallyRendered(nbPages: Int) {
-                    pdfView.fitToWidth(currentPage)
-                }
-            })
-            .onTap(object : OnTapListener {
-                override fun onTap(e: MotionEvent?): Boolean {
-                    return true
-                }
-            })
-            .onDrawAll(object : OnDrawListener {
-                override fun onLayerDrawn(
-                    canvas: Canvas?,
-                    pageWidth: Float,
-                    pageHeight: Float,
-                    currentPage: Int
-                ) {
-                    val pdfFile = pdfView.pdfFile ?: return
-
-                    // Paint for URL text overlay (semi-transparent blue)
-                    val textOverlayPaint = Paint().apply {
-                        color = Color.argb(77, 0, 0, 255) // 70% transparent (30% visible)
-                        style = Paint.Style.FILL
-                        isAntiAlias = true
-                    }
-
-                    // Paint for underline (thicker blue line)
-                    val underlinePaint = Paint().apply {
-                        color = Color.BLUE
-                        style = Paint.Style.STROKE
-                        strokeWidth = 2f // Thicker than default underline
-                        isAntiAlias = true
-                    }
-
-                    val links = pdfFile.getPageLinks(
-                        pageIndex = currentPage,
-                        size = pdfFile.getPageSize(currentPage),
-                        posX = 0f,
-                        posY = 0f
-                    )
-
-                    links.forEach { link ->
-                        val devRect = pdfFile.mapRectToDevice(
-                            pageIndex = currentPage,
-                            startX = 0,
-                            startY = 0,
-                            sizeX = pageWidth.toInt(),
-                            sizeY = pageHeight.toInt(),
-                            rect = link.bounds
-                        ).apply { sort() }
-
-                        // 1. Draw semi-transparent blue overlay (simulates colored text)
-                        canvas?.drawRect(devRect, textOverlayPaint)
-
-                        // 2. Draw custom underline (thicker than default)
-                        val underlineY = devRect.bottom - 2f // Adjust position as needed
-                        canvas?.drawLine(
-                            devRect.left,
-                            underlineY,
-                            devRect.right,
-                            underlineY,
-                            underlinePaint
-                        )
-                    }
-                }
-            })
-            .fitEachPage(true)
-            .nightMode(viewModel.uiState.value.isNightMode)
-            .swipeHorizontal(viewModel.uiState.value.isViewHorizontal)
-            .pageSnap(viewModel.uiState.value.isPageSnap)
-            .autoSpacing(viewModel.uiState.value.isAutoSpacing)
-            .password(password)
-            .spacing(viewModel.uiState.value.spacing)
-            .enableSwipe(true)
-            .pageFling(false)
-            .enableDoubleTap(true)
-            .enableAnnotationRendering(true)
-            .scrollHandle(DefaultScrollHandle(this))
-            .enableAntialiasing(true)
-            .linkHandler(DefaultLinkHandler(pdfView))
-            .pageFitPolicy(FitPolicy.BOTH)
+        pdfView.fromUri(uri = uri)
+            .applyPdfViewConfig(state = viewModel.pdfUiState.value)
             .load()
-        pdfView.setBestQuality(true)
-        pdfView.setMinZoom(1f)
-        pdfView.setMidZoom(2.5f)
-        pdfView.setMaxZoom(4.0f)
+        applyPdfViewQualitySettings()
+    }
+
+    private fun reloadPdfViewer() {
+        pdfView.recycle()
+        if (intent.data != null) {
+            displayFromUri(intent.data!!)
+        } else {
+            displayFromAsset(pdfFileName)
+        }
+    }
+
+    private fun PDFView.Configurator.applyPdfViewConfig(state: PdfUiState): PDFView.Configurator {
+        return this
+            .defaultPage(defaultPage = currentPage)
+            .onLoad(onLoadCompleteListener = this@PdfActivity)
+            .onPageChange(onPageChangeListener = this@PdfActivity)
+            .onError(onErrorListener = createOnErrorListener())
+            .onPageError(onPageErrorListener = createOnPageErrorListener())
+            .onRender(onRenderListener = createOnRenderListener())
+            .onTap(onTapListener = createOnTapListener())
+            .onDrawAll(onDrawAllListener = createOnDrawListener())
+            .fitEachPage(fitEachPage = true)
+            .nightMode(nightMode = state.isNightMode)
+            .swipeHorizontal(swipeHorizontal = state.isViewHorizontal)
+            .pageSnap(pageSnap = state.isPageSnap)
+            .autoSpacing(autoSpacing = state.isAutoSpacing)
+            .password(password = password)
+            .spacing(spacing = state.spacing)
+            .enableSwipe(enableSwipe = true)
+            .pageFling(pageFling = false)
+            .enableDoubleTap(enableDoubleTap = true)
+            .enableAnnotationRendering(annotationRendering = true)
+            .scrollHandle(scrollHandle = DefaultScrollHandle(context = this@PdfActivity))
+            .enableAntialiasing(antialiasing = true)
+            .linkHandler(linkHandler = DefaultLinkHandler(pdfView = pdfView))
+            .pageFitPolicy(pageFitPolicy = FitPolicy.BOTH)
     }
 
     private fun logBookmarks(bookmarks: List<PdfDocument.Bookmark>, prefix: String = "") {
-        lifecycleScope.launch(Dispatchers.Default) {
+        lifecycleScope.launch(context = Dispatchers.Default) {
             bookmarks.forEach { bookmark ->
                 Log.v(
                     Constants.TAG,
                     "Bookmark $prefix ${bookmark.title}, Page: ${bookmark.pageIndex}"
                 )
-                if (bookmark.hasChildren) logBookmarks(bookmark.children, "$prefix-")
+                if (bookmark.hasChildren) {
+                    logBookmarks(
+                        bookmarks = bookmark.children,
+                        prefix = "$prefix-"
+                    )
+                }
             }
         }
     }
@@ -314,12 +302,119 @@ class PdfActivity : AppCompatActivity(), OnPageChangeListener, OnLoadCompleteLis
     override fun onPageChanged(page: Int, pageCount: Int) {
         currentPage = page
         binding.toolbar.title = "Page ${page + 1} of $pageCount"
+        viewModel.saveLastPage(fileName = pdfFileName, page = page)
     }
 
     override fun loadComplete(nbPages: Int) {
         progressBar.visibility = View.GONE
-        viewModel.setPdfLoaded(true)
-        logBookmarks(pdfView.bookmarks())
+        menuState(isEnabled = true)
+        logBookmarks(bookmarks = pdfView.bookmarks())
+    }
+
+    private fun applyPdfViewQualitySettings() {
+        pdfView.setBestQuality(isBestQuality = true)
+        pdfView.setMinZoom(minZoom = 1f)
+        pdfView.setMidZoom(midZoom = 2.5f)
+        pdfView.setMaxZoom(maxZoom = 4.0f)
+    }
+
+    private fun createOnErrorListener(): OnErrorListener {
+        return object : OnErrorListener {
+            override fun onError(t: Throwable?) {
+                if (t is PdfPasswordException) {
+                    showPasswordDialog()
+                } else {
+                    showToast(msg = resources.getString(R.string.error_loading_pdf))
+                    t?.printStackTrace()
+                    Log.v(Constants.TAG, " onError: $t")
+                }
+            }
+        }
+    }
+
+    private fun createOnPageErrorListener(): OnPageErrorListener {
+        return object : OnPageErrorListener {
+            override fun onPageError(page: Int, t: Throwable?) {
+                t?.printStackTrace()
+                showToast(msg = "onPageError")
+                Log.v(Constants.TAG, "onPageError: $t on page: $page")
+            }
+        }
+    }
+
+    private fun createOnRenderListener(): OnRenderListener {
+        return object : OnRenderListener {
+            override fun onInitiallyRendered(nbPages: Int) {
+                pdfView.fitToWidth(page = currentPage)
+            }
+        }
+    }
+
+    private fun createOnTapListener(): OnTapListener {
+        return object : OnTapListener {
+            override fun onTap(e: MotionEvent?): Boolean {
+                return true
+            }
+        }
+    }
+
+    private fun createOnDrawListener(): OnDrawListener {
+        return object : OnDrawListener {
+            override fun onLayerDrawn(
+                canvas: Canvas?,
+                pageWidth: Float,
+                pageHeight: Float,
+                currentPage: Int
+            ) {
+                val pdfFile = pdfView.pdfFile ?: return
+
+                // Paint for URL text overlay (semi-transparent blue)
+                val textOverlayPaint = Paint().apply {
+                    color = Color.argb(77, 0, 0, 255) // 70% transparent (30% visible)
+                    style = Paint.Style.FILL
+                    isAntiAlias = true
+                }
+
+                // Paint for underline (thicker blue line)
+                val underlinePaint = Paint().apply {
+                    color = Color.BLUE
+                    style = Paint.Style.STROKE
+                    strokeWidth = 2f // Thicker than default underline
+                    isAntiAlias = true
+                }
+
+                val links = pdfFile.getPageLinks(
+                    pageIndex = currentPage,
+                    size = pdfFile.getPageSize(pageIndex = currentPage),
+                    posX = 0f,
+                    posY = 0f
+                )
+
+                links.forEach { link ->
+                    val devRect = pdfFile.mapRectToDevice(
+                        pageIndex = currentPage,
+                        startX = 0,
+                        startY = 0,
+                        sizeX = pageWidth.toInt(),
+                        sizeY = pageHeight.toInt(),
+                        rect = link.bounds
+                    ).apply { sort() }
+
+                    // 1. Draw semi-transparent blue overlay (simulates colored text)
+                    canvas?.drawRect(devRect, textOverlayPaint)
+
+                    // 2. Draw custom underline (thicker than default)
+                    val underlineY = devRect.bottom - 2f // Adjust position as needed
+                    canvas?.drawLine(
+                        devRect.left,
+                        underlineY,
+                        devRect.right,
+                        underlineY,
+                        underlinePaint
+                    )
+                }
+            }
+        }
     }
 
     override fun onCreateOptionsMenu(menu: Menu): Boolean {
@@ -332,7 +427,7 @@ class PdfActivity : AppCompatActivity(), OnPageChangeListener, OnLoadCompleteLis
             context = this,
             onPasswordEntered = { password ->
                 this.password = password
-                pdfFileName?.let { displayFromAsset(it) }
+                displayFromAsset(fileName = pdfFileName)
             },
             onDismiss = ::finishWithTransition
         ).show()
@@ -342,7 +437,7 @@ class PdfActivity : AppCompatActivity(), OnPageChangeListener, OnLoadCompleteLis
         PdfDialogHelper.createJumpToDialog(
             context = this,
             pageCount = pdfView.getPageCount(),
-            onPageSelected = { page -> pdfView.jumpTo(page - 1) }
+            onPageSelected = { page -> pdfView.jumpTo(page = page - 1, withAnimation = true) }
         ).show()
     }
 
@@ -351,7 +446,12 @@ class PdfActivity : AppCompatActivity(), OnPageChangeListener, OnLoadCompleteLis
             PdfDialogHelper.createInfoDialog(
                 context = this@PdfActivity,
                 meta = pdfView.documentMeta(),
-                file = pdfFileName?.let { PdfUtils.fileFromAsset(this@PdfActivity, it) }
+                file = pdfFileName.let {
+                    PdfUtils.fileFromAsset(
+                        context = this@PdfActivity,
+                        assetName = it
+                    )
+                }
             ).show()
         }
     }

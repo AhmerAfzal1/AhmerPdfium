@@ -14,6 +14,8 @@ class Constants {
         const val PDF_FILE_PROTECTED: String = "protected"
         const val PDF_SAMPLE_FILE: String = "statement.pdf"
         const val PDF_SAMPLE_FILE_PASSWORD_PROTECTED: String = "grammar.pdf"
+        const val PDF_URI = "pdf_uri"
+        const val PDF_FILE_SD = "pdf_file_sd"
 
 
     }

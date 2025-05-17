@@ -1,10 +1,14 @@
 package com.ahmer.afzal.pdfviewer
 
 import android.content.Intent
+import android.net.Uri
 import android.os.Build
 import android.os.Bundle
 import android.view.View
+import android.widget.Toast
 import androidx.activity.OnBackPressedCallback
+import androidx.activity.result.ActivityResultLauncher
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.view.isVisible
 import androidx.fragment.app.commit
@@ -15,23 +19,34 @@ import dagger.hilt.android.AndroidEntryPoint
 class MainActivity : AppCompatActivity() {
 
     private lateinit var binding: ActivityMainBinding
+    private val pdfPickerLauncher: ActivityResultLauncher<String> =
+        registerForActivityResult(ActivityResultContracts.GetContent()) { uri ->
+            uri?.let {
+                // Automatically grants temporary read permission
+                openPdfViewer(uri = it)
+            } ?: run {
+                Toast.makeText(this@MainActivity, "No file selected", Toast.LENGTH_SHORT).show()
+            }
+        }
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         binding = ActivityMainBinding.inflate(layoutInflater)
         setContentView(binding.root)
-        onBackPressedDispatcher.addCallback(this, object : OnBackPressedCallback(true) {
-            override fun handleOnBackPressed() {
-                if (binding.fragmentContainer.isVisible) {
-                    binding.toolbar.visibility = View.VISIBLE
-                    binding.buttonContainer.visibility = View.VISIBLE
-                    binding.fragmentContainer.visibility = View.GONE
-                    supportFragmentManager.popBackStack()
-                } else {
-                    finish()
+        onBackPressedDispatcher.addCallback(
+            owner = this,
+            onBackPressedCallback = object : OnBackPressedCallback(enabled = true) {
+                override fun handleOnBackPressed() {
+                    if (binding.fragmentContainer.isVisible) {
+                        binding.toolbar.visibility = View.VISIBLE
+                        binding.buttonContainer.visibility = View.VISIBLE
+                        binding.fragmentContainer.visibility = View.GONE
+                        supportFragmentManager.popBackStack()
+                    } else {
+                        finish()
+                    }
                 }
-            }
-        })
+            })
         setupToolbar()
         setupClickListeners()
     }
@@ -47,29 +62,40 @@ class MainActivity : AppCompatActivity() {
         binding.apply {
             // Fragment examples
             pdfNormalFragment.setOnClickListener {
-                showPdfFragment(PdfFragment.TYPE_NORMAL)
+                showPdfFragment(pdfType = PdfFragment.TYPE_NORMAL)
             }
 
             pdfProtectedFragment.setOnClickListener {
-                showPdfFragment(PdfFragment.TYPE_PROTECTED)
+                showPdfFragment(pdfType =PdfFragment.TYPE_PROTECTED)
             }
 
             // Activity examples
             pdfNormalActivity.setOnClickListener {
-                launchPdfActivity(Constants.PDF_FILE_MAIN)
+                launchPdfActivity(pdfFileName = Constants.PDF_FILE_MAIN)
             }
 
             pdfProtectedActivity.setOnClickListener {
-                launchPdfActivity(Constants.PDF_FILE_PROTECTED)
+                launchPdfActivity(pdfFileName = Constants.PDF_FILE_PROTECTED)
             }
 
             // Other PDF examples
-            pdfFile1.setOnClickListener { launchPdfActivity(Constants.PDF_FILE_1) }
-            pdfFile2.setOnClickListener { launchPdfActivity(Constants.PDF_FILE_2) }
-            pdfFile3.setOnClickListener { launchPdfActivity(Constants.PDF_FILE_3) }
-            pdfFile4.setOnClickListener { launchPdfActivity(Constants.PDF_FILE_4) }
+            pdfFile1.setOnClickListener { launchPdfActivity(pdfFileName =Constants.PDF_FILE_1) }
+            pdfFile2.setOnClickListener { launchPdfActivity(pdfFileName =Constants.PDF_FILE_2) }
+            pdfFile3.setOnClickListener { launchPdfActivity(pdfFileName =Constants.PDF_FILE_3) }
+            pdfFile4.setOnClickListener { launchPdfActivity(pdfFileName =Constants.PDF_FILE_4) }
             pdfTest.setOnClickListener { launchTestPdfiumActivity() }
+
+            pdfSdCard.setOnClickListener {
+                pdfPickerLauncher.launch("application/pdf")
+            }
         }
+    }
+
+    private fun openPdfViewer(uri: Uri) {
+        Intent(this@MainActivity, PdfActivity::class.java).apply {
+            data = uri  // Set URI directly in intent.data
+            flags = Intent.FLAG_GRANT_READ_URI_PERMISSION
+        }.also { startActivity(it) }
     }
 
     private fun showPdfFragment(pdfType: Int) {
@@ -84,9 +110,9 @@ class MainActivity : AppCompatActivity() {
         }
     }
 
-    private fun launchPdfActivity(pdfFileConstant: String) {
+    private fun launchPdfActivity(pdfFileName: String) {
         val intent = Intent(this, PdfActivity::class.java).apply {
-            putExtra(Constants.PDF_FILE, pdfFileConstant)
+            putExtra(Constants.PDF_FILE, pdfFileName)
             addFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP or Intent.FLAG_ACTIVITY_SINGLE_TOP)
             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.P) {
                 addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
