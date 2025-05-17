@@ -14,8 +14,8 @@ class UriSource(private val uri: Uri) : DocumentSource {
         pdfiumCore: PdfiumCore,
         password: String?
     ): PdfDocument {
-        return context.contentResolver.openFileDescriptor(uri, "r")?.use {
-            pdfiumCore.newDocument(parcelFileDescriptor = it, password = password)
-        } ?: throw IOException("Failed to open PDF from URI")
+        val pfd = context.contentResolver.openFileDescriptor(uri, "r")
+            ?: throw IOException("Failed to open PDF from URI")
+        return pdfiumCore.newDocument(parcelFileDescriptor = pfd, password = password)
     }
 }

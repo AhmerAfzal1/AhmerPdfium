@@ -7,7 +7,7 @@ object PdfConstants {
     /**
      * Between 0 and 1, the thumbnails quality (default 0.3). Increasing this value may cause performance decrease
      */
-    const val THUMBNAIL_RATIO: Float = 0.6f // Default 0.3f
+    const val THUMBNAIL_RATIO: Float = 0.3f // Default 0.3f
 
     /**
      * The size of the rendered parts (default 256)
@@ -19,7 +19,7 @@ object PdfConstants {
     /**
      * Part of document above and below screen that should be preloaded, in dp
      */
-    const val PRELOAD_OFFSET: Int = 30 // Default 20
+    const val PRELOAD_OFFSET: Int = 25 // Default 20
 
     /**
      * Max pages to load at the time, others are in queue

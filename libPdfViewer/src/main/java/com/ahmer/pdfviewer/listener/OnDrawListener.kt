@@ -13,10 +13,10 @@ interface OnDrawListener {
      *
      * The page is starting at (0,0)
      *
-     * @param canvas        The canvas on which to draw things.
-     * @param pageWidth     The width of the current page.
-     * @param pageHeight    The height of the current page.
-     * @param displayedPage The current page index
+     * @param canvas The canvas on which to draw things.
+     * @param pageWidth The width of the current page.
+     * @param pageHeight The height of the current page.
+     * @param currentPage The current page index
      */
-    fun onLayerDrawn(canvas: Canvas?, pageWidth: Float, pageHeight: Float, displayedPage: Int)
+    fun onLayerDrawn(canvas: Canvas?, pageWidth: Float, pageHeight: Float, currentPage: Int)
 }
