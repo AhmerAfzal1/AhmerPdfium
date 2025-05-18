@@ -66,7 +66,7 @@ class MainActivity : AppCompatActivity() {
             }
 
             pdfProtectedFragment.setOnClickListener {
-                showPdfFragment(pdfType =PdfFragment.TYPE_PROTECTED)
+                showPdfFragment(pdfType = PdfFragment.TYPE_PROTECTED)
             }
 
             // Activity examples
@@ -79,10 +79,10 @@ class MainActivity : AppCompatActivity() {
             }
 
             // Other PDF examples
-            pdfFile1.setOnClickListener { launchPdfActivity(pdfFileName =Constants.PDF_FILE_1) }
-            pdfFile2.setOnClickListener { launchPdfActivity(pdfFileName =Constants.PDF_FILE_2) }
-            pdfFile3.setOnClickListener { launchPdfActivity(pdfFileName =Constants.PDF_FILE_3) }
-            pdfFile4.setOnClickListener { launchPdfActivity(pdfFileName =Constants.PDF_FILE_4) }
+            pdfFile1.setOnClickListener { launchPdfActivity(pdfFileName = Constants.PDF_FILE_1) }
+            pdfFile2.setOnClickListener { launchPdfActivity(pdfFileName = Constants.PDF_FILE_2) }
+            pdfFile3.setOnClickListener { launchPdfActivity(pdfFileName = Constants.PDF_FILE_3) }
+            pdfFile4.setOnClickListener { launchPdfActivity(pdfFileName = Constants.PDF_FILE_4) }
             pdfTest.setOnClickListener { launchTestPdfiumActivity() }
 
             pdfSdCard.setOnClickListener {

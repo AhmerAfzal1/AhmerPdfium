@@ -26,12 +26,11 @@ class PdfDocument : Closeable {
      *
      * @return Number of pages or 0 if closed
      */
-    val totalPages: Int
-        get() {
-            synchronized(lock = PdfiumCore.lock) {
-                return nativeGetPageCount(docPtr = nativePtr)
-            }
+    fun totalPages(): Int {
+        synchronized(lock = PdfiumCore.lock) {
+            return nativeGetPageCount(docPtr = nativePtr)
         }
+    }
 
     /**
      * Retrieves character counts for all pages in the document.
@@ -114,7 +113,7 @@ class PdfDocument : Closeable {
                 creationDate =
                     nativeGetDocumentMetaText(docPtr = nativePtr, tag = "CreationDate")
                 modDate = nativeGetDocumentMetaText(docPtr = nativePtr, tag = "ModDate")
-                totalPages = this@PdfDocument.totalPages
+                totalPages = totalPages()
             }
         }
     }

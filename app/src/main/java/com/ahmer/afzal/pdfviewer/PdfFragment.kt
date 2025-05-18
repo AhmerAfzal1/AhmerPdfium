@@ -132,9 +132,11 @@ class PdfFragment : Fragment(R.layout.fragment_pdf), MenuProvider, OnPageChangeL
                     password = "5632"
                     pdfFileName = "grammar.pdf"
                 }
+
                 TYPE_PROTECTED -> {
                     pdfFileName = Constants.PDF_SAMPLE_FILE_PASSWORD_PROTECTED
                 }
+
                 else -> throw IllegalArgumentException("Unknown PDF type")
             }
 
