@@ -23,12 +23,6 @@ class PagePart(
     }
 
     override fun hashCode(): Int {
-        return Objects.hash(
-            page,
-            pageBounds.left,
-            pageBounds.right,
-            pageBounds.top,
-            pageBounds.bottom
-        )
+        return Objects.hash(page, pageBounds.left, pageBounds.right, pageBounds.top, pageBounds.bottom)
     }
 }

@@ -25,6 +25,7 @@ import com.ahmer.afzal.pdfviewer.databinding.FragmentPdfBinding
 import com.ahmer.pdfium.PdfDocument
 import com.ahmer.pdfium.PdfPasswordException
 import com.ahmer.pdfviewer.PDFView
+import com.ahmer.pdfviewer.link.DefaultLinkHandler
 import com.ahmer.pdfviewer.listener.OnDrawListener
 import com.ahmer.pdfviewer.listener.OnErrorListener
 import com.ahmer.pdfviewer.listener.OnLoadCompleteListener
@@ -169,36 +170,37 @@ class PdfFragment : Fragment(R.layout.fragment_pdf), MenuProvider, OnPageChangeL
     }
 
     private fun applyPdfViewQualitySettings() {
-        pdfView.setBestQuality(isBestQuality = true)
-        pdfView.setMinZoom(minZoom = 1f)
-        pdfView.setMidZoom(midZoom = 2.5f)
-        pdfView.setMaxZoom(maxZoom = 4.0f)
+        pdfView.setBestQuality(enabled = true)
+        pdfView.setMinZoom(zoom = 1f)
+        pdfView.setMidZoom(zoom = 2.5f)
+        pdfView.setMaxZoom(zoom = 4.0f)
     }
 
     private fun PDFView.Configurator.applyPdfViewConfig(state: PdfUiState): PDFView.Configurator {
         return this
-            .defaultPage(defaultPage = currentPage)
-            .onLoad(onLoadCompleteListener = this@PdfFragment)
-            .onPageChange(onPageChangeListener = this@PdfFragment)
-            .onError(onErrorListener = createOnErrorListener())
-            .onPageError(onPageErrorListener = createOnPageErrorListener())
-            .onRender(onRenderListener = createOnRenderListener())
-            .onTap(onTapListener = createOnTapListener())
-            .onDrawAll(onDrawAllListener = createOnDrawListener())
-            .fitEachPage(fitEachPage = true)
-            .nightMode(nightMode = state.isNightMode)
-            .swipeHorizontal(swipeHorizontal = state.isViewHorizontal)
-            .pageSnap(pageSnap = state.isPageSnap)
-            .autoSpacing(autoSpacing = state.isAutoSpacing)
+            .defaultPage(page = currentPage)
+            .onLoad(listener = this@PdfFragment)
+            .onPageChange(listener = this@PdfFragment)
+            .onError(listener = createOnErrorListener())
+            .onPageError(listener = createOnPageErrorListener())
+            .onRender(listener = createOnRenderListener())
+            .onTap(listener = createOnTapListener())
+            .onDrawAll(listener = createOnDrawListener())
+            .fitEachPage(enable = true)
+            .nightMode(enable = state.isNightMode)
+            .swipeHorizontal(horizontal = state.isViewHorizontal)
+            .pageSnap(enable = state.isPageSnap)
+            .autoSpacing(enable = state.isAutoSpacing)
             .password(password = password)
             .spacing(spacing = state.spacing)
-            .enableSwipe(enableSwipe = true)
-            .pageFling(pageFling = false)
-            .enableDoubleTap(enableDoubleTap = true)
-            .enableAnnotationRendering(annotationRendering = true)
-            .scrollHandle(scrollHandle = DefaultScrollHandle(context = requireContext()))
-            .enableAntialiasing(antialiasing = true)
-            .pageFitPolicy(pageFitPolicy = FitPolicy.BOTH)
+            .enableSwipe(enable = true)
+            .pageFling(enable = false)
+            .enableDoubleTap(enable = true)
+            .enableAnnotationRendering(enable = true)
+            .scrollHandle(handle = DefaultScrollHandle(context = requireContext()))
+            .enableAntialiasing(enable = true)
+            .linkHandler(handler = DefaultLinkHandler(pdfView = pdfView))
+            .pageFitPolicy(policy = FitPolicy.BOTH)
     }
 
     private fun createOnErrorListener(): OnErrorListener {
@@ -227,7 +229,7 @@ class PdfFragment : Fragment(R.layout.fragment_pdf), MenuProvider, OnPageChangeL
 
     private fun createOnRenderListener(): OnRenderListener {
         return object : OnRenderListener {
-            override fun onInitiallyRendered(nbPages: Int) {
+            override fun onInitiallyRendered(totalPages: Int) {
                 pdfView.fitToWidth(page = currentPage)
             }
         }
@@ -406,13 +408,13 @@ class PdfFragment : Fragment(R.layout.fragment_pdf), MenuProvider, OnPageChangeL
         }
     }
 
-    override fun onPageChanged(page: Int, pageCount: Int) {
+    override fun onPageChanged(page: Int, totalPages: Int) {
         currentPage = page
-        binding.toolbar.title = "Page ${page + 1} of $pageCount"
+        binding.toolbar.title = "Page ${page + 1} of $totalPages"
         viewModel.saveLastPage(fileName = pdfFileName, page = page)
     }
 
-    override fun loadComplete(nbPages: Int) {
+    override fun loadComplete(totalPages: Int) {
         progressBar.visibility = View.GONE
         menuState(isEnabled = true)
         logBookmarks(bookmarks = pdfView.bookmarks())

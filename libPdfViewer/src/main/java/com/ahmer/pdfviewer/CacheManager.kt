@@ -7,140 +7,107 @@ import com.ahmer.pdfviewer.util.PdfConstants.Cache.THUMBNAILS_CACHE_SIZE
 import java.util.PriorityQueue
 
 class CacheManager {
-    private val mActiveCache: PriorityQueue<PagePart>
-    private val mOrderComparator = PagePartComparator()
-    private val mPassiveActiveLock = Any()
-    private val mPassiveCache: PriorityQueue<PagePart>
-    private val mThumbnails: MutableList<PagePart>
+    private val activeCache = PriorityQueue(CACHE_SIZE, PagePartComparator())
+    private val passiveCache = PriorityQueue(CACHE_SIZE, PagePartComparator())
+    private val thumbnails: MutableList<PagePart> = mutableListOf()
+    private val cacheLock: Any = Any()
+    private val thumbnailsLock: Any = Any()
 
     fun cachePart(part: PagePart) {
-        synchronized(lock = mPassiveActiveLock) {
-            // If cache too big, remove and recycle
-            makeAFreeSpace()
-            // Then add part
-            mActiveCache.offer(part)
+        synchronized(lock = cacheLock) {
+            clearCacheSpace()
+            activeCache.offer(part)
         }
     }
 
-    fun makeANewSet() {
-        synchronized(lock = mPassiveActiveLock) {
-            mPassiveCache.addAll(mActiveCache)
-            mActiveCache.clear()
+    fun makeNewSet() {
+        synchronized(lock = cacheLock) {
+            passiveCache.addAll(activeCache)
+            activeCache.clear()
         }
     }
 
-    private fun makeAFreeSpace() {
-        synchronized(lock = mPassiveActiveLock) {
-            while (mActiveCache.size + mPassiveCache.size >= CACHE_SIZE && !mPassiveCache.isEmpty()) {
-                mPassiveCache.poll()?.renderedBitmap?.recycle()
+    private fun clearCacheSpace() {
+        synchronized(lock = cacheLock) {
+            while (activeCache.size + passiveCache.size >= CACHE_SIZE && passiveCache.isNotEmpty()) {
+                passiveCache.poll()?.renderedBitmap?.recycle()
             }
-            while (mActiveCache.size + mPassiveCache.size >= CACHE_SIZE && !mActiveCache.isEmpty()) {
-                mActiveCache.poll()?.renderedBitmap?.recycle()
+            while (activeCache.size + passiveCache.size >= CACHE_SIZE && activeCache.isNotEmpty()) {
+                activeCache.poll()?.renderedBitmap?.recycle()
             }
         }
     }
 
     fun cacheThumbnail(part: PagePart) {
-        synchronized(lock = mThumbnails) {
-            // If cache too big, remove and recycle
-            while (mThumbnails.size >= THUMBNAILS_CACHE_SIZE) {
-                mThumbnails.removeAt(0).renderedBitmap?.recycle()
+        synchronized(lock = thumbnailsLock) {
+            while (thumbnails.size >= THUMBNAILS_CACHE_SIZE) {
+                thumbnails.removeAt(index = 0).renderedBitmap?.recycle()
             }
-            // Then add thumbnail
-            addWithoutDuplicates(mThumbnails, part)
+            if (thumbnails.any { it == part }) {
+                part.renderedBitmap?.recycle()
+            } else {
+                thumbnails.add(part)
+            }
         }
     }
 
-    fun upPartIfContained(page: Int, pageRelativeBounds: RectF, toOrder: Int):
-            Boolean {
-        val mFakePart = PagePart(page, null, pageRelativeBounds, false, 0)
-        var mFound: PagePart? = null
-        synchronized(lock = mPassiveActiveLock) {
-            if (find(mPassiveCache, mFakePart)?.also { mFound = it } != null) {
-                mFound?.let { mPassiveCache.remove(it) }
-                mFound?.cacheOrder = toOrder
-                mActiveCache.offer(mFound)
-                return true
-            }
-            return find(mActiveCache, mFakePart) != null
+    fun moveToActiveCache(page: Int, bounds: RectF, newOrder: Int): Boolean {
+        val fakePart = PagePart(
+            page = page,
+            renderedBitmap = null,
+            pageBounds = bounds,
+            isThumbnail = false,
+            cacheOrder = 0
+        )
+        return synchronized(lock = cacheLock) {
+            passiveCache.firstOrNull { it == fakePart }?.let { found ->
+                passiveCache.remove(found)
+                found.cacheOrder = newOrder
+                activeCache.offer(found)
+                true
+            } ?: activeCache.any { it == fakePart }
         }
     }
 
-    /**
-     * Return true if already contains the described PagePart
-     */
-    fun containsThumbnail(page: Int, pageRelativeBounds: RectF): Boolean {
-        val mFakePart = PagePart(page, null, pageRelativeBounds, true, 0)
-        synchronized(lock = mThumbnails) {
-            for (mPart in mThumbnails) {
-                if (mPart == mFakePart) {
-                    return true
-                }
-            }
-            return false
+    fun hasThumbnail(page: Int, bounds: RectF): Boolean {
+        val fakePart = PagePart(
+            page = page,
+            renderedBitmap = null,
+            pageBounds = bounds,
+            isThumbnail = true,
+            cacheOrder = 0
+        )
+        return synchronized(lock = thumbnailsLock) {
+            thumbnails.any { it == fakePart }
         }
-    }
-
-    /**
-     * Add part if it doesn't exist, recycle bitmap otherwise
-     */
-    private fun addWithoutDuplicates(collection: MutableCollection<PagePart>, newPart: PagePart) {
-        for (mPart in collection) {
-            if (mPart == newPart) {
-                newPart.renderedBitmap?.recycle()
-                return
-            }
-        }
-        collection.add(newPart)
     }
 
     val pageParts: List<PagePart>
-        get() {
-            synchronized(lock = mPassiveActiveLock) {
-                val mParts: MutableList<PagePart> = ArrayList(mPassiveCache)
-                mParts.addAll(mActiveCache)
-                return mParts
+        get() = synchronized(lock = cacheLock) {
+            mutableListOf<PagePart>().apply {
+                addAll(passiveCache)
+                addAll(activeCache)
             }
         }
 
-    fun getThumbnails(): List<PagePart> {
-        synchronized(lock = mThumbnails) { return mThumbnails }
-    }
+    val allThumbnails: List<PagePart> = synchronized(lock = thumbnailsLock) { thumbnails.toList() }
 
-    fun recycle() {
-        synchronized(lock = mPassiveActiveLock) {
-            for (mPartPassive in mPassiveCache) mPartPassive.renderedBitmap?.recycle()
-            mPassiveCache.clear()
-            for (mPartActive in mActiveCache) mPartActive.renderedBitmap?.recycle()
-            mActiveCache.clear()
+    fun clearAll() {
+        synchronized(lock = cacheLock) {
+            passiveCache.forEach { it.renderedBitmap?.recycle() }
+            passiveCache.clear()
+            activeCache.forEach { it.renderedBitmap?.recycle() }
+            activeCache.clear()
         }
-        synchronized(lock = mThumbnails) {
-            for (mPartThumbnails in mThumbnails) mPartThumbnails.renderedBitmap?.recycle()
-            mThumbnails.clear()
+        synchronized(lock = thumbnailsLock) {
+            thumbnails.forEach { it.renderedBitmap?.recycle() }
+            thumbnails.clear()
         }
     }
 
-    internal class PagePartComparator : Comparator<PagePart> {
+    private class PagePartComparator : Comparator<PagePart> {
         override fun compare(part1: PagePart, part2: PagePart): Int {
-            if (part1.cacheOrder == part2.cacheOrder) return 0
-            return if (part1.cacheOrder > part2.cacheOrder) 1 else -1
+            return part1.cacheOrder.compareTo(other = part2.cacheOrder)
         }
-    }
-
-    companion object {
-        private fun find(vector: PriorityQueue<PagePart>, fakePart: PagePart): PagePart? {
-            for (mPart in vector) {
-                if (mPart.equals(fakePart)) {
-                    return mPart
-                }
-            }
-            return null
-        }
-    }
-
-    init {
-        mActiveCache = PriorityQueue(CACHE_SIZE, mOrderComparator)
-        mPassiveCache = PriorityQueue(CACHE_SIZE, mOrderComparator)
-        mThumbnails = ArrayList()
     }
 }

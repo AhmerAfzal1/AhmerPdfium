@@ -57,29 +57,19 @@ class Callbacks {
      */
     var onError: OnErrorListener? = null
 
-    fun callLinkHandler(event: LinkTapEvent?) {
-        if (linkHandler != null) {
-            linkHandler?.handleLinkEvent(event)
-        }
-    }
+    fun callLinkHandler(event: LinkTapEvent?) = linkHandler?.handleLinkEvent(event)
 
-    fun callOnLoadComplete(pagesCount: Int) {
-        if (onLoadCompleteListener != null) {
-            onLoadCompleteListener?.loadComplete(pagesCount)
-        }
-    }
+    fun callOnLoadComplete(totalPages: Int) = onLoadCompleteListener?.loadComplete(totalPages)
 
-    fun callOnLongPress(event: MotionEvent?) {
-        if (onLongPressListener != null) {
-            onLongPressListener?.onLongPress(event)
-        }
-    }
+    fun callOnLongPress(event: MotionEvent?) = onLongPressListener?.onLongPress(event)
 
-    fun callOnPageChange(page: Int, pagesCount: Int) {
-        if (onPageChangeListener != null) {
-            onPageChangeListener?.onPageChanged(page, pagesCount)
-        }
-    }
+    fun callOnPageChange(page: Int, totalPages: Int) = onPageChangeListener?.onPageChanged(page, totalPages)
+
+    fun callOnPageScroll(currentPage: Int, offset: Float) = onPageScrollListener?.onPageScrolled(currentPage, offset)
+
+    fun callOnRender(totalPages: Int) = onRenderListener?.onInitiallyRendered(totalPages)
+
+    fun callOnTap(event: MotionEvent?): Boolean = onTapListener?.onTap(event) == true
 
     fun callOnPageError(page: Int, error: Throwable?): Boolean {
         if (onPageErrorListener != null) {
@@ -89,51 +79,35 @@ class Callbacks {
         return false
     }
 
-    fun callOnPageScroll(currentPage: Int, offset: Float) {
-        if (onPageScrollListener != null) {
-            onPageScrollListener?.onPageScrolled(currentPage, offset)
-        }
-    }
-
-    fun callOnRender(pagesCount: Int) {
-        if (onRenderListener != null) {
-            onRenderListener?.onInitiallyRendered(pagesCount)
-        }
-    }
-
-    fun callOnTap(event: MotionEvent?): Boolean {
-        return onTapListener?.onTap(event) == true
-    }
-
     fun setLinkHandler(linkHandler: LinkHandler?) {
         this.linkHandler = linkHandler
     }
 
-    fun setOnLoadComplete(onLoadCompleteListener: OnLoadCompleteListener?) {
-        this.onLoadCompleteListener = onLoadCompleteListener
+    fun setOnLoadComplete(listener: OnLoadCompleteListener?) {
+        onLoadCompleteListener = listener
     }
 
-    fun setOnLongPress(onLongPressListener: OnLongPressListener?) {
-        this.onLongPressListener = onLongPressListener
+    fun setOnLongPress(listener: OnLongPressListener?) {
+        onLongPressListener = listener
     }
 
-    fun setOnPageChange(onPageChangeListener: OnPageChangeListener?) {
-        this.onPageChangeListener = onPageChangeListener
+    fun setOnPageChange(listener: OnPageChangeListener?) {
+        onPageChangeListener = listener
     }
 
-    fun setOnPageError(onPageErrorListener: OnPageErrorListener?) {
-        this.onPageErrorListener = onPageErrorListener
+    fun setOnPageError(listener: OnPageErrorListener?) {
+        onPageErrorListener = listener
     }
 
-    fun setOnPageScroll(onPageScrollListener: OnPageScrollListener?) {
-        this.onPageScrollListener = onPageScrollListener
+    fun setOnPageScroll(listener: OnPageScrollListener?) {
+        onPageScrollListener = listener
     }
 
-    fun setOnRender(onRenderListener: OnRenderListener?) {
-        this.onRenderListener = onRenderListener
+    fun setOnRender(listener: OnRenderListener?) {
+        onRenderListener = listener
     }
 
-    fun setOnTap(onTapListener: OnTapListener?) {
-        this.onTapListener = onTapListener
+    fun setOnTap(listener: OnTapListener?) {
+        onTapListener = listener
     }
 }

@@ -13,32 +13,36 @@ internal class DecodingTask(
     private val userPages: IntArray? = null,
     private val pdfView: PDFView
 ) {
-    private val mExecutor: ExecutorService = Executors.newFixedThreadPool(4)
-    private val mHandler: Handler = Handler(Looper.getMainLooper())
+    private val executor: ExecutorService = Executors.newFixedThreadPool(4)
+    private val mainHandler: Handler = Handler(Looper.getMainLooper())
 
     fun execute() {
         try {
-            val document = docSource.createDocument(pdfView.context, pdfView.pdfiumCore!!, password)
+            val document = docSource.createDocument(
+                context = pdfView.context,
+                pdfiumCore = pdfView.pdfiumCore!!,
+                password = password
+            )
 
-            val mPdfFile = PdfFile.create(
+            val pdfFile = PdfFile.create(
                 pdfDocument = document,
                 pdfiumCore = pdfView.pdfiumCore!!,
                 fitPolicy = pdfView.getPageFitPolicy(),
-                size = Size(pdfView.width, pdfView.height),
-                userPages = userPages ?: intArrayOf(),
+                isAutoSpacing = pdfView.isAutoSpacingEnabled(),
+                isFitEachPage = pdfView.isFitEachPage(),
                 isVertical = pdfView.isSwipeVertical(),
-                spacingPx = pdfView.getSpacingPx(),
-                autoSpacing = pdfView.isAutoSpacingEnabled(),
-                fitEachPage = pdfView.isFitEachPage()
+                spacingPixels = pdfView.getSpacingPx(),
+                userPages = userPages ?: intArrayOf(),
+                size = Size(width = pdfView.width, height = pdfView.height)
             )
 
-            mExecutor.execute {
-                mHandler.post {
-                    pdfView.loadComplete(mPdfFile)
+            executor.execute {
+                mainHandler.post {
+                    pdfView.loadComplete(pdfFile = pdfFile)
                 }
             }
         } catch (t: Throwable) {
-            pdfView.loadError(t)
+            pdfView.loadError(error = t)
         }
     }
 
@@ -46,7 +50,7 @@ internal class DecodingTask(
      * Call to cancel background work
      */
     fun cancel() {
-        mExecutor.shutdown()
-        mHandler.removeCallbacksAndMessages(null)
+        executor.shutdown()
+        mainHandler.removeCallbacksAndMessages(null)
     }
 }

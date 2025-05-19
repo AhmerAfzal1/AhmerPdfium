@@ -70,7 +70,7 @@ class DefaultLinkHandler(private val pdfView: PDFView) : LinkHandler {
      * @param pageNumber The non-null page index to navigate to
      */
     private fun handlePage(pageNumber: Int) {
-        pdfView.jumpTo(page = pageNumber, withAnimation =  true)
+        pdfView.jumpTo(page = pageNumber, withAnimation = true)
     }
 
     companion object {
