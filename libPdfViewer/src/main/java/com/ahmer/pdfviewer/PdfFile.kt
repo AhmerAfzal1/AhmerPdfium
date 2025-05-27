@@ -13,7 +13,7 @@ import com.ahmer.pdfviewer.util.FitPolicy
 import com.ahmer.pdfviewer.util.PageSizeCalculator
 
 class PdfFile(
-    private val pdfDocument: PdfDocument,
+    val pdfDocument: PdfDocument,
     private val pdfiumCore: PdfiumCore,
     private val fitPolicy: FitPolicy,
     private val isAutoSpacing: Boolean,

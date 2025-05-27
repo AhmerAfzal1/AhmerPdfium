@@ -247,7 +247,7 @@ internal class PagesLoader(private val pdfView: PDFView) {
         val lastOffsetX: Float = -offsetX - pdfView.width - scaledPreloadOffset
         val lastOffsetY: Float = -offsetY - pdfView.height - scaledPreloadOffset
 
-        val rangeList: List<PagesLoader.RenderRange> = getRenderRangeList(
+        val rangeList: List<RenderRange> = getRenderRangeList(
             firstXOffset = firstOffsetX,
             firstYOffset = firstOffsetY,
             lastXOffset = lastOffsetX,
