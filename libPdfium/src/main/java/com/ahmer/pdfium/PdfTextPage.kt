@@ -577,9 +577,10 @@ class PdfTextPage(
 }
 
 enum class FindFlags(val value: Int) {
-    MatchCase(value = 0x00000001),
-    MatchWholeWord(value = 0x00000002),
-    Consecutive(value = 0x00000004),
+    NONE(value = 0),
+    MATCH_CASE(value = 0x00000001),
+    MATCH_WHOLE_WORD(value = 0x00000002),
+    CONSECUTIVE(value = 0x00000004),
 }
 
 data class WordRangeRect(
