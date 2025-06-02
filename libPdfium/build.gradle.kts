@@ -29,9 +29,10 @@ android {
             cmake {
                 arguments.addAll(
                     listOf(
-                        "-DANDROID_STL=c++_static",
+                        "-DANDROID_STL=c++_shared",
                         "-DANDROID_PLATFORM=android-${minSdk}",
-                        "-DANDROID_ARM_NEON=TRUE"
+                        "-DANDROID_ARM_NEON=TRUE",
+                        "-DANDROID_SUPPORT_FLEXIBLE_PAGE_SIZES=ON"
                     )
                 )
 
@@ -67,6 +68,12 @@ android {
 
     kotlinOptions {
         jvmTarget = JvmTarget.JVM_17.target
+    }
+
+    packaging  {
+        jniLibs {
+            useLegacyPackaging = true
+        }
     }
 
     lint {
