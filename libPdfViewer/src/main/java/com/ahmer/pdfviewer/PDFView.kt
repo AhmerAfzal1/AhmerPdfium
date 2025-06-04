@@ -104,8 +104,8 @@ class PDFView(context: Context?, set: AttributeSet?) : RelativeLayout(context, s
     }
 
     private fun drawPart(canvas: Canvas, part: PagePart) {
-        val bitmap: Bitmap? = part.renderedBitmap
-        if (bitmap == null || bitmap.isRecycled) return
+        val bitmap: Bitmap = part.renderedBitmap ?: return
+        if (bitmap.isRecycled) return
 
         val file: PdfFile = pdfFile ?: return
         val pageBounds: RectF = part.pageBounds
@@ -772,13 +772,13 @@ class PDFView(context: Context?, set: AttributeSet?) : RelativeLayout(context, s
             }
         }
 
+        canvas.translate(-currentOffsetX, -currentOffsetY)
+
         onDrawPagesNumber.forEach { page ->
             drawWithListener(canvas = canvas, page = page, listener = callbacks.onDrawAll)
         }
         onDrawPagesNumber.clear()
-
         drawWithListener(canvas = canvas, page = currentPage, listener = callbacks.onDraw)
-        canvas.translate(-currentOffsetX, -currentOffsetY)
     }
 
     override fun onSizeChanged(w: Int, h: Int, oldW: Int, oldH: Int) {
@@ -943,9 +943,9 @@ class PDFView(context: Context?, set: AttributeSet?) : RelativeLayout(context, s
     }
 
     companion object {
-        const val DEFAULT_MAX_SCALE = 3.0f
-        const val DEFAULT_MID_SCALE = 1.75f
-        const val DEFAULT_MIN_SCALE = 1.0f
+        const val DEFAULT_MAX_SCALE: Float = 3.0f
+        const val DEFAULT_MID_SCALE: Float = 1.75f
+        const val DEFAULT_MIN_SCALE: Float = 1.0f
     }
 
     private fun initPDFView() {

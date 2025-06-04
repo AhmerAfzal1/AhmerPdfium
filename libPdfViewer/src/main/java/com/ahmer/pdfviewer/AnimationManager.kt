@@ -83,10 +83,7 @@ internal class AnimationManager(private val pdfView: PDFView) {
 
     fun computeFling() {
         if (overScroller.computeScrollOffset()) {
-            pdfView.moveTo(
-                offsetX = overScroller.currX.toFloat(),
-                offsetY = overScroller.currY.toFloat()
-            )
+            pdfView.moveTo(offsetX = overScroller.currX.toFloat(), offsetY = overScroller.currY.toFloat())
             pdfView.loadPageByOffset()
         } else if (isFlinging) {
             isFlinging = false
@@ -116,7 +113,7 @@ internal class AnimationManager(private val pdfView: PDFView) {
     private inner class XAnimationListener : AnimatorListenerAdapter(),
         ValueAnimator.AnimatorUpdateListener {
         override fun onAnimationUpdate(animation: ValueAnimator) {
-            pdfView.moveTo(animation.animatedValue as Float, pdfView.getCurrentYOffset())
+            pdfView.moveTo(offsetX = animation.animatedValue as Float, offsetY = pdfView.getCurrentYOffset())
             pdfView.loadPageByOffset()
         }
 
@@ -136,7 +133,7 @@ internal class AnimationManager(private val pdfView: PDFView) {
     private inner class YAnimationListener : AnimatorListenerAdapter(),
         ValueAnimator.AnimatorUpdateListener {
         override fun onAnimationUpdate(animation: ValueAnimator) {
-            pdfView.moveTo(pdfView.getCurrentXOffset(), animation.animatedValue as Float)
+            pdfView.moveTo(offsetX = pdfView.getCurrentXOffset(), offsetY = animation.animatedValue as Float)
             pdfView.loadPageByOffset()
         }
 
@@ -158,7 +155,7 @@ internal class AnimationManager(private val pdfView: PDFView) {
         private val centerY: Float
     ) : AnimatorListenerAdapter(), ValueAnimator.AnimatorUpdateListener {
         override fun onAnimationUpdate(animation: ValueAnimator) {
-            pdfView.zoomCenteredTo(animation.animatedValue as Float, PointF(centerX, centerY))
+            pdfView.zoomCenteredTo(zoom = animation.animatedValue as Float, pivot = PointF(centerX, centerY))
         }
 
         override fun onAnimationCancel(animation: Animator) {

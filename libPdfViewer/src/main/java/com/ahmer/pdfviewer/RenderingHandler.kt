@@ -17,6 +17,10 @@ class RenderingHandler(looper: Looper, private val pdfView: PDFView) : Handler(l
     private val roundedBounds: Rect = Rect()
     private var isRunning: Boolean = false
 
+    private fun getBitmapConfig(isBestQuality: Boolean): Bitmap.Config {
+        return if (isBestQuality) Bitmap.Config.ARGB_8888 else Bitmap.Config.RGB_565
+    }
+
     fun addRenderingTask(
         page: Int, width: Float, height: Float, bounds: RectF, isThumbnail: Boolean,
         cacheOrder: Int, isBestQuality: Boolean, isAnnotation: Boolean
@@ -36,7 +40,7 @@ class RenderingHandler(looper: Looper, private val pdfView: PDFView) : Handler(l
     }
 
     override fun handleMessage(message: Message) {
-        val bitmapPart = proceed(task = message.obj as RenderingTask)
+        val bitmapPart: PagePart? = proceed(task = message.obj as RenderingTask)
         try {
             if (bitmapPart != null) {
                 if (isRunning) {
@@ -51,7 +55,7 @@ class RenderingHandler(looper: Looper, private val pdfView: PDFView) : Handler(l
     }
 
     private fun toNightMode(bitmap: Bitmap, bestQuality: Boolean): Bitmap {
-        val config = if (bestQuality) Bitmap.Config.ARGB_8888 else Bitmap.Config.RGB_565
+        val config: Bitmap.Config = getBitmapConfig(isBestQuality = bestQuality)
         val newBitmap = createBitmap(width = bitmap.width, height = bitmap.height, config = config)
         val paint = Paint().apply {
             colorFilter = ColorMatrixColorFilter(ColorMatrix().apply {
@@ -77,17 +81,16 @@ class RenderingHandler(looper: Looper, private val pdfView: PDFView) : Handler(l
 
     @Throws(PageRenderingException::class)
     private fun proceed(task: RenderingTask): PagePart? {
-        val pdfFile = pdfView.pdfFile ?: return null
+        val pdfFile: PdfFile = pdfView.pdfFile ?: return null
         pdfFile.openPage(pageIndex = task.page)
 
-        val width = task.width.roundToInt()
-        val height = task.height.roundToInt()
-        if (width == 0 || height == 0 || pdfFile.pageHasError(task.page)) return null
+        val width: Int = task.width.roundToInt()
+        val height: Int = task.height.roundToInt()
+        if (width == 0 || height == 0 || pdfFile.pageHasError(page = task.page)) return null
 
-        val config = if (task.isBestQuality) Bitmap.Config.ARGB_8888 else Bitmap.Config.RGB_565
         var bitmap: Bitmap
         bitmap = try {
-            createBitmap(width = width, height = height, config = config)
+            createBitmap(width = width, height = height, config = getBitmapConfig(isBestQuality = task.isBestQuality))
         } catch (e: IllegalArgumentException) {
             Log.e(PdfConstants.TAG, "Cannot create bitmap", e)
             return null

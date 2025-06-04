@@ -43,11 +43,8 @@ class CacheManager {
             while (thumbnails.size >= THUMBNAILS_CACHE_SIZE) {
                 thumbnails.removeAt(index = 0).renderedBitmap?.recycle()
             }
-            if (thumbnails.any { it == part }) {
-                part.renderedBitmap?.recycle()
-            } else {
-                thumbnails.add(part)
-            }
+            if (thumbnails.any { it == part }) part.renderedBitmap?.recycle() else thumbnails.add(part)
+
         }
     }
 
