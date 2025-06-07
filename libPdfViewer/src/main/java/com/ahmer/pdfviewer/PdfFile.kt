@@ -147,7 +147,7 @@ class PdfFile(
             return documentPage(userPage = pageIndex).takeIf { it >= 0 }?.let { docPage ->
                 if (openedPages.indexOfKey(docPage) < 0) {
                     try {
-                        pdfDocument.openPage(docPage)
+                        pdfDocument.openPage(pageIndex = docPage)
                         openedPages.put(docPage, true)
                         true
                     } catch (e: Exception) {
