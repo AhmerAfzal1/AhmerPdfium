@@ -3,6 +3,7 @@ package com.ahmer.pdfviewer
 import android.graphics.Bitmap
 import android.graphics.Rect
 import android.graphics.RectF
+import android.util.Log
 import android.util.SparseBooleanArray
 import com.ahmer.pdfium.PdfDocument
 import com.ahmer.pdfium.PdfiumCore
@@ -11,6 +12,7 @@ import com.ahmer.pdfium.util.SizeF
 import com.ahmer.pdfviewer.exception.PageRenderingException
 import com.ahmer.pdfviewer.util.FitPolicy
 import com.ahmer.pdfviewer.util.PageSizeCalculator
+import com.ahmer.pdfviewer.util.PdfConstants
 
 class PdfFile(
     val pdfDocument: PdfDocument,
@@ -50,7 +52,7 @@ class PdfFile(
 
     fun documentPage(userPage: Int): Int {
         if (userPage < 0 || (userPages.isNotEmpty() && userPage >= userPages.size)) return -1
-        val docPage = if (userPages.isNotEmpty()) userPages[userPage] else userPage
+        val docPage: Int = if (userPages.isNotEmpty()) userPages[userPage] else userPage
         return if (docPage < 0 || userPage >= pagesCount) -1 else docPage
     }
 
@@ -66,16 +68,11 @@ class PdfFile(
     }
 
     fun getPageLength(pageIndex: Int, zoom: Float): Float {
-        val size = getPageSize(pageIndex = pageIndex)
+        val size: SizeF = getPageSize(pageIndex = pageIndex)
         return (if (isVertical) size.height else size.width) * zoom
     }
 
-    fun getPageLinks(
-        pageIndex: Int,
-        size: SizeF,
-        posX: Float,
-        posY: Float
-    ): List<PdfDocument.Link> {
+    fun getPageLinks(pageIndex: Int, size: SizeF, posX: Float, posY: Float): List<PdfDocument.Link> {
         return pdfiumCore.getPageLinks(pageIndex = pageIndex, size = size, posX = posX, posY = posY)
     }
 
@@ -105,14 +102,7 @@ class PdfFile(
         return zoom * new / 2f
     }
 
-    fun mapRectToDevice(
-        pageIndex: Int,
-        startX: Int,
-        startY: Int,
-        sizeX: Int,
-        sizeY: Int,
-        rect: RectF
-    ): RectF {
+    fun mapRectToDevice(pageIndex: Int, startX: Int, startY: Int, sizeX: Int, sizeY: Int, rect: RectF): RectF {
         return pdfiumCore.mapRectToDevice(
             pageIndex = pageIndex,
             startX = startX,
@@ -124,12 +114,7 @@ class PdfFile(
         )
     }
 
-    fun renderPageBitmap(
-        pageIndex: Int,
-        bitmap: Bitmap,
-        bounds: Rect,
-        isAnnotation: Boolean
-    ) {
+    fun renderPageBitmap(pageIndex: Int, bitmap: Bitmap, bounds: Rect, isAnnotation: Boolean) {
         pdfiumCore.renderPageBitmap(
             pageIndex = pageIndex,
             bitmap = bitmap,
@@ -198,7 +183,7 @@ class PdfFile(
                 else -> viewSize.width - pageSize.width
             }.coerceAtLeast(minimumValue = 0f)
 
-            val finalSpacing = if (i < pagesCount - 1) baseSpacing + spacingPixels else baseSpacing
+            val finalSpacing: Float = if (i < pagesCount - 1) baseSpacing + spacingPixels else baseSpacing
             pageSpacing.add(finalSpacing)
         }
     }
