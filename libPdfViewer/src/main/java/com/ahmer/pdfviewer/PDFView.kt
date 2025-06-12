@@ -223,9 +223,14 @@ class PDFView(context: Context?, set: AttributeSet?) : RelativeLayout(context, s
         return file.getPageAtOffset(offset = file.docLength(zoom = zoom) * positionOffset, zoom = zoom)
     }
 
-    fun getPageRotation(pageIndex: Int): Int {
+    fun pageRotation(pageIndex: Int): Int {
         val file: PdfFile = pdfFile ?: return 0
-        return file.getPageRotation(pageIndex = pageIndex)
+        return file.pageRotation(pageIndex = pageIndex)
+    }
+
+    fun deletePage(pageIndex: Int) {
+        val file: PdfFile = pdfFile ?: return
+        return file.deletePage(pageIndex = pageIndex)
     }
 
     fun getPageSize(pageIndex: Int): SizeF {

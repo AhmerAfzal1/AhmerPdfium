@@ -3,7 +3,6 @@ package com.ahmer.pdfviewer
 import android.graphics.Bitmap
 import android.graphics.Rect
 import android.graphics.RectF
-import android.util.Log
 import android.util.SparseBooleanArray
 import com.ahmer.pdfium.PdfDocument
 import com.ahmer.pdfium.PdfiumCore
@@ -12,7 +11,6 @@ import com.ahmer.pdfium.util.SizeF
 import com.ahmer.pdfviewer.exception.PageRenderingException
 import com.ahmer.pdfviewer.util.FitPolicy
 import com.ahmer.pdfviewer.util.PageSizeCalculator
-import com.ahmer.pdfviewer.util.PdfConstants
 
 class PdfFile(
     val pdfDocument: PdfDocument,
@@ -166,7 +164,9 @@ class PdfFile(
 
     fun docLength(zoom: Float): Float = documentLength * zoom
 
-    fun getPageRotation(pageIndex: Int): Int = pdfiumCore.getPageRotation(pageIndex = pageIndex)
+    fun pageRotation(pageIndex: Int): Int = pdfiumCore.pageRotation(pageIndex = pageIndex)
+
+    fun deletePage(pageIndex: Int) = pdfDocument.deletePage(pageIndex = pageIndex)
 
     fun metaData(): PdfDocument.Meta = pdfDocument.metaData
 
