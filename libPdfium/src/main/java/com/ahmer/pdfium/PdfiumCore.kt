@@ -35,11 +35,6 @@ class PdfiumCore(
         return doc.pageCache[index]?.pagePtr ?: -1
     }
 
-    private fun buildRect(values: FloatArray): RectF = RectF().apply {
-        require(value = values.size == 4) { "Invalid rect values from native" }
-        set(values[0], values[1], values[2], values[3])
-    }
-
     /**
      * Opens a new PDF document from a file descriptor.
      *
