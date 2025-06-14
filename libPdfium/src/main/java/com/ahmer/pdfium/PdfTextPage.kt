@@ -15,15 +15,19 @@ typealias FindHandle = Long
  *
  * @property doc Parent PDF document
  * @property pageIndex Index of this page in the document
- * @property pagePtr Native page pointer
+ * @property textPagePtr Native text page pointer
  * @property pageMap Mutable map tracking page usage counts
  */
 class PdfTextPage(
     val doc: PdfDocument,
     val pageIndex: Int,
-    val pagePtr: Long,
+    val textPagePtr: Long,
     val pageMap: MutableMap<Int, PdfDocument.PageCount>,
 ) : Closeable {
+
+    private fun pagePtr(index: Int): Long {
+        return doc.pageCache[index]?.pagePtr ?: -1
+    }
 
     /**
      * Get the number of characters on this page.
@@ -33,7 +37,7 @@ class PdfTextPage(
      */
     val charCount: Int by lazy {
         synchronized(lock = PdfiumCore.lock) {
-            nativeTextCountChars(textPagePtr = pagePtr).also {
+            nativeTextCountChars(textPagePtr = textPagePtr).also {
                 if (it < 0) throw IllegalStateException("Failed to get character count")
             }
         }
@@ -41,7 +45,7 @@ class PdfTextPage(
 
     private val pageLinkPtr: Long by lazy {
         synchronized(lock = PdfiumCore.lock) {
-            nativeLoadWebLink(textPagePtr = pagePtr).also {
+            nativeLoadWebLink(textPagePtr = textPagePtr).also {
                 if (it == 0L) throw IllegalStateException("Failed to load page links")
             }
         }
@@ -74,7 +78,7 @@ class PdfTextPage(
             return try {
                 val buffer = ShortArray(size = length + 1)
                 val chars = nativeTextGetText(
-                    textPagePtr = pagePtr,
+                    textPagePtr = textPagePtr,
                     startIndex = startIndex,
                     count = length,
                     result = buffer
@@ -108,17 +112,16 @@ class PdfTextPage(
         require(value = length >= 0) { "Length cannot be negative" }
         require(value = startIndex + length <= charCount) { "Requested range exceeds character count" }
 
-        synchronized(lock = PdfiumCore.lock) {
-            return try {
+        return synchronized(lock = PdfiumCore.lock) {
+            try {
                 ByteArray(size = length * 2).let { buffer ->
                     val chars = nativeTextGetTextByteArray(
-                        textPagePtr = pagePtr,
+                        textPagePtr = textPagePtr,
                         startIndex = startIndex,
                         count = length,
                         result = buffer
                     )
-                    if (chars <= 0) return ""
-                    String(bytes = buffer, charset = StandardCharsets.UTF_16LE)
+                    if (chars <= 0) "" else String(bytes = buffer, charset = StandardCharsets.UTF_16LE)
                 }
 
             } catch (e: Exception) {
@@ -138,7 +141,7 @@ class PdfTextPage(
     fun getUnicodeChar(index: Int): Char {
         require(value = index in 0 until charCount) { "Index $index out of bounds [0, $charCount)" }
         synchronized(lock = PdfiumCore.lock) {
-            return nativeTextGetUnicode(textPagePtr = pagePtr, index = index).toChar()
+            return nativeTextGetUnicode(textPagePtr = textPagePtr, index = index).toChar()
         }
     }
 
@@ -153,7 +156,7 @@ class PdfTextPage(
         require(value = index in 0 until charCount) { "Index $index out of bounds [0, $charCount)" }
         synchronized(lock = PdfiumCore.lock) {
             return try {
-                nativeTextGetCharBox(textPagePtr = pagePtr, index = index).let { data ->
+                nativeTextGetCharBox(textPagePtr = textPagePtr, index = index).let { data ->
                     RectF().apply {
                         left = data[0].toFloat()
                         right = data[1].toFloat()
@@ -184,7 +187,7 @@ class PdfTextPage(
         synchronized(lock = PdfiumCore.lock) {
             return try {
                 nativeTextGetCharIndexAtPos(
-                    textPagePtr = pagePtr,
+                    textPagePtr = textPagePtr,
                     x = x,
                     y = y,
                     xTolerance = xTolerance,
@@ -210,11 +213,7 @@ class PdfTextPage(
         require(value = count > 0) { "Count must be positive" }
         synchronized(lock = PdfiumCore.lock) {
             return try {
-                nativeTextCountRects(
-                    textPagePtr = pagePtr,
-                    startIndex = startIndex,
-                    count = count
-                )
+                nativeTextCountRects(textPagePtr = textPagePtr, startIndex = startIndex, count = count)
             } catch (e: Exception) {
                 val msg =
                     "Failed to count rectangles for range [$startIndex, ${startIndex + count}]: ${e.message}"
@@ -234,7 +233,7 @@ class PdfTextPage(
     fun getTextRect(rectIndex: Int): RectF? {
         synchronized(lock = PdfiumCore.lock) {
             return try {
-                nativeTextGetRect(textPagePtr = pagePtr, rectIndex = rectIndex).let { data ->
+                nativeTextGetRect(textPagePtr = textPagePtr, rectIndex = rectIndex).let { data ->
                     RectF().apply {
                         left = data[0].toFloat()
                         top = data[1].toFloat()
@@ -260,7 +259,7 @@ class PdfTextPage(
     fun getTextRangeRects(wordRanges: IntArray): List<WordRangeRect>? {
         synchronized(lock = PdfiumCore.lock) {
             return try {
-                nativeTextGetRects(textPagePtr = pagePtr, wordRanges = wordRanges)?.let { data ->
+                nativeTextGetRects(textPagePtr = textPagePtr, wordRanges = wordRanges)?.let { data ->
                     List(size = data.size / 6) { i ->
                         val offset = i * 6
                         WordRangeRect(
@@ -295,7 +294,7 @@ class PdfTextPage(
             return try {
                 val buffer = ShortArray(size = length + 1)
                 val textRect = nativeTextGetBoundedText(
-                    textPagePtr = pagePtr,
+                    textPagePtr = textPagePtr,
                     left = rect.left.toDouble(),
                     top = rect.top.toDouble(),
                     right = rect.right.toDouble(),
@@ -330,7 +329,7 @@ class PdfTextPage(
         require(value = charIndex in 0 until charCount) { "Invalid character index" }
         synchronized(lock = PdfiumCore.lock) {
             return try {
-                nativeGetFontSize(pagePtr = pagePtr, charIndex = charIndex)
+                nativeGetFontSize(pagePtr = textPagePtr, charIndex = charIndex)
             } catch (e: Exception) {
                 Log.e(TAG, "Failed to get font size for character $charIndex: ${e.message}", e)
                 Double.NaN
@@ -357,19 +356,17 @@ class PdfTextPage(
             return try {
                 val flag = flags.fold(initial = 0) { acc, flag -> acc or flag.value }
                 nativeFindStart(
-                    textPagePtr = pagePtr,
+                    textPagePtr = textPagePtr,
                     findWhat = query,
                     flags = flag,
                     startIndex = startIndex
                 ).takeIf { it != 0L }?.let { FindResult(handle = it) }
-
             } catch (e: Exception) {
                 Log.e(TAG, "Failed to start search for '$query': ${e.message}", e)
                 null
             }
         }
     }
-
 
     /**
      * Retrieves the URL text for a given web link on this PDF page.
@@ -430,11 +427,7 @@ class PdfTextPage(
         require(value = rectIndex in 0 until countRects(linkIndex)) { "Rect index cannot be negative" }
         synchronized(lock = PdfiumCore.lock) {
             return try {
-                nativeGetRect(
-                    pageLinkPtr = pageLinkPtr,
-                    linkIndex = linkIndex,
-                    rectIndex = rectIndex
-                ).let { data ->
+                nativeGetRect(pageLinkPtr = pageLinkPtr, linkIndex = linkIndex, rectIndex = rectIndex).let { data ->
                     RectF().apply {
                         left = data[0]
                         top = data[1]
@@ -478,7 +471,7 @@ class PdfTextPage(
                 if (--it.count > 0) return
                 pageMap.remove(key = pageIndex)
             }
-            nativeCloseTextPage(pagePtr = pagePtr)
+            nativeCloseTextPage(pagePtr = textPagePtr)
             nativeClosePageLink(pageLinkPtr)
             pageMap.clear()
         }
@@ -491,9 +484,7 @@ class PdfTextPage(
         private external fun nativeCloseTextPage(pagePtr: Long)
 
         @JvmStatic
-        private external fun nativeFindStart(
-            textPagePtr: Long, findWhat: String, flags: Int, startIndex: Int,
-        ): Long
+        private external fun nativeFindStart(textPagePtr: Long, findWhat: String, flags: Int, startIndex: Int): Long
 
         @JvmStatic
         @FastNative
@@ -508,15 +499,12 @@ class PdfTextPage(
 
         @JvmStatic
         @FastNative
-        private external fun nativeTextCountRects(
-            textPagePtr: Long, startIndex: Int, count: Int
-        ): Int
+        private external fun nativeTextCountRects(textPagePtr: Long, startIndex: Int, count: Int): Int
 
         @JvmStatic
         @FastNative
         private external fun nativeTextGetBoundedText(
-            textPagePtr: Long, left: Double, top: Double,
-            right: Double, bottom: Double, arr: ShortArray
+            textPagePtr: Long, left: Double, top: Double, right: Double, bottom: Double, arr: ShortArray
         ): Int
 
         @JvmStatic
@@ -534,14 +522,10 @@ class PdfTextPage(
 
         @JvmStatic
         @FastNative
-        private external fun nativeTextGetRects(
-            textPagePtr: Long, wordRanges: IntArray
-        ): DoubleArray?
+        private external fun nativeTextGetRects(textPagePtr: Long, wordRanges: IntArray): DoubleArray?
 
         @JvmStatic
-        private external fun nativeTextGetText(
-            textPagePtr: Long, startIndex: Int, count: Int, result: ShortArray
-        ): Int
+        private external fun nativeTextGetText(textPagePtr: Long, startIndex: Int, count: Int, result: ShortArray): Int
 
         @JvmStatic
         private external fun nativeTextGetTextByteArray(
@@ -562,17 +546,13 @@ class PdfTextPage(
         private external fun nativeCountWebLinks(pageLinkPtr: Long): Int
 
         @JvmStatic
-        private external fun nativeGetRect(
-            pageLinkPtr: Long, linkIndex: Int, rectIndex: Int
-        ): FloatArray
+        private external fun nativeGetRect(pageLinkPtr: Long, linkIndex: Int, rectIndex: Int): FloatArray
 
         @JvmStatic
         private external fun nativeGetTextRange(pageLinkPtr: Long, index: Int): IntArray
 
         @JvmStatic
-        private external fun nativeGetURL(
-            pageLinkPtr: Long, index: Int, count: Int, result: ByteArray
-        ): Int
+        private external fun nativeGetURL(pageLinkPtr: Long, index: Int, count: Int, result: ByteArray): Int
     }
 }
 

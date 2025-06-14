@@ -3,7 +3,6 @@ package com.ahmer.pdfium
 import android.graphics.RectF
 import android.os.ParcelFileDescriptor
 import android.util.Log
-import android.view.Surface
 import java.io.Closeable
 
 /**
@@ -53,7 +52,7 @@ class PdfDocument : Closeable {
      */
     fun openPage(pageIndex: Int): Long {
         synchronized(lock = PdfiumCore.lock) {
-            if (pageCache.containsKey(key = pageIndex)) {
+            if (hasPage(pageIndex = pageIndex)) {
                 pageCache[pageIndex]?.let {
                     it.count++
                     return it.pagePtr
@@ -72,7 +71,7 @@ class PdfDocument : Closeable {
      * @param toIndex End page (inclusive)
      * @return LongArray of native page pointers
      */
-    fun openPageRange(fromIndex: Int, toIndex: Int): LongArray {
+    fun openPages(fromIndex: Int, toIndex: Int): LongArray {
         synchronized(lock = PdfiumCore.lock) {
             val pagesPtr: LongArray =
                 nativeLoadPages(docPtr = nativePtr, fromIndex = fromIndex, toIndex = toIndex)
@@ -177,13 +176,13 @@ class PdfDocument : Closeable {
      */
     fun openTextPage(pageIndex: Int): PdfTextPage {
         synchronized(lock = PdfiumCore.lock) {
-            if (textPageCache.containsKey(key = pageIndex)) {
+            if (hasTextPage(pageIndex = pageIndex)) {
                 textPageCache[pageIndex]?.let {
                     it.count++
                     return PdfTextPage(
                         doc = this@PdfDocument,
                         pageIndex = pageIndex,
-                        pagePtr = it.pagePtr,
+                        textPagePtr = it.pagePtr,
                         pageMap = textPageCache
                     )
                 }
@@ -194,7 +193,7 @@ class PdfDocument : Closeable {
             return PdfTextPage(
                 doc = this@PdfDocument,
                 pageIndex = pageIndex,
-                pagePtr = textPagePtr,
+                textPagePtr = textPagePtr,
                 pageMap = textPageCache
             )
         }
@@ -221,7 +220,7 @@ class PdfDocument : Closeable {
                 PdfTextPage(
                     doc = this@PdfDocument,
                     pageIndex = fromIndex + index,
-                    pagePtr = pagePtr,
+                    textPagePtr = pagePtr,
                     pageMap = textPageCache
                 )
             }
@@ -235,10 +234,7 @@ class PdfDocument : Closeable {
      * @param flags Modification flags (INCREMENTAL, NO_INCREMENTAL, REMOVE_SECURITY)
      * @return True if save operation succeeded
      */
-    fun saveAsCopy(
-        callback: PdfWriteCallback,
-        flags: Int = FPDF_INCREMENTAL
-    ): Boolean {
+    fun saveAsCopy(callback: PdfWriteCallback, flags: Int = FPDF_INCREMENTAL): Boolean {
         return nativeSaveAsCopy(docPtr = nativePtr, callback = callback, flags = flags)
     }
 
@@ -333,21 +329,6 @@ class PdfDocument : Closeable {
         private external fun nativeLoadTextPage(docPtr: Long, pagePtr: Long): Long
 
         @JvmStatic
-        private external fun nativeRenderPagesSurfaceWithMatrix(
-            pages: LongArray, surface: Surface, matrixFloats: FloatArray, clipFloats: FloatArray,
-            annotation: Boolean, canvasColor: Int, pageBackgroundColor: Int,
-        ): Boolean
-
-        @JvmStatic
-        private external fun nativeRenderPagesWithMatrix(
-            pages: LongArray, bufferPtr: Long, drawSizeHor: Int, drawSizeVer: Int,
-            matrixFloats: FloatArray, clipFloats: FloatArray, annotation: Boolean, canvasColor: Int,
-            pageBackgroundColor: Int,
-        )
-
-        @JvmStatic
-        private external fun nativeSaveAsCopy(
-            docPtr: Long, callback: PdfWriteCallback, flags: Int,
-        ): Boolean
+        private external fun nativeSaveAsCopy(docPtr: Long, callback: PdfWriteCallback, flags: Int): Boolean
     }
 }
