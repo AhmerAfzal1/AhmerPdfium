@@ -31,7 +31,7 @@ class PdfDocument : Closeable {
         }
 
     /**
-     * Retrieves character counts for all pages in the document.
+     * Get the page character counts for every page of the PDF document
      *
      * @return IntArray of character counts per page (empty if closed)
      */
@@ -56,7 +56,7 @@ class PdfDocument : Closeable {
                     return it.pagePtr
                 }
             }
-            val pagePtr = nativeLoadPage(docPtr = nativePtr, pageIndex = pageIndex)
+            val pagePtr: Long = nativeLoadPage(docPtr = nativePtr, pageIndex = pageIndex)
             pageCache[pageIndex] = PageCount(pagePtr = pagePtr, count = 1)
             return pagePtr
         }
@@ -65,17 +65,16 @@ class PdfDocument : Closeable {
     /**
      * Opens a range of pages for batch processing.
      *
-     * @param fromIndex Start page (inclusive)
-     * @param toIndex End page (inclusive)
+     * @param start Start page (inclusive)
+     * @param end End page (inclusive)
      * @return LongArray of native page pointers
      */
-    fun openPages(fromIndex: Int, toIndex: Int): LongArray {
+    fun openPages(start: Int, end: Int): LongArray {
         synchronized(lock = PdfiumCore.lock) {
-            val pagesPtr: LongArray =
-                nativeLoadPages(docPtr = nativePtr, fromIndex = fromIndex, toIndex = toIndex)
-            var pageIndex = fromIndex
+            val pagesPtr: LongArray = nativeLoadPages(docPtr = nativePtr, fromIndex = start, toIndex = end)
+            var pageIndex: Int = start
             for (page in pagesPtr) {
-                if (pageIndex > toIndex) break
+                if (pageIndex > end) break
                 pageIndex++
             }
             return pagesPtr
@@ -144,7 +143,7 @@ class PdfDocument : Closeable {
     val bookmarks: List<Bookmark> by lazy {
         synchronized(lock = PdfiumCore.lock) {
             val topLevel: MutableList<Bookmark> = mutableListOf()
-            val first = nativeGetFirstChildBookmark(docPtr = nativePtr, bookmarkPtr = 0L)
+            val first: Long = nativeGetFirstChildBookmark(docPtr = nativePtr, bookmarkPtr = 0L)
             if (first != 0L) {
                 recursiveGetBookmark(tree = topLevel, bookmarkPtr = first, level = 1)
             }
@@ -180,8 +179,8 @@ class PdfDocument : Closeable {
                     )
                 }
             }
-            val pagePtr = pageCache[pageIndex]?.pagePtr ?: 0L
-            val textPagePtr = nativeLoadTextPage(docPtr = nativePtr, pagePtr = pagePtr)
+            val pagePtr: Long = pageCache[pageIndex]?.pagePtr ?: 0L
+            val textPagePtr: Long = nativeLoadTextPage(docPtr = nativePtr, pagePtr = pagePtr)
             textPageCache[pageIndex] = PageCount(pagePtr = textPagePtr, count = 1)
             return PdfTextPage(
                 doc = this@PdfDocument,
@@ -195,24 +194,20 @@ class PdfDocument : Closeable {
     /**
      * Opens a range of text pages for batch text processing
      *
-     * @param fromIndex Starting page index (inclusive)
-     * @param toIndex Ending page index (inclusive)
+     * @param start Starting page index (inclusive)
+     * @param end Ending page index (inclusive)
      * @return List of text page wrapper objects
      * @throws IllegalStateException If any page in the range isn't already loaded
      */
-    fun openTextPages(fromIndex: Int, toIndex: Int): List<PdfTextPage> {
-        require(value = fromIndex <= toIndex) { "Invalid page range: $fromIndex-$toIndex" }
+    fun openTextPages(start: Int, end: Int): List<PdfTextPage> {
+        require(value = start <= end) { "Invalid page range: $start-$end" }
         var textPagesPtr: LongArray
         synchronized(lock = PdfiumCore.lock) {
-            textPagesPtr = nativeLoadPages(
-                docPtr = nativePtr,
-                fromIndex = fromIndex,
-                toIndex = toIndex
-            )
+            textPagesPtr = nativeLoadPages(docPtr = nativePtr, fromIndex = start, toIndex = end)
             return textPagesPtr.mapIndexed { index: Int, pagePtr: Long ->
                 PdfTextPage(
                     doc = this@PdfDocument,
-                    pageIndex = fromIndex + index,
+                    pageIndex = start + index,
                     textPagePtr = pagePtr,
                     pageMap = textPageCache
                 )
@@ -223,11 +218,15 @@ class PdfDocument : Closeable {
     /**
      * Saves a copy of the document with optional modifications.
      *
-     * @param callback Write callback for handling output
-     * @param flags Modification flags (INCREMENTAL, NO_INCREMENTAL, REMOVE_SECURITY)
-     * @return True if save operation succeeded
+     * @param callback The write callback to handle the output stream.
+     * @param flags Save option flags, which can be one of the following:
+     *  - FPDF_INCREMENTAL: Saves changes incrementally, preserving existing data.
+     *  - FPDF_NO_INCREMENTAL: Saves a full copy, overwriting the original structure.
+     *  - FPDF_REMOVE_SECURITY: Removes password protection or encryption while saving.
+     *
+     * @return true if the save operation succeeded, false otherwise.
      */
-    fun saveAsCopy(callback: PdfWriteCallback, flags: Int = FPDF_INCREMENTAL): Boolean {
+    fun saveAsCopy(callback: PdfWriteCallback, flags: Int): Boolean {
         return nativeSaveAsCopy(docPtr = nativePtr, callback = callback, flags = flags)
     }
 
@@ -279,10 +278,6 @@ class PdfDocument : Closeable {
 
     companion object {
         private val TAG: String? = PdfDocument::class.java.name
-
-        const val FPDF_INCREMENTAL = 1
-        const val FPDF_NO_INCREMENTAL = 2
-        const val FPDF_REMOVE_SECURITY = 3
 
         @JvmStatic
         private external fun nativeCloseDocument(docPtr: Long)

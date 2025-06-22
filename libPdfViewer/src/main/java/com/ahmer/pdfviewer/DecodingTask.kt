@@ -27,11 +27,11 @@ internal class DecodingTask(
             val pdfFile = PdfFile.create(
                 pdfDocument = document,
                 pdfiumCore = pdfView.pdfiumCore!!,
-                fitPolicy = pdfView.getPageFitPolicy(),
-                isAutoSpacing = pdfView.isAutoSpacingEnabled(),
-                isFitEachPage = pdfView.isFitEachPage(),
-                isVertical = pdfView.isSwipeVertical(),
-                spacingPixels = pdfView.getSpacingPx(),
+                fitPolicy = pdfView.pageFitPolicy,
+                isAutoSpacing = pdfView.isAutoSpacingEnabled,
+                isFitEachPage = pdfView.isFitEachPage,
+                isVertical = pdfView.isSwipeVertical,
+                spacingPixels = pdfView.spacingPx,
                 userPages = userPages ?: intArrayOf(),
                 size = Size(width = pdfView.width, height = pdfView.height)
             )

@@ -34,7 +34,7 @@ class DefaultScrollHandle @JvmOverloads constructor(
     private var pdfView: PDFView? = null
 
     override fun setupLayout(pdfView: PDFView) {
-        val isVertical = pdfView.isSwipeVertical()
+        val isVertical = pdfView.isSwipeVertical
         val width = if (isVertical) HANDLE_LONG else HANDLE_SHORT
         val height = if (isVertical) HANDLE_SHORT else HANDLE_LONG
         val align = when {
@@ -67,7 +67,7 @@ class DefaultScrollHandle @JvmOverloads constructor(
     override fun setScroll(position: Float) {
         if (!shown()) show() else handler.removeCallbacks(hideScroller)
         pdfView?.let {
-            val viewSize = if (it.isSwipeVertical()) it.height else it.width
+            val viewSize = if (it.isSwipeVertical) it.height else it.width
             setPosition(viewSize * position)
         }
     }
@@ -75,15 +75,15 @@ class DefaultScrollHandle @JvmOverloads constructor(
     private fun setPosition(position: Float) {
         if (position.isInfinite() || position.isNaN()) return
         pdfView?.let { v ->
-            val viewSize: Float = if (v.isSwipeVertical()) v.height.toFloat() else v.width.toFloat()
+            val viewSize: Float = if (v.isSwipeVertical) v.height.toFloat() else v.width.toFloat()
             val maxPosition: Float = viewSize - PdfUtils.getDP(context = context, dp = HANDLE_SHORT)
             val adjustedPosition: Float = (position - handleCenterOffset).coerceIn(
                 minimumValue = 0f,
                 maximumValue = maxPosition
             )
 
-            if (v.isSwipeVertical()) y = adjustedPosition else x = adjustedPosition
-            handleCenterOffset = if (v.isSwipeVertical()) {
+            if (v.isSwipeVertical) y = adjustedPosition else x = adjustedPosition
+            handleCenterOffset = if (v.isSwipeVertical) {
                 (y + handleCenterOffset) / viewSize * height
             } else {
                 (x + handleCenterOffset) / viewSize * width
@@ -125,7 +125,7 @@ class DefaultScrollHandle @JvmOverloads constructor(
     }
 
     private val isPDFViewReady: Boolean
-        get() = pdfView?.let { it.getPageCount() > 0 && !it.documentFitsView() } ?: false
+        get() = pdfView?.let { it.pageCount > 0 && !it.documentFitsView() } ?: false
 
     @SuppressLint("ClickableViewAccessibility")
     override fun onTouchEvent(event: MotionEvent): Boolean {
@@ -137,29 +137,29 @@ class DefaultScrollHandle @JvmOverloads constructor(
                     view.stopFling()
                     handler.removeCallbacks(hideScroller)
                     currentTouchPosition =
-                        if (view.isSwipeVertical()) event.rawY - y else event.rawX - x
-                    val position = if (view.isSwipeVertical()) {
+                        if (view.isSwipeVertical) event.rawY - y else event.rawX - x
+                    val position = if (view.isSwipeVertical) {
                         event.rawY - currentTouchPosition + handleCenterOffset
                     } else {
                         event.rawX - currentTouchPosition + handleCenterOffset
                     }
                     setPosition(position = position)
                     view.setPositionOffset(
-                        progress = if (view.isSwipeVertical()) handleCenterOffset / height else handleCenterOffset / width,
+                        progress = if (view.isSwipeVertical) handleCenterOffset / height else handleCenterOffset / width,
                         moveHandle = false
                     )
                     return true
                 }
 
                 MotionEvent.ACTION_MOVE -> {
-                    val position = if (view.isSwipeVertical()) {
+                    val position = if (view.isSwipeVertical) {
                         event.rawY - currentTouchPosition + handleCenterOffset
                     } else {
                         event.rawX - currentTouchPosition + handleCenterOffset
                     }
                     setPosition(position = position)
                     view.setPositionOffset(
-                        progress = if (view.isSwipeVertical()) handleCenterOffset / height else handleCenterOffset / width,
+                        progress = if (view.isSwipeVertical) handleCenterOffset / height else handleCenterOffset / width,
                         moveHandle = false
                     )
                     return true

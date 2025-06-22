@@ -24,8 +24,8 @@ internal class PagesLoader(private val pdfView: PDFView) {
         val size: SizeF = pdfFile.getPageSize(pageIndex = pageIndex)
         val ratioX: Float = 1f / size.width
         val ratioY: Float = 1f / size.height
-        val partHeight = PdfConstants.PART_SIZE * ratioY / pdfView.getZoom()
-        val partWidth = PdfConstants.PART_SIZE * ratioX / pdfView.getZoom()
+        val partHeight = PdfConstants.PART_SIZE * ratioY / pdfView.zoom
+        val partWidth = PdfConstants.PART_SIZE * ratioX / pdfView.zoom
         grid.rows = MathUtils.ceil(value = 1f / partHeight)
         grid.column = MathUtils.ceil(value = 1f / partWidth)
     }
@@ -52,11 +52,11 @@ internal class PagesLoader(private val pdfView: PDFView) {
         val fixedLastXOffset: Float = -MathUtils.max(number = lastXOffset, max = 0f)
         val fixedLastYOffset: Float = -MathUtils.max(number = lastYOffset, max = 0f)
 
-        val isVertical: Boolean = pdfView.isSwipeVertical()
+        val isVertical: Boolean = pdfView.isSwipeVertical
         val offsetFirst: Float = if (isVertical) fixedFirstYOffset else fixedFirstXOffset
         val offsetLast: Float = if (isVertical) fixedLastYOffset else fixedLastXOffset
 
-        val zoom: Float = pdfView.getZoom()
+        val zoom: Float = pdfView.zoom
         val pageFirst: Int = pdfFile.getPageAtOffset(offset = offsetFirst, zoom = zoom)
         val pageLast: Int = pdfFile.getPageAtOffset(offset = offsetLast, zoom = zoom)
         val pageCount: Int = pageLast - pageFirst + 1
@@ -162,7 +162,7 @@ internal class PagesLoader(private val pdfView: PDFView) {
         secondaryOffset: Float, isVertical: Boolean
     ) {
         val pdfFile: PdfFile = pdfView.pdfFile ?: return
-        val pageOffset: Float = pdfFile.getPageOffset(pageIndex = range.page, zoom = pdfView.getZoom())
+        val pageOffset: Float = pdfFile.getPageOffset(pageIndex = range.page, zoom = pdfView.zoom)
         // Get the page offset int the whole file
         // ---------------------------------------
         // |            |           |            |
@@ -286,8 +286,8 @@ internal class PagesLoader(private val pdfView: PDFView) {
                     bounds = bounds,
                     isThumbnail = false,
                     cacheOrder = cacheOrder,
-                    isBestQuality = pdfView.isBestQuality(),
-                    isAnnotation = pdfView.isAnnotationRendering()
+                    isBestQuality = pdfView.isBestQuality,
+                    isAnnotation = pdfView.isAnnotationRendering
                 )
             }
             cacheOrder++
@@ -312,16 +312,16 @@ internal class PagesLoader(private val pdfView: PDFView) {
                 bounds = thumbnailRect,
                 isThumbnail = true,
                 cacheOrder = 0,
-                isBestQuality = pdfView.isBestQuality(),
-                isAnnotation = pdfView.isAnnotationRendering()
+                isBestQuality = pdfView.isBestQuality,
+                isAnnotation = pdfView.isAnnotationRendering
             )
         }
     }
 
     fun loadPages() {
         cacheOrder = 1
-        offsetX = -MathUtils.max(number = pdfView.getCurrentXOffset(), max = 0f)
-        offsetY = -MathUtils.max(number = pdfView.getCurrentYOffset(), max = 0f)
+        offsetX = -MathUtils.max(number = pdfView.currentXOffset, max = 0f)
+        offsetY = -MathUtils.max(number = pdfView.currentYOffset, max = 0f)
         loadVisible()
     }
 

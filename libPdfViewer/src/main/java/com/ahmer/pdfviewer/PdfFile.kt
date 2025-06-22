@@ -5,15 +5,18 @@ import android.graphics.Rect
 import android.graphics.RectF
 import android.util.SparseBooleanArray
 import com.ahmer.pdfium.PdfDocument
+import com.ahmer.pdfium.PdfTextPage
+import com.ahmer.pdfium.PdfWriteCallback
 import com.ahmer.pdfium.PdfiumCore
 import com.ahmer.pdfium.util.Size
 import com.ahmer.pdfium.util.SizeF
 import com.ahmer.pdfviewer.exception.PageRenderingException
 import com.ahmer.pdfviewer.util.FitPolicy
 import com.ahmer.pdfviewer.util.PageSizeCalculator
+import java.io.OutputStream
 
 class PdfFile(
-    val pdfDocument: PdfDocument,
+    private val pdfDocument: PdfDocument,
     private val pdfiumCore: PdfiumCore,
     private val fitPolicy: FitPolicy,
     private val isAutoSpacing: Boolean,
@@ -36,7 +39,7 @@ class PdfFile(
 
     val maxPageHeight: Float get() = (if (isVertical) maxWidthPageSize else maxHeightPageSize).height
     val maxPageWidth: Float get() = (if (isVertical) maxWidthPageSize else maxHeightPageSize).width
-    val pagesCount: Int get() = if (userPages.isNotEmpty()) userPages.size else totalPages()
+    val pagesCount: Int get() = if (userPages.isNotEmpty()) userPages.size else totalPages
 
     fun ensureValidPageNumber(userPage: Int): Int {
         if (userPage <= 0) return 0
@@ -160,19 +163,45 @@ class PdfFile(
         preparePagesOffset()
     }
 
-    fun bookmarks(): List<PdfDocument.Bookmark> = pdfDocument.bookmarks
+    fun deletePage(pageIndex: Int) = pdfDocument.deletePage(pageIndex = pageIndex)
 
     fun docLength(zoom: Float): Float = documentLength * zoom
 
-    fun pageRotation(pageIndex: Int): Int = pdfiumCore.pageRotation(pageIndex = pageIndex)
+    fun openDocPage(pageIndex: Int): Long = pdfDocument.openPage(pageIndex = pageIndex)
 
-    fun deletePage(pageIndex: Int) = pdfDocument.deletePage(pageIndex = pageIndex)
+    fun openDocPages(start: Int, end: Int): LongArray = pdfDocument.openPages(start = start, end = end)
 
-    fun metaData(): PdfDocument.Meta = pdfDocument.metaData
+    fun openTextPage(pageIndex: Int): PdfTextPage = pdfDocument.openTextPage(pageIndex = pageIndex)
+
+    fun openTextPages(start: Int, end: Int): List<PdfTextPage> = pdfDocument.openTextPages(start = start, end = end)
 
     fun pageHasError(page: Int): Boolean = !openedPages[documentPage(userPage = page), false]
 
-    fun totalPages(): Int = pdfDocument.totalPages()
+    fun pageRotation(pageIndex: Int): Int = pdfiumCore.pageRotation(pageIndex = pageIndex)
+
+    fun saveAsCopy(out: OutputStream, flags: Int): Boolean {
+        return try {
+            val callback = object : PdfWriteCallback {
+                override fun WriteBlock(data: ByteArray?): Int {
+                    data?.let {
+                        out.write(it)
+                        return it.size
+                    }
+                    return 0
+                }
+            }
+            pdfDocument.saveAsCopy(callback = callback, flags = flags)
+            true
+        } catch (e: Exception) {
+            false
+        }
+    }
+
+    val bookmarks: List<PdfDocument.Bookmark> = pdfDocument.bookmarks
+
+    val metaData: PdfDocument.Meta = pdfDocument.metaData
+
+    val totalPages: Int = pdfDocument.totalPages
 
     private fun prepareAutoSpacing(viewSize: Size) {
         pageSpacing.clear()
@@ -258,7 +287,7 @@ class PdfFile(
             userPages: IntArray = intArrayOf(),
             size: Size,
         ): PdfFile {
-            val pdfFile = PdfFile(
+            return PdfFile(
                 pdfDocument = pdfDocument,
                 pdfiumCore = pdfiumCore,
                 fitPolicy = fitPolicy,
@@ -268,7 +297,6 @@ class PdfFile(
                 spacingPixels = spacingPixels,
                 userPages = userPages
             ).apply { setup(viewSize = size) }
-            return pdfFile
         }
     }
 }

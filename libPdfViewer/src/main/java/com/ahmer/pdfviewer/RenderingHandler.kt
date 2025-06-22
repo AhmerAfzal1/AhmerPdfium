@@ -103,7 +103,7 @@ class RenderingHandler(looper: Looper, private val pdfView: PDFView) : Handler(l
             bounds = roundedBounds,
             isAnnotation = task.isAnnotation
         )
-        if (pdfView.isNightMode()) {
+        if (pdfView.isNightMode) {
             bitmap = toNightMode(bitmap = bitmap, bestQuality = task.isBestQuality)
         }
         return PagePart(

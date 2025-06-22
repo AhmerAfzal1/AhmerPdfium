@@ -18,7 +18,7 @@ internal class AnimationManager(private val pdfView: PDFView) {
     private var currentAnimator: ValueAnimator? = null
 
     private fun hideHandle() {
-        pdfView.getScrollHandle()?.hideDelayed()
+        pdfView.scrollHandle?.hideDelayed()
     }
 
     fun startXAnimation(xFrom: Float, xTo: Float) {
@@ -73,10 +73,10 @@ internal class AnimationManager(private val pdfView: PDFView) {
     }
 
     fun startPageFlingAnimation(targetOffset: Float) {
-        if (pdfView.isSwipeVertical()) {
-            startYAnimation(yFrom = pdfView.getCurrentYOffset(), yTo = targetOffset)
+        if (pdfView.isSwipeVertical) {
+            startYAnimation(yFrom = pdfView.currentYOffset, yTo = targetOffset)
         } else {
-            startXAnimation(xFrom = pdfView.getCurrentXOffset(), xTo = targetOffset)
+            startXAnimation(xFrom = pdfView.currentXOffset, xTo = targetOffset)
         }
         isPageFlinging = true
     }
@@ -113,7 +113,7 @@ internal class AnimationManager(private val pdfView: PDFView) {
     private inner class XAnimationListener : AnimatorListenerAdapter(),
         ValueAnimator.AnimatorUpdateListener {
         override fun onAnimationUpdate(animation: ValueAnimator) {
-            pdfView.moveTo(offsetX = animation.animatedValue as Float, offsetY = pdfView.getCurrentYOffset())
+            pdfView.moveTo(offsetX = animation.animatedValue as Float, offsetY = pdfView.currentYOffset)
             pdfView.loadPageByOffset()
         }
 
@@ -133,7 +133,7 @@ internal class AnimationManager(private val pdfView: PDFView) {
     private inner class YAnimationListener : AnimatorListenerAdapter(),
         ValueAnimator.AnimatorUpdateListener {
         override fun onAnimationUpdate(animation: ValueAnimator) {
-            pdfView.moveTo(offsetX = pdfView.getCurrentXOffset(), offsetY = animation.animatedValue as Float)
+            pdfView.moveTo(offsetX = pdfView.currentXOffset, offsetY = animation.animatedValue as Float)
             pdfView.loadPageByOffset()
         }
 
