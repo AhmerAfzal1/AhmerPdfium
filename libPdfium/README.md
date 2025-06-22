@@ -44,7 +44,6 @@ fun printInfo(doc: PdfDocument) {
     Log.v(TAG, "Producer = " + meta.producer)
     Log.v(TAG, "CreationDate = " + meta.creationDate)
     Log.v(TAG, "ModDate = " + meta.modDate)
-    Log.v(TAG, "TotalPages = " + meta.totalPages)
     printBookmarksTree(doc.bookmarks, "-")
 }
 

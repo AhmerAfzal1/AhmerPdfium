@@ -70,7 +70,7 @@ android {
         jvmTarget = JvmTarget.JVM_17.target
     }
 
-    packaging  {
+    packaging {
         jniLibs {
             useLegacyPackaging = true
         }

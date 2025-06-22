@@ -25,23 +25,21 @@ class PdfDocument : Closeable {
      *
      * @return Number of pages or 0 if closed
      */
-    fun totalPages(): Int {
-        synchronized(lock = PdfiumCore.lock) {
-            return nativeGetPageCount(docPtr = nativePtr)
+    val totalPages: Int
+        get() = synchronized(lock = PdfiumCore.lock) {
+            nativeGetPageCount(docPtr = nativePtr)
         }
-    }
 
     /**
      * Retrieves character counts for all pages in the document.
      *
      * @return IntArray of character counts per page (empty if closed)
      */
-    val pageCharCounts: IntArray
-        get() {
-            synchronized(lock = PdfiumCore.lock) {
-                return nativeGetPageCharCounts(docPtr = nativePtr)
-            }
+    val pageCharCounts: IntArray by lazy {
+        synchronized(lock = PdfiumCore.lock) {
+            nativeGetPageCharCounts(docPtr = nativePtr)
         }
+    }
 
     /**
      * Opens a page and maintains reference count.
@@ -109,10 +107,8 @@ class PdfDocument : Closeable {
                 keywords = nativeGetDocumentMetaText(docPtr = nativePtr, tag = "Keywords")
                 creator = nativeGetDocumentMetaText(docPtr = nativePtr, tag = "Creator")
                 producer = nativeGetDocumentMetaText(docPtr = nativePtr, tag = "Producer")
-                creationDate =
-                    nativeGetDocumentMetaText(docPtr = nativePtr, tag = "CreationDate")
+                creationDate = nativeGetDocumentMetaText(docPtr = nativePtr, tag = "CreationDate")
                 modDate = nativeGetDocumentMetaText(docPtr = nativePtr, tag = "ModDate")
-                totalPages = totalPages()
             }
         }
     }
@@ -123,23 +119,20 @@ class PdfDocument : Closeable {
         level: Long,
     ) {
         val maxRecursion = 16
-        var levelMutable = level
+        var levelMutable: Long = level
         val bookmark: Bookmark = Bookmark().apply {
             nativePtr = bookmarkPtr
             title = nativeGetBookmarkTitle(bookmarkPtr = bookmarkPtr)
-            pageIndex = nativeGetBookmarkDestIndex(
-                docPtr = this@PdfDocument.nativePtr,
-                bookmarkPtr = bookmarkPtr
-            )
+            pageIndex = nativeGetBookmarkDestIndex(docPtr = this@PdfDocument.nativePtr, bookmarkPtr = bookmarkPtr)
             tree.add(this)
         }
-        val child = nativeGetFirstChildBookmark(nativePtr, bookmarkPtr)
+        val child: Long = nativeGetFirstChildBookmark(docPtr = nativePtr, bookmarkPtr = bookmarkPtr)
         if (child != 0L && levelMutable < maxRecursion) {
-            recursiveGetBookmark(bookmark.children, child, levelMutable++)
+            recursiveGetBookmark(tree = bookmark.children, bookmarkPtr = child, level = levelMutable++)
         }
-        val sibling = nativeGetSiblingBookmark(nativePtr, bookmarkPtr)
+        val sibling: Long = nativeGetSiblingBookmark(docPtr = nativePtr, bookmarkPtr = bookmarkPtr)
         if (sibling != 0L && levelMutable < maxRecursion) {
-            recursiveGetBookmark(tree, sibling, levelMutable)
+            recursiveGetBookmark(tree = tree, bookmarkPtr = sibling, level = levelMutable)
         }
     }
 
@@ -262,7 +255,6 @@ class PdfDocument : Closeable {
         var producer: String? = null,
         var creationDate: String? = null,
         var modDate: String? = null,
-        var totalPages: Int = 0
     )
 
     data class Bookmark(
