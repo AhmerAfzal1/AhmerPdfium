@@ -159,7 +159,7 @@ with different page sizes:
 
 ```kotlin
 onRender(object : OnRenderListener {
-    override fun onInitiallyRendered(nbPages: Int) {
+    override fun onInitiallyRendered(totalPages: Int) {
         pdfView.fitToWidth(pageIndex)
     }
 })

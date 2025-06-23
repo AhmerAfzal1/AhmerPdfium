@@ -50,7 +50,6 @@ fun printInfo(doc: PdfDocument) {
     Log.v(TAG, "Producer = " + meta.producer)
     Log.v(TAG, "CreationDate = " + meta.creationDate)
     Log.v(TAG, "ModDate = " + meta.modDate)
-    Log.v(TAG, "TotalPages = " + meta.totalPages)
     printBookmarksTree(doc.bookmarks, "-")
 }
 
@@ -231,7 +230,7 @@ with different page sizes:
 
 ```kotlin
 onRender(object : OnRenderListener {
-    override fun onInitiallyRendered(nbPages: Int) {
+    override fun onInitiallyRendered(totalPages: Int) {
         pdfView.fitToWidth(pageIndex)
     }
 })
