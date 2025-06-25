@@ -1,5 +1,4 @@
 import com.vanniktech.maven.publish.AndroidSingleVariantLibrary
-import com.vanniktech.maven.publish.SonatypeHost
 import org.jetbrains.kotlin.gradle.dsl.JvmTarget
 
 plugins {
@@ -25,6 +24,7 @@ android {
     defaultConfig {
         minSdk = 24
 
+        @Suppress("UnstableApiUsage")
         externalNativeBuild {
             cmake {
                 arguments.addAll(
@@ -66,8 +66,10 @@ android {
         targetCompatibility = JavaVersion.VERSION_17
     }
 
-    kotlinOptions {
-        jvmTarget = JvmTarget.JVM_17.target
+    kotlin {
+        compilerOptions {
+            jvmTarget.set(JvmTarget.JVM_17)
+        }
     }
 
     packaging {
@@ -115,7 +117,7 @@ mavenPublishing {
             publishJavadocJar = true,
         )
     )
-    publishToMavenCentral(SonatypeHost.CENTRAL_PORTAL)
+    publishToMavenCentral()
     signAllPublications()
 
     coordinates(

@@ -1,5 +1,4 @@
 import com.vanniktech.maven.publish.AndroidSingleVariantLibrary
-import com.vanniktech.maven.publish.SonatypeHost
 import org.jetbrains.kotlin.gradle.dsl.JvmTarget
 
 plugins {
@@ -40,11 +39,14 @@ android {
         disable.addAll(setOf("TypographyFractions", "TypographyQuotes", "Typos"))
     }
 
-    kotlinOptions {
-        jvmTarget = JvmTarget.JVM_17.target
-        freeCompilerArgs = freeCompilerArgs + listOf(
-            "-opt-in=kotlin.RequiresOptIn", "-opt-in=org.readium.r2.shared.InternalReadiumApi"
-        )
+    kotlin {
+        compilerOptions {
+            jvmTarget.set(JvmTarget.JVM_17)
+            freeCompilerArgs.addAll(
+                "-opt-in=kotlin.RequiresOptIn",
+                "-opt-in=org.readium.r2.shared.InternalReadiumApi"
+            )
+        }
     }
 }
 
@@ -77,7 +79,7 @@ mavenPublishing {
             publishJavadocJar = true,
         )
     )
-    publishToMavenCentral(SonatypeHost.CENTRAL_PORTAL)
+    publishToMavenCentral()
     signAllPublications()
 
     coordinates(
