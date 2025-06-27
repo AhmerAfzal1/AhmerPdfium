@@ -10,16 +10,9 @@ import java.io.IOException
 class FileSource(private val file: File) : DocumentSource {
 
     @Throws(IOException::class)
-    override fun createDocument(
-        context: Context,
-        pdfiumCore: PdfiumCore,
-        password: String?
-    ): PdfDocument {
+    override fun createDocument(context: Context, pdfiumCore: PdfiumCore, password: String?): PdfDocument {
         return pdfiumCore.newDocument(
-            parcelFileDescriptor = ParcelFileDescriptor.open(
-                file,
-                ParcelFileDescriptor.MODE_READ_ONLY
-            ),
+            parcelFileDescriptor = ParcelFileDescriptor.open(file, ParcelFileDescriptor.MODE_READ_ONLY),
             password = password
         )
     }

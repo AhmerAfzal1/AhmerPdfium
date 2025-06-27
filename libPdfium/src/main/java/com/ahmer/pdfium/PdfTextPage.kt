@@ -77,7 +77,7 @@ class PdfTextPage(
         synchronized(lock = PdfiumCore.lock) {
             return try {
                 val buffer = ShortArray(size = length + 1)
-                val chars = nativeTextGetText(
+                val chars: Int = nativeTextGetText(
                     textPagePtr = textPagePtr,
                     startIndex = startIndex,
                     count = length,
@@ -115,7 +115,7 @@ class PdfTextPage(
         return synchronized(lock = PdfiumCore.lock) {
             try {
                 ByteArray(size = length * 2).let { buffer ->
-                    val chars = nativeTextGetTextByteArray(
+                    val chars: Int = nativeTextGetTextByteArray(
                         textPagePtr = textPagePtr,
                         startIndex = startIndex,
                         count = length,
@@ -215,8 +215,7 @@ class PdfTextPage(
             return try {
                 nativeTextCountRects(textPagePtr = textPagePtr, startIndex = startIndex, count = count)
             } catch (e: Exception) {
-                val msg =
-                    "Failed to count rectangles for range [$startIndex, ${startIndex + count}]: ${e.message}"
+                val msg = "Failed to count rectangles for range [$startIndex, ${startIndex + count}]: ${e.message}"
                 Log.e(TAG, msg, e)
                 return -1
             }
@@ -261,7 +260,7 @@ class PdfTextPage(
             return try {
                 nativeTextGetRects(textPagePtr = textPagePtr, wordRanges = wordRanges)?.let { data ->
                     List(size = data.size / 6) { i ->
-                        val offset = i * 6
+                        val offset: Int = i * 6
                         WordRangeRect(
                             rangeStart = data[offset + 4].toInt(),
                             rangeLength = data[offset + 5].toInt(),
@@ -293,7 +292,7 @@ class PdfTextPage(
         synchronized(lock = PdfiumCore.lock) {
             return try {
                 val buffer = ShortArray(size = length + 1)
-                val textRect = nativeTextGetBoundedText(
+                val textRect: Int = nativeTextGetBoundedText(
                     textPagePtr = textPagePtr,
                     left = rect.left.toDouble(),
                     top = rect.top.toDouble(),
@@ -345,16 +344,12 @@ class PdfTextPage(
      * @param startIndex starting character index
      * @return search result handle or null on error
      */
-    fun startTextSearch(
-        query: String,
-        flags: Set<FindFlags> = emptySet(),
-        startIndex: Int = 0
-    ): FindResult? {
+    fun startTextSearch(query: String, flags: Set<FindFlags> = emptySet(), startIndex: Int = 0): FindResult? {
         require(value = query.isNotEmpty()) { "Search query cannot be empty" }
         require(value = startIndex >= 0) { "Start index cannot be negative" }
         synchronized(lock = PdfiumCore.lock) {
             return try {
-                val flag = flags.fold(initial = 0) { acc, flag -> acc or flag.value }
+                val flag: Int = flags.fold(initial = 0) { acc, flag -> acc or flag.value }
                 nativeFindStart(
                     textPagePtr = textPagePtr,
                     findWhat = query,
@@ -380,7 +375,7 @@ class PdfTextPage(
         synchronized(lock = PdfiumCore.lock) {
             return try {
                 val buffer = ByteArray(size = charCount * 2)
-                val bytesWritten = nativeGetURL(
+                val bytesWritten: Int = nativeGetURL(
                     pageLinkPtr = pageLinkPtr,
                     index = linkIndex,
                     count = charCount,

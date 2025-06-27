@@ -30,20 +30,20 @@ class DefaultScrollHandle @JvmOverloads constructor(
     private val hideScroller: Runnable = Runnable { hide() }
     private var currentTouchPosition: Float = 0f
     private var handleCenterOffset: Float = 0f
-    private val pageNumberText = TextView(context)
+    private val pageNumberText: TextView = TextView(context)
     private var pdfView: PDFView? = null
 
     override fun setupLayout(pdfView: PDFView) {
-        val isVertical = pdfView.isSwipeVertical
-        val width = if (isVertical) HANDLE_LONG else HANDLE_SHORT
-        val height = if (isVertical) HANDLE_SHORT else HANDLE_LONG
-        val align = when {
+        val isVertical: Boolean = pdfView.isSwipeVertical
+        val width: Int = if (isVertical) HANDLE_LONG else HANDLE_SHORT
+        val height: Int = if (isVertical) HANDLE_SHORT else HANDLE_LONG
+        val align: Int = when {
             isVertical && inverted -> ALIGN_PARENT_LEFT
             isVertical -> ALIGN_PARENT_RIGHT
             inverted -> ALIGN_PARENT_TOP
             else -> ALIGN_PARENT_BOTTOM
         }
-        val backgroundRes = when {
+        val backgroundRes: Int = when {
             isVertical && inverted -> R.drawable.default_scroll_handle_left
             isVertical -> R.drawable.default_scroll_handle_right
             inverted -> R.drawable.default_scroll_handle_top
@@ -67,7 +67,7 @@ class DefaultScrollHandle @JvmOverloads constructor(
     override fun setScroll(position: Float) {
         if (!shown()) show() else handler.removeCallbacks(hideScroller)
         pdfView?.let {
-            val viewSize = if (it.isSwipeVertical) it.height else it.width
+            val viewSize: Int = if (it.isSwipeVertical) it.height else it.width
             setPosition(viewSize * position)
         }
     }
@@ -136,9 +136,8 @@ class DefaultScrollHandle @JvmOverloads constructor(
                 MotionEvent.ACTION_DOWN, MotionEvent.ACTION_POINTER_DOWN -> {
                     view.stopFling()
                     handler.removeCallbacks(hideScroller)
-                    currentTouchPosition =
-                        if (view.isSwipeVertical) event.rawY - y else event.rawX - x
-                    val position = if (view.isSwipeVertical) {
+                    currentTouchPosition = if (view.isSwipeVertical) event.rawY - y else event.rawX - x
+                    val position: Float = if (view.isSwipeVertical) {
                         event.rawY - currentTouchPosition + handleCenterOffset
                     } else {
                         event.rawX - currentTouchPosition + handleCenterOffset
@@ -152,7 +151,7 @@ class DefaultScrollHandle @JvmOverloads constructor(
                 }
 
                 MotionEvent.ACTION_MOVE -> {
-                    val position = if (view.isSwipeVertical) {
+                    val position: Float = if (view.isSwipeVertical) {
                         event.rawY - currentTouchPosition + handleCenterOffset
                     } else {
                         event.rawX - currentTouchPosition + handleCenterOffset
