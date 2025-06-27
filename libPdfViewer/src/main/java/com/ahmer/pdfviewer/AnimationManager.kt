@@ -110,8 +110,7 @@ internal class AnimationManager(private val pdfView: PDFView) {
         const val FLING_DURATION: Long = 400L
     }
 
-    private inner class XAnimationListener : AnimatorListenerAdapter(),
-        ValueAnimator.AnimatorUpdateListener {
+    private inner class XAnimationListener : AnimatorListenerAdapter(), ValueAnimator.AnimatorUpdateListener {
         override fun onAnimationUpdate(animation: ValueAnimator) {
             pdfView.moveTo(offsetX = animation.animatedValue as Float, offsetY = pdfView.currentYOffset)
             pdfView.loadPageByOffset()
@@ -130,8 +129,7 @@ internal class AnimationManager(private val pdfView: PDFView) {
         }
     }
 
-    private inner class YAnimationListener : AnimatorListenerAdapter(),
-        ValueAnimator.AnimatorUpdateListener {
+    private inner class YAnimationListener : AnimatorListenerAdapter(), ValueAnimator.AnimatorUpdateListener {
         override fun onAnimationUpdate(animation: ValueAnimator) {
             pdfView.moveTo(offsetX = pdfView.currentXOffset, offsetY = animation.animatedValue as Float)
             pdfView.loadPageByOffset()
@@ -150,10 +148,8 @@ internal class AnimationManager(private val pdfView: PDFView) {
         }
     }
 
-    private inner class ZoomAnimationListener(
-        private val centerX: Float,
-        private val centerY: Float
-    ) : AnimatorListenerAdapter(), ValueAnimator.AnimatorUpdateListener {
+    private inner class ZoomAnimationListener(private val centerX: Float, private val centerY: Float) :
+        AnimatorListenerAdapter(), ValueAnimator.AnimatorUpdateListener {
         override fun onAnimationUpdate(animation: ValueAnimator) {
             pdfView.zoomCenteredTo(zoom = animation.animatedValue as Float, pivot = PointF(centerX, centerY))
         }

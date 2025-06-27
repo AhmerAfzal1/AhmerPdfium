@@ -2,6 +2,8 @@ package com.ahmer.pdfviewer
 
 import android.os.Handler
 import android.os.Looper
+import com.ahmer.pdfium.PdfDocument
+import com.ahmer.pdfium.PdfiumCore
 import com.ahmer.pdfium.util.Size
 import com.ahmer.pdfviewer.source.DocumentSource
 import java.util.concurrent.ExecutorService
@@ -18,15 +20,17 @@ internal class DecodingTask(
 
     fun execute() {
         try {
-            val document = docSource.createDocument(
+            val pdfiumCore: PdfiumCore = pdfView.pdfiumCore ?: return
+
+            val document: PdfDocument = docSource.createDocument(
                 context = pdfView.context,
-                pdfiumCore = pdfView.pdfiumCore!!,
+                pdfiumCore = pdfiumCore,
                 password = password
             )
 
-            val pdfFile = PdfFile.create(
+            val pdfFile: PdfFile = PdfFile.create(
                 pdfDocument = document,
-                pdfiumCore = pdfView.pdfiumCore!!,
+                pdfiumCore = pdfiumCore,
                 fitPolicy = pdfView.pageFitPolicy,
                 isAutoSpacing = pdfView.isAutoSpacingEnabled,
                 isFitEachPage = pdfView.isFitEachPage,

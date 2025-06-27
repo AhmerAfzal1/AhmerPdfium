@@ -5,8 +5,8 @@ plugins {
     alias(libs.plugins.kotlin.android)
     alias(libs.plugins.kotlin.parcelize)
     alias(libs.plugins.navigation.safe.args)
-    alias(libs.plugins.ksp)
     alias(libs.plugins.hilt.android)
+    alias(libs.plugins.ksp)
 }
 
 android {
@@ -75,23 +75,23 @@ android {
 dependencies {
     implementation(project(":libPdfium"))
     implementation(project(":libPdfViewer"))
-    implementation(libs.androidx.core.ktx)
     implementation(libs.androidx.appcompat)
-    implementation(libs.androidx.material)
     implementation(libs.androidx.constraintlayout)
+    implementation(libs.androidx.core.ktx)
     implementation(libs.androidx.datastore)
     implementation(libs.androidx.datastore.core)
     implementation(libs.androidx.datastore.preferences)
     implementation(libs.androidx.lifecycle.common)
     implementation(libs.androidx.lifecycle.livedata)
     implementation(libs.androidx.lifecycle.viewmodel)
+    implementation(libs.androidx.material)
     implementation(libs.androidx.multidex)
     implementation(libs.androidx.navigation.fragment)
     implementation(libs.androidx.navigation.ui)
     implementation(libs.androidx.preference)
-    implementation(libs.hilt.android)
-    ksp(libs.hilt.compiler)
     implementation(libs.coroutines.android)
     implementation(libs.coroutines.core)
     implementation(libs.coroutines.play.services)
+    implementation(libs.hilt.android)
+    ksp(libs.hilt.compiler)
 }

@@ -56,7 +56,7 @@ class RenderingHandler(looper: Looper, private val pdfView: PDFView) : Handler(l
 
     private fun toNightMode(bitmap: Bitmap, bestQuality: Boolean): Bitmap {
         val config: Bitmap.Config = getBitmapConfig(isBestQuality = bestQuality)
-        val newBitmap = createBitmap(width = bitmap.width, height = bitmap.height, config = config)
+        val newBitmap: Bitmap = createBitmap(width = bitmap.width, height = bitmap.height, config = config)
         val paint = Paint().apply {
             colorFilter = ColorMatrixColorFilter(ColorMatrix().apply {
                 postConcat(ColorMatrix().apply { setSaturation(0f) })
