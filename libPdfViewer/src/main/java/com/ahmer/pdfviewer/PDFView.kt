@@ -808,6 +808,18 @@ class PDFView(context: Context?, set: AttributeSet?) : RelativeLayout(context, s
         loadPageByOffset()
     }
 
+    /**
+     * Writes a copy of the currently loaded PDF document to the provided output stream,
+     * allowing control over incremental updates and security settings.
+     *
+     * @param out The output stream to which the PDF will be written. Caller is responsible for closing it.
+     * @param flags A flag indicating the save behavior. Valid options:
+     *   - [FPDF_INCREMENTAL]: Preserves previous revisions, appending changes incrementally.
+     *   - [FPDF_NO_INCREMENTAL]: Rewrites the entire PDF as a new file, optimizing size.
+     *   - [FPDF_REMOVE_SECURITY]: Generates an unprotected copy if the source PDF is restricted.
+     *
+     * @return `true` if the PDF was successfully saved, `false` if no document was loaded or on failure.
+     */
     fun saveAsCopy(out: OutputStream, flags: Int): Boolean {
         return pdfFile?.saveAsCopy(out = out, flags = flags) ?: false
     }
