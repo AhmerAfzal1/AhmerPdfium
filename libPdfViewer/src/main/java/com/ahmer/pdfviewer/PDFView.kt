@@ -19,6 +19,9 @@ import com.ahmer.pdfium.PdfTextPage
 import com.ahmer.pdfium.PdfiumCore
 import com.ahmer.pdfium.util.Size
 import com.ahmer.pdfium.util.SizeF
+import com.ahmer.pdfviewer.PDFView.Companion.FPDF_INCREMENTAL
+import com.ahmer.pdfviewer.PDFView.Companion.FPDF_NO_INCREMENTAL
+import com.ahmer.pdfviewer.PDFView.Companion.FPDF_REMOVE_SECURITY
 import com.ahmer.pdfviewer.exception.PageRenderingException
 import com.ahmer.pdfviewer.link.DefaultLinkHandler
 import com.ahmer.pdfviewer.link.LinkHandler

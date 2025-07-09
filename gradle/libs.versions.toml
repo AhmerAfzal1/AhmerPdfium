@@ -11,7 +11,7 @@ hilt = "2.56.2"
 lifecycle = "2.9.1"
 material = "1.12.0"
 multidex = "2.0.1"
-navigation = "2.9.0"
+navigation = "2.9.1"
 preference = "1.2.1"
 vanniktech-maven-publish = "0.33.0"
 

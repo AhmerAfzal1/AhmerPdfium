@@ -127,7 +127,7 @@ class PdfFile(
         )
     }
 
-    @Throws(PageRenderingException::class)
+    @Throws(exceptionClasses = [PageRenderingException::class])
     fun openPage(pageIndex: Int): Boolean {
         synchronized(lock = lock) {
             return documentPage(userPage = pageIndex).takeIf { it >= 0 }?.let { docPage ->
@@ -192,7 +192,7 @@ class PdfFile(
             }
             pdfDocument.saveAsCopy(callback = callback, flags = flags)
             true
-        } catch (e: Exception) {
+        } catch (_: Exception) {
             false
         }
     }
