@@ -44,7 +44,6 @@ import com.ahmer.pdfviewer.source.FileSource
 import com.ahmer.pdfviewer.source.InputStreamSource
 import com.ahmer.pdfviewer.source.UriSource
 import com.ahmer.pdfviewer.util.FitPolicy
-import com.ahmer.pdfviewer.util.MathUtils
 import com.ahmer.pdfviewer.util.PdfConstants
 import com.ahmer.pdfviewer.util.PdfUtils
 import com.ahmer.pdfviewer.util.ScrollDir
@@ -261,7 +260,7 @@ class PDFView(context: Context?, set: AttributeSet?) : RelativeLayout(context, s
         } else {
             -_currentXOffset / (docLength - width)
         }
-        return MathUtils.limit(number = offset, between = 0f, and = 1f)
+        return offset.coerceIn(minimumValue = 0f, maximumValue = 1f)
     }
 
     @JvmOverloads
