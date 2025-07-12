@@ -661,7 +661,7 @@ class PDFView(context: Context?, set: AttributeSet?) : RelativeLayout(context, s
     val maxZoom: Float get() = _zoomMax
     val midZoom: Float get() = _zoomMid
     val minZoom: Float get() = _zoomMin
-    val pageCount: Int get() = pdfFile?.pagesCount ?: pdfFile!!.totalPages
+    val pagesCount: Int get() = pdfFile?.pagesCount ?: pdfFile!!.totalPages
     val pageFitPolicy: FitPolicy get() = _pageFitPolicy
     val scrollHandle: ScrollHandle? get() = _scrollHandle
     val spacingPx: Int get() = _spacingPx

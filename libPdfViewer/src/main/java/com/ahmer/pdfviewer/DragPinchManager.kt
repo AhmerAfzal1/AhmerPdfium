@@ -132,7 +132,7 @@ internal class DragPinchManager(
         val startingPage: Int = pdfView.findFocusPage(xOffset = offsetX, yOffset = offsetY)
         val targetPage: Int = startingPage + direction.coerceIn(
             minimumValue = 0,
-            maximumValue = pdfView.pageCount - 1
+            maximumValue = pdfView.pagesCount - 1
         )
 
         val edge: SnapEdge = pdfView.findSnapEdge(page = targetPage)
