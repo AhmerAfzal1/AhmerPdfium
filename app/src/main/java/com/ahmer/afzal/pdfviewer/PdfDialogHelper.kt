@@ -12,6 +12,7 @@ import android.widget.EditText
 import android.widget.TextView
 import androidx.core.content.ContextCompat
 import com.ahmer.pdfium.PdfDocument
+import com.ahmer.pdfviewer.PDFView
 import java.io.File
 import java.util.Locale
 
@@ -125,11 +126,11 @@ object PdfDialogHelper {
     }
 
     fun createInfoDialog(
-        context: Context,
+        pdfView: PDFView,
         meta: PdfDocument.Meta?,
         file: File?
     ): Dialog {
-        return Dialog(context).apply {
+        return Dialog(pdfView.context).apply {
             requestWindowFeature(Window.FEATURE_NO_TITLE)
             window?.setBackgroundDrawableResource(android.R.color.transparent)
             setContentView(R.layout.dialog_pdf_info)
@@ -141,7 +142,7 @@ object PdfDialogHelper {
             meta?.let {
                 findViewById<TextView>(R.id.dialogTvTitle).text = it.title
                 findViewById<TextView>(R.id.dialogTvAuthor).text = it.author
-                findViewById<TextView>(R.id.dialogTvTotalPage).text = it.totalPages.toString()
+                findViewById<TextView>(R.id.dialogTvTotalPage).text = pdfView.pagesCount.toString()
                 findViewById<TextView>(R.id.dialogTvSubject).text = it.subject
                 findViewById<TextView>(R.id.dialogTvKeywords).text = it.keywords
                 findViewById<TextView>(R.id.dialogTvCreationDate).text = it.creationDate

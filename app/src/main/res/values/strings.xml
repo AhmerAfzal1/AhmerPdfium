@@ -51,4 +51,13 @@
     <string name="password_not_empty">Password should not be empty</string>
     <string name="password_not_space">Password should not be only space(s)</string>
     <string name="desc_pdf_protected">This file is password protected.\nPlease enter the password to open PDF file</string>
+
+    <!-- strings.xml -->
+    <string name="search_hint">Search...</string>
+    <string name="match_case">Aa</string>
+    <string name="whole_word">Whole</string>
+    <string name="previous_result">Previous result</string>
+    <string name="next_result">Next result</string>
+    <string name="close_search">Close search</string>
+    <string name="search_counter_format">%1$d/%2$d</string>
 </resources>

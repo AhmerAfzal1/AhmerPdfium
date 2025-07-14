@@ -369,7 +369,7 @@ class PdfFragment : Fragment(R.layout.fragment_pdf), MenuProvider, OnPageChangeL
     private fun showJumpToDialog() {
         PdfDialogHelper.createJumpToDialog(
             context = requireContext(),
-            pageCount = pdfView.getPageCount(),
+            pageCount = pdfView.pagesCount,
             onPageSelected = { page ->
                 pdfView.jumpTo(page = page - 1, withAnimation = true)
             }
@@ -379,8 +379,8 @@ class PdfFragment : Fragment(R.layout.fragment_pdf), MenuProvider, OnPageChangeL
     private fun showPdfInfoDialog() {
         lifecycleScope.launch {
             PdfDialogHelper.createInfoDialog(
-                context = requireContext(),
-                meta = pdfView.documentMeta(),
+                pdfView = pdfView,
+                meta = pdfView.documentMeta,
                 file = pdfFileName.let {
                     PdfUtils.fileFromAsset(
                         context = requireContext(),
@@ -417,7 +417,7 @@ class PdfFragment : Fragment(R.layout.fragment_pdf), MenuProvider, OnPageChangeL
     override fun loadComplete(totalPages: Int) {
         progressBar.visibility = View.GONE
         menuState(isEnabled = true)
-        logBookmarks(bookmarks = pdfView.bookmarks())
+        logBookmarks(bookmarks = pdfView.bookmarks)
     }
 
     private fun showToast(msg: String) {

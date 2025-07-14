@@ -19,7 +19,7 @@
         android:title="@android:string/search_go"
         app:actionViewClass="androidx.appcompat.widget.SearchView"
         app:iconTint="@android:color/white"
-        app:showAsAction="collapseActionView|ifRoom" />
+        app:showAsAction="ifRoom" />
 
     <item
         android:id="@+id/menuPageSnap"
@@ -37,5 +37,15 @@
         android:id="@+id/menuInfo"
         android:icon="@drawable/ic_baseline_info"
         android:title="@string/menu_pdf_file_info"
+        app:showAsAction="ifRoom" />
+
+    <item
+        android:id="@+id/menuDeletePage"
+        android:title="Delete Page"
+        app:showAsAction="ifRoom" />
+
+    <item
+        android:id="@+id/menuSaveCopy"
+        android:title="Save As Copy"
         app:showAsAction="ifRoom" />
 </menu>

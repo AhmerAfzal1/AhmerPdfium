@@ -1,0 +1,90 @@
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:background="@android:drawable/dialog_holo_light_frame"
+    android:elevation="8dp"
+    android:gravity="center_vertical"
+    android:orientation="horizontal"
+    android:padding="8dp">
+
+    <!-- Search field -->
+    <EditText
+        android:id="@+id/searchQuery"
+        android:layout_width="0dp"
+        android:layout_height="36dp"
+        android:layout_weight="1"
+        android:background="@android:drawable/editbox_background_normal"
+        android:hint="@string/search_hint"
+        android:imeOptions="actionSearch"
+        android:inputType="text"
+        android:paddingStart="12dp"
+        android:paddingEnd="12dp"
+        android:textColor="@android:color/black"
+        android:textColorHint="@android:color/darker_gray" />
+
+    <!-- Search options -->
+    <CheckBox
+        android:id="@+id/matchCase"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginStart="4dp"
+        android:buttonTint="@android:color/holo_blue_dark"
+        android:text="@string/match_case"
+        android:textColor="@android:color/black"
+        android:textSize="12sp" />
+
+    <CheckBox
+        android:id="@+id/wholeWord"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginStart="4dp"
+        android:buttonTint="@android:color/holo_blue_dark"
+        android:text="@string/whole_word"
+        android:textColor="@android:color/black"
+        android:textSize="12sp" />
+
+    <!-- Search counter -->
+    <TextView
+        android:id="@+id/searchCounter"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginStart="4dp"
+        android:textColor="@android:color/black"
+        android:textSize="12sp"
+        android:visibility="gone"
+        tools:text="5/10" />
+
+    <!-- Navigation buttons - more compact -->
+    <ImageButton
+        android:id="@+id/searchPrev"
+        android:layout_width="36dp"
+        android:layout_height="36dp"
+        android:layout_marginStart="4dp"
+        android:background="?attr/selectableItemBackgroundBorderless"
+        android:contentDescription="@string/previous_result"
+        android:padding="8dp"
+        android:src="@drawable/chevron_left" />  <!-- Use your up arrow vector here -->
+
+    <ImageButton
+        android:id="@+id/searchNext"
+        android:layout_width="36dp"
+        android:layout_height="36dp"
+        android:layout_marginStart="2dp"
+        android:background="?attr/selectableItemBackgroundBorderless"
+        android:contentDescription="@string/next_result"
+        android:padding="8dp"
+        android:src="@drawable/chevron_right" />  <!-- Use your down arrow vector here -->
+
+    <!-- Close button - more elegant -->
+    <ImageButton
+        android:id="@+id/closeSearch"
+        android:layout_width="36dp"
+        android:layout_height="36dp"
+        android:layout_marginStart="4dp"
+        android:background="?attr/selectableItemBackgroundBorderless"
+        android:contentDescription="@string/close_search"
+        android:padding="8dp"
+        app:srcCompat="@drawable/cancel" />  <!-- Use a simple 'x' vector icon -->
+</LinearLayout>
