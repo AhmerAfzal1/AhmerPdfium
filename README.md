@@ -9,7 +9,7 @@ Ahmer Pdfium library fork [barteksc/PdfiumAndroid](https://github.com/barteksc/P
 Add to _build.gradle_:
 
 ```groovy
-implementation 'io.github.ahmerafzal1:ahmer-pdfium:1.8.2'
+implementation 'io.github.ahmerafzal1:ahmer-pdfium:1.9.0'
 ```
 
 ## Simple example
@@ -72,7 +72,7 @@ Android view for displaying PDFs rendered with PdfiumAndroid from API 24
 Add to _build.gradle_:
 
 ```groovy
-implementation 'io.github.ahmerafzal1:ahmer-pdfviewer:1.7.4'
+implementation 'io.github.ahmerafzal1:ahmer-pdfviewer:2.0.0'
 ```
 
 ## Include PDFView in your layout

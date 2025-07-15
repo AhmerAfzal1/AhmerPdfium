@@ -85,7 +85,7 @@ mavenPublishing {
     coordinates(
         groupId = "io.github.ahmerafzal1",
         artifactId = "ahmer-pdfviewer",
-        version = "1.7.4"
+        version = "2.0.0"
     )
 
     pom {

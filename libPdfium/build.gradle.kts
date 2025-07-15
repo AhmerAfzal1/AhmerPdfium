@@ -123,7 +123,7 @@ mavenPublishing {
     coordinates(
         groupId = "io.github.ahmerafzal1",
         artifactId = "ahmer-pdfium",
-        version = "1.8.2"
+        version = "1.9.0"
     )
 
     pom {
