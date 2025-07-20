@@ -21,9 +21,7 @@ android {
     buildTypes {
         release {
             isMinifyEnabled = false
-            proguardFiles(
-                getDefaultProguardFile("proguard-android-optimize.txt"), "proguard-rules.pro"
-            )
+            proguardFiles(getDefaultProguardFile(name = "proguard-android-optimize.txt"), "proguard-rules.pro")
         }
     }
 
@@ -36,15 +34,14 @@ android {
         checkAllWarnings = true
         warningsAsErrors = false
         abortOnError = false
-        disable.addAll(setOf("TypographyFractions", "TypographyQuotes", "Typos"))
+        disable.addAll(elements = setOf("TypographyFractions", "TypographyQuotes", "Typos"))
     }
 
     kotlin {
         compilerOptions {
             jvmTarget.set(JvmTarget.JVM_17)
             freeCompilerArgs.addAll(
-                "-opt-in=kotlin.RequiresOptIn",
-                "-opt-in=org.readium.r2.shared.InternalReadiumApi"
+                "-opt-in=kotlin.RequiresOptIn", "-opt-in=org.readium.r2.shared.InternalReadiumApi"
             )
         }
     }
@@ -61,10 +58,10 @@ tasks.dokkaHtml.configure {
     moduleName.set("AhmerPdfViewer")
 
     dokkaSourceSets {
-        named("main") {
+        named(name = "main") {
             sourceLink {
-                localDirectory.set(file("src/main/java"))
-                remoteUrl.set(uri("https://github.com/AhmerAfzal1/AhmerPdfium/tree/main/libPdfViewer/src/main/java").toURL())
+                localDirectory.set(file(path = "src/main/java"))
+                remoteUrl.set(uri(path = "https://github.com/AhmerAfzal1/AhmerPdfium/tree/main/libPdfViewer/src/main/java").toURL())
                 remoteLineSuffix.set("#L")
             }
         }
@@ -73,7 +70,7 @@ tasks.dokkaHtml.configure {
 
 mavenPublishing {
     configure(
-        AndroidSingleVariantLibrary(
+        platform = AndroidSingleVariantLibrary(
             variant = "release",
             sourcesJar = true,
             publishJavadocJar = true,

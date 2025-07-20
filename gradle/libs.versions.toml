@@ -7,13 +7,13 @@ coreKtx = "1.16.0"
 coroutines = "1.10.2"
 datastore = "1.1.7"
 dokka = "2.0.0"
-hilt = "2.56.2"
-lifecycle = "2.9.1"
+hilt = "2.57"
+lifecycle = "2.9.2"
 material = "1.12.0"
 multidex = "2.0.1"
-navigation = "2.9.1"
+navigation = "2.9.2"
 preference = "1.2.1"
-vanniktech-maven-publish = "0.33.0"
+vanniktech-maven-publish = "0.34.0"
 
 [libraries]
 androidx-appcompat = { group = "androidx.appcompat", name = "appcompat", version.ref = "appcompat" }
@@ -34,7 +34,7 @@ coroutines-android = { group = "org.jetbrains.kotlinx", name = "kotlinx-coroutin
 coroutines-core = { group = "org.jetbrains.kotlinx", name = "kotlinx-coroutines-core", version.ref = "coroutines" }
 coroutines-play-services = { group = "org.jetbrains.kotlinx", name = "kotlinx-coroutines-play-services", version.ref = "coroutines" }
 hilt-android = { group = "com.google.dagger", name = "hilt-android", version.ref = "hilt" }
-hilt-compiler = { group = "com.google.dagger", name = "hilt-android-compiler", version.ref = "hilt" }
+hilt-compiler = { group = "com.google.dagger", name = "hilt-compiler", version.ref = "hilt" }
 
 [plugins]
 android-application = { id = "com.android.application", version = "8.11.1" }

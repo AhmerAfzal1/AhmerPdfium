@@ -28,7 +28,7 @@ android {
         externalNativeBuild {
             cmake {
                 arguments.addAll(
-                    listOf(
+                    elements = listOf(
                         "-DANDROID_STL=c++_shared",
                         "-DANDROID_PLATFORM=android-${minSdk}",
                         "-DANDROID_ARM_NEON=TRUE",
@@ -49,7 +49,7 @@ android {
         release {
             isMinifyEnabled = false
             proguardFiles(
-                getDefaultProguardFile("proguard-android-optimize.txt"), "proguard-rules.pro"
+                getDefaultProguardFile(name = "proguard-android-optimize.txt"), "proguard-rules.pro"
             )
         }
     }
@@ -57,7 +57,7 @@ android {
     externalNativeBuild {
         cmake {
             version = "4.0.2"
-            path("src/main/cpp/CMakeLists.txt")
+            path(path = "src/main/cpp/CMakeLists.txt")
         }
     }
 
@@ -82,7 +82,7 @@ android {
         checkAllWarnings = true
         warningsAsErrors = false
         abortOnError = false
-        disable.addAll(setOf("TypographyFractions", "TypographyQuotes", "Typos"))
+        disable.addAll(elements = setOf("TypographyFractions", "TypographyQuotes", "Typos"))
     }
 }
 
@@ -99,10 +99,10 @@ tasks.dokkaHtml.configure {
     moduleName.set("AhmerPdfium")
 
     dokkaSourceSets {
-        named("main") {
+        named(name = "main") {
             sourceLink {
-                localDirectory.set(file("src/main/java"))
-                remoteUrl.set(uri("https://github.com/AhmerAfzal1/AhmerPdfium/tree/main/libPdfium/src/main/java").toURL())
+                localDirectory.set(file(path = "src/main/java"))
+                remoteUrl.set(uri(path = "https://github.com/AhmerAfzal1/AhmerPdfium/tree/main/libPdfium/src/main/java").toURL())
                 remoteLineSuffix.set("#L")
             }
         }
@@ -111,7 +111,7 @@ tasks.dokkaHtml.configure {
 
 mavenPublishing {
     configure(
-        AndroidSingleVariantLibrary(
+        platform = AndroidSingleVariantLibrary(
             variant = "release",
             sourcesJar = true,
             publishJavadocJar = true,
