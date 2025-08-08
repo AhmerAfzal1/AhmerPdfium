@@ -2,7 +2,7 @@
 
 # Pdfium
 
-Ahmer Pdfium library fork [barteksc/PdfiumAndroid](https://github.com/barteksc/PdfiumAndroid)
+Ahmer Pdfium library fork [barteksc/PdfiumAndroid](https://github.com/barteksc/PdfiumAndroid) and [barteksc/AndroidPdfViewer](https://github.com/DImuthuUpe/AndroidPdfViewer)
 
 ## Installation
 
