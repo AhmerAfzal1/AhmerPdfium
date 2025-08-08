@@ -2,9 +2,9 @@
 
 # Pdfium
 
-Ahmer Pdfium library fork [barteksc/PdfiumAndroid](https://github.com/barteksc/PdfiumAndroid), now with [16
-KB page size support](https://developer.android.com/guide/practices/page-sizes) for improved memory efficiency
-on Android.
+Ahmer Pdfium library fork [barteksc/PdfiumAndroid](https://github.com/barteksc/PdfiumAndroid), now
+with [16KB page size support](https://developer.android.com/guide/practices/page-sizes) for improved memory
+efficiency on Android.
 
 ## Simple example
 
