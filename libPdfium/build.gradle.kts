@@ -32,7 +32,6 @@ android {
                         "-DANDROID_STL=c++_shared",
                         "-DANDROID_PLATFORM=android-${minSdk}",
                         "-DANDROID_ARM_NEON=TRUE",
-                        "-DANDROID_SUPPORT_FLEXIBLE_PAGE_SIZES=ON"
                     )
                 )
 
@@ -69,12 +68,6 @@ android {
     kotlin {
         compilerOptions {
             jvmTarget.set(JvmTarget.JVM_17)
-        }
-    }
-
-    packaging {
-        jniLibs {
-            useLegacyPackaging = true
         }
     }
 

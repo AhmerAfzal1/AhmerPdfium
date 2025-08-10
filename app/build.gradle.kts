@@ -62,14 +62,6 @@ android {
             isEnable = false
         }
     }
-
-    packaging {
-        jniLibs {
-            useLegacyPackaging = true
-            pickFirsts.add("**/libpdfium_jni.so")
-            pickFirsts.add("**/libpdfium.so")
-        }
-    }
 }
 
 dependencies {
