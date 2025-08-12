@@ -14,7 +14,6 @@ add_library(pdfium_jni SHARED mainJNILib.cpp)
 
 # Linker optimizations
 target_link_options(pdfium_jni PRIVATE
-        "-Wl,-z,max-page-size=16384"
         "-Wl,--no-warn-mismatch"
 )
 
