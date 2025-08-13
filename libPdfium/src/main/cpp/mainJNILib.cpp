@@ -741,8 +741,8 @@ JNI_FUNC(jobject, PdfiumCore, nativeGetPageSizeByIndex)(JNI_ARGS, jlong docPtr, 
         width = 0;
         height = 0;
     }
-    jint widthInt = (jint) (width * dpi / 72);
-    jint heightInt = (jint) (height * dpi / 72);
+    int widthInt = (int) (width * dpi / 72);
+    int heightInt = (int) (height * dpi / 72);
     jclass clazz = env->FindClass("com/ahmer/pdfium/util/Size");
     if (clazz == nullptr) {
         LOGE("Size class not found");
