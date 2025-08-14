@@ -202,6 +202,20 @@ internal class PagesLoader(private val pdfView: PDFView) {
             lastYOffset = lastOffsetY
         )
         rangeList.forEach {
+            // When the first page height is relatively small, after calculations using methods like
+            // calculatePageOffsets, the final result of
+            // "range.leftTop.row = floor(a = abs(x = pageStartY - pageOffset) / rowHeight)" in the
+            // calculateGridPositions method is incorrect due to pageStartY = 0, a relatively large
+            // pageOffset, and a relatively low rowHeight. The expected value is 0, but the actual
+            // value is 1 or greater. I originally considered modifying this calculation,
+            // but discovered that it would cause other rendering issues, so I'm choosing to modify
+            // it here. I haven't found any issues yet. If you have a better solution, please ignore
+            // it.
+            // I also put the test PDF file in the assets directory, "sample_split.pdf"
+            if (pdfView.isPageSnap && it.page == 0) {
+                it.leftTop.row = 0
+                it.leftTop.column = 0
+            }
             loadThumbnail(page = it.page)
         }
 
