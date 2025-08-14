@@ -41,7 +41,8 @@ android {
         compilerOptions {
             jvmTarget.set(JvmTarget.JVM_17)
             freeCompilerArgs.addAll(
-                "-opt-in=kotlin.RequiresOptIn", "-opt-in=org.readium.r2.shared.InternalReadiumApi"
+                "-opt-in=kotlin.RequiresOptIn",
+                "-opt-in=org.readium.r2.shared.InternalReadiumApi"
             )
         }
     }
