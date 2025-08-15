@@ -1,6 +1,13 @@
 package com.ahmer.pdfviewer
 
-import android.graphics.*
+import android.graphics.Bitmap
+import android.graphics.Canvas
+import android.graphics.ColorMatrix
+import android.graphics.ColorMatrixColorFilter
+import android.graphics.Matrix
+import android.graphics.Paint
+import android.graphics.Rect
+import android.graphics.RectF
 import android.os.Handler
 import android.os.Looper
 import android.os.Message
@@ -35,7 +42,7 @@ class RenderingHandler(looper: Looper, private val pdfView: PDFView) : Handler(l
             isBestQuality = isBestQuality,
             isAnnotation = isAnnotation
         )
-        val message = obtainMessage(MSG_RENDER_PART_TASK, task)
+        val message: Message = obtainMessage(MSG_RENDER_PART_TASK, task)
         sendMessage(message)
     }
 
