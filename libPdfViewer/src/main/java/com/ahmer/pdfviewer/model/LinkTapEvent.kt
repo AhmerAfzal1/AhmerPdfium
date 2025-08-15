@@ -6,8 +6,8 @@ import com.ahmer.pdfium.PdfDocument
 class LinkTapEvent(
     val originalX: Float,
     val originalY: Float,
-    val documentX: Float,
-    val documentY: Float,
+    val mappedX: Float,
+    val mappedY: Float,
     val mappedLinkRect: RectF,
     val link: PdfDocument.Link
 )
