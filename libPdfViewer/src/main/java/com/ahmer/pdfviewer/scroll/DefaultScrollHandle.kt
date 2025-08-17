@@ -7,7 +7,6 @@ import android.os.Handler
 import android.os.Looper
 import android.util.TypedValue
 import android.view.MotionEvent
-import android.view.ViewGroup
 import android.widget.RelativeLayout
 import android.widget.TextView
 import androidx.core.content.ContextCompat
@@ -188,13 +187,8 @@ class DefaultScrollHandle @JvmOverloads constructor(
         visibility = INVISIBLE
         setTextColor(color = Color.BLACK)
         setTextSize(size = DEFAULT_TEXT_SIZE)
-        addView(
-            pageNumberText,
-            LayoutParams(
-                ViewGroup.LayoutParams.WRAP_CONTENT,
-                ViewGroup.LayoutParams.WRAP_CONTENT
-            ).apply {
-                addRule(CENTER_IN_PARENT, TRUE)
-            })
+        addView(pageNumberText, LayoutParams(LayoutParams.WRAP_CONTENT, LayoutParams.WRAP_CONTENT).apply {
+            addRule(CENTER_IN_PARENT, TRUE)
+        })
     }
 }

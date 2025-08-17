@@ -59,8 +59,11 @@ class DefaultLinkHandler(private val pdfView: PDFView) : LinkHandler {
                 context.startActivity(Intent.createChooser(intent, CHOOSER_TITLE))
             }
         } catch (e: ActivityNotFoundException) {
-            Log.e(PdfConstants.TAG, e.localizedMessage ?: "Failed to open link", e)
-            Toast.makeText(context, ERROR_MESSAGE_NO_APPS, Toast.LENGTH_LONG).show()
+            Log.e(PdfConstants.TAG, e.localizedMessage ?: "No activity to handle uri", e)
+            showToast(context = context, message = ERROR_MESSAGE_NO_APPS)
+        } catch (e: Exception) {
+            Log.e(PdfConstants.TAG, e.localizedMessage ?: "Unexpected error opening uri", e)
+            showToast(context = context, message = ERROR_MESSAGE_FAILED)
         }
     }
 
@@ -73,8 +76,13 @@ class DefaultLinkHandler(private val pdfView: PDFView) : LinkHandler {
         pdfView.jumpTo(page = pageNumber, withAnimation = true)
     }
 
+    private fun showToast(context: Context, message: String) {
+        Toast.makeText(context, message, Toast.LENGTH_LONG).show()
+    }
+
     companion object {
-        private const val CHOOSER_TITLE = "Select app for open link"
-        private const val ERROR_MESSAGE_NO_APPS = "No apps can open for this link"
+        private const val CHOOSER_TITLE: String = "Select app for open link"
+        private const val ERROR_MESSAGE_FAILED: String = "Failed to open link"
+        private const val ERROR_MESSAGE_NO_APPS: String = "No app available to handle this link"
     }
 }
