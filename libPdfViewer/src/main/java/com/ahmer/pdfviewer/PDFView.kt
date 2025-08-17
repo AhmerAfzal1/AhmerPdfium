@@ -810,6 +810,10 @@ class PDFView(context: Context?, set: AttributeSet?) : RelativeLayout(context, s
         loadPageByOffset()
     }
 
+    override fun performClick(): Boolean {
+        return super.performClick()
+    }
+
     /**
      * Writes a copy of the currently loaded PDF document to the provided output stream,
      * allowing control over incremental updates and security settings.

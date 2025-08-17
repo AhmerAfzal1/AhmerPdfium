@@ -82,8 +82,8 @@ class CacheManager {
     val pageParts: List<PagePart>
         get() = synchronized(lock = cacheLock) {
             mutableListOf<PagePart>().apply {
-                addAll(passiveCache)
-                addAll(activeCache)
+                addAll(elements = passiveCache)
+                addAll(elements = activeCache)
             }
         }
 
