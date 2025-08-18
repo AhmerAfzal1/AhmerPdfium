@@ -24,10 +24,9 @@ import kotlin.math.abs
 internal class DragPinchManager(
     private val pdfView: PDFView,
     private val animationManager: AnimationManager
-) : GestureDetector.OnGestureListener, OnDoubleTapListener, OnScaleGestureListener,
-    OnTouchListener {
-    private val gestureDetector = GestureDetector(pdfView.context, this)
-    private val scaleGestureDetector = ScaleGestureDetector(pdfView.context, this)
+) : GestureDetector.OnGestureListener, OnDoubleTapListener, OnScaleGestureListener, OnTouchListener {
+    private val gestureDetector: GestureDetector = GestureDetector(pdfView.context, this)
+    private val scaleGestureDetector: ScaleGestureDetector = ScaleGestureDetector(pdfView.context, this)
     private var isEnabled: Boolean = false
     private var isScaling: Boolean = false
     private var isScrolling: Boolean = false
@@ -127,11 +126,7 @@ internal class DragPinchManager(
         val offsetX: Float = pdfView.currentXOffset - delta * zoom
         val offsetY: Float = pdfView.currentYOffset - delta * zoom
         val startingPage: Int = pdfView.findFocusPage(xOffset = offsetX, yOffset = offsetY)
-        val targetPage: Int = startingPage + direction.coerceIn(
-            minimumValue = 0,
-            maximumValue = pdfView.pagesCount - 1
-        )
-
+        val targetPage: Int = startingPage + direction.coerceIn(minimumValue = 0, maximumValue = pdfView.pagesCount - 1)
         val edge: SnapEdge = pdfView.findSnapEdge(page = targetPage)
         val offset: Float = pdfView.snapOffsetForPage(pageIndex = targetPage, edge = edge)
         animationManager.startPageFlingAnimation(targetOffset = -offset)
@@ -142,18 +137,8 @@ internal class DragPinchManager(
         val zoom: Float = pdfView.zoom
 
         when {
-            zoom < pdfView.midZoom -> pdfView.zoomWithAnimation(
-                centerX = e.x,
-                centerY = e.y,
-                scale = pdfView.midZoom
-            )
-
-            zoom < pdfView.maxZoom -> pdfView.zoomWithAnimation(
-                centerX = e.x,
-                centerY = e.y,
-                scale = pdfView.maxZoom
-            )
-
+            zoom < pdfView.midZoom -> pdfView.zoomWithAnimation(centerX = e.x, centerY = e.y, scale = pdfView.midZoom)
+            zoom < pdfView.maxZoom -> pdfView.zoomWithAnimation(centerX = e.x, centerY = e.y, scale = pdfView.maxZoom)
             else -> pdfView.resetZoomWithAnimation()
         }
         return true
@@ -234,7 +219,7 @@ internal class DragPinchManager(
             val pageStart: Float = -pdfFile.getPageOffset(pageIndex = currentPage, zoom = zoom)
             val pageEnd: Float = pageStart - pdfFile.getPageLength(pageIndex = currentPage, zoom = zoom)
 
-            val bounds = if (pdfView.isSwipeVertical) {
+            val bounds: Bounds = if (pdfView.isSwipeVertical) {
                 Bounds(
                     minX = -(pdfView.toCurrentScale(size = pdfFile.maxPageWidth) - pdfView.width),
                     maxY = pageEnd + pdfView.height,
@@ -270,7 +255,7 @@ internal class DragPinchManager(
         val zoom: Float = pdfView.zoom
         val wantedZoom: Float = zoom * detector.scaleFactor
 
-        val scaleFactor = when {
+        val scaleFactor: Float = when {
             wantedZoom < minZoom -> minZoom / zoom
             wantedZoom > maxZoom -> maxZoom / zoom
             else -> detector.scaleFactor

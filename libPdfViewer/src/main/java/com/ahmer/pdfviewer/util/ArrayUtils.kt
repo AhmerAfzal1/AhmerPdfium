@@ -26,7 +26,7 @@ object ArrayUtils {
     fun calculateIndexesInDuplicateArray(originalPages: IntArray): IntArray {
         if (originalPages.isEmpty()) return intArrayOf()
 
-        val groupIndices = IntArray(size = originalPages.size).apply {
+        val groupIndices: IntArray = IntArray(size = originalPages.size).apply {
             this[0] = 0  // First element always belongs to group 0
         }
         var currentGroupIndex = 0

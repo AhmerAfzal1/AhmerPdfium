@@ -96,8 +96,8 @@ class DefaultScrollHandle @JvmOverloads constructor(
     }
 
     override fun setPageNumber(pageNumber: Int) {
-        val text: String = pageNumber.toString()
-        if (pageNumberText.text != text) pageNumberText.text = text
+        val page: String = pageNumber.toString()
+        if (pageNumberText.text != page) pageNumberText.text = page
     }
 
     override fun shown(): Boolean {

@@ -13,14 +13,14 @@ import kotlin.math.min
 
 internal class PagesLoader(private val pdfView: PDFView) {
     private val preLoadOffset: Int = PdfUtils.getDP(context = pdfView.context, dp = PdfConstants.PRELOAD_OFFSET)
-    private val thumbnailRect = RectF(0f, 0f, 1f, 1f)
-    private var cacheOrder = 0
-    private var offsetX = 0f
-    private var offsetY = 0f
-    private var pageRelativePartHeight = 0f
-    private var pageRelativePartWidth = 0f
-    private var partRenderHeight = 0f
-    private var partRenderWidth = 0f
+    private val thumbnailRect: RectF = RectF(0f, 0f, 1f, 1f)
+    private var cacheOrder: Int = 0
+    private var offsetX: Float = 0f
+    private var offsetY: Float = 0f
+    private var pageRelativePartHeight: Float = 0f
+    private var pageRelativePartWidth: Float = 0f
+    private var partRenderHeight: Float = 0f
+    private var partRenderWidth: Float = 0f
 
     private fun getPageColsRows(grid: GridSize, pageIndex: Int) {
         val pdfFile: PdfFile = pdfView.pdfFile ?: return
@@ -66,7 +66,7 @@ internal class PagesLoader(private val pdfView: PDFView) {
         val renderRanges: MutableList<RenderRange> = mutableListOf()
 
         for (page in pageFirst..pageLast) {
-            val range = RenderRange().apply {
+            val range: RenderRange = RenderRange().apply {
                 this.page = page
             }
             val (pageFirstXOffset, pageFirstYOffset, pageLastXOffset, pageLastYOffset) = calculatePageOffsets(
@@ -122,10 +122,10 @@ internal class PagesLoader(private val pdfView: PDFView) {
                 val pageOffset: Float = pdfFile.getPageOffset(pageIndex = page, zoom = zoom)
                 val pageSize: SizeF = pdfFile.getScaledPageSize(pageIndex = page, zoom = zoom)
 
-                val lastX = if (pageCount == 1) fixedLastXOffset else {
+                val lastX: Float = if (pageCount == 1) fixedLastXOffset else {
                     if (isVertical) fixedLastXOffset else pageOffset + pageSize.width
                 }
-                val lastY = if (pageCount == 1) fixedLastYOffset else {
+                val lastY: Float = if (pageCount == 1) fixedLastYOffset else {
                     if (isVertical) pageOffset + pageSize.height else fixedLastYOffset
                 }
                 Quadruple(first = fixedFirstXOffset, second = fixedFirstYOffset, third = lastX, fourth = lastY)

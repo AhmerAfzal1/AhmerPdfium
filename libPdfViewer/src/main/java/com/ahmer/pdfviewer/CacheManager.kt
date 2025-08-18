@@ -7,8 +7,8 @@ import com.ahmer.pdfviewer.util.PdfConstants.Cache.THUMBNAILS_CACHE_SIZE
 import java.util.PriorityQueue
 
 class CacheManager {
-    private val activeCache = PriorityQueue(CACHE_SIZE, PagePartComparator())
-    private val passiveCache = PriorityQueue(CACHE_SIZE, PagePartComparator())
+    private val activeCache: PriorityQueue<PagePart> = PriorityQueue(CACHE_SIZE, PagePartComparator())
+    private val passiveCache: PriorityQueue<PagePart> = PriorityQueue(CACHE_SIZE, PagePartComparator())
     private val thumbnails: MutableList<PagePart> = mutableListOf()
     private val cacheLock: Any = Any()
     private val thumbnailsLock: Any = Any()
@@ -44,7 +44,6 @@ class CacheManager {
                 thumbnails.removeAt(index = 0).renderedBitmap?.recycle()
             }
             if (thumbnails.any { it == part }) part.renderedBitmap?.recycle() else thumbnails.add(part)
-
         }
     }
 

@@ -24,7 +24,7 @@ class RenderingHandler(looper: Looper, private val pdfView: PDFView) : Handler(l
     private val roundedBounds: Rect = Rect()
     private var isRunning: Boolean = false
 
-    private fun getBitmapConfig(isBestQuality: Boolean): Bitmap.Config {
+    private fun bitmapConfig(isBestQuality: Boolean): Bitmap.Config {
         return if (isBestQuality) Bitmap.Config.ARGB_8888 else Bitmap.Config.RGB_565
     }
 
@@ -62,7 +62,7 @@ class RenderingHandler(looper: Looper, private val pdfView: PDFView) : Handler(l
     }
 
     private fun toNightMode(bitmap: Bitmap, bestQuality: Boolean): Bitmap {
-        val config: Bitmap.Config = getBitmapConfig(isBestQuality = bestQuality)
+        val config: Bitmap.Config = bitmapConfig(isBestQuality = bestQuality)
         val newBitmap: Bitmap = createBitmap(width = bitmap.width, height = bitmap.height, config = config)
         val paint = Paint().apply {
             colorFilter = ColorMatrixColorFilter(ColorMatrix().apply {
@@ -97,7 +97,7 @@ class RenderingHandler(looper: Looper, private val pdfView: PDFView) : Handler(l
 
         var bitmap: Bitmap
         bitmap = try {
-            createBitmap(width = width, height = height, config = getBitmapConfig(isBestQuality = task.isBestQuality))
+            createBitmap(width = width, height = height, config = bitmapConfig(isBestQuality = task.isBestQuality))
         } catch (e: IllegalArgumentException) {
             Log.e(PdfConstants.TAG, "Cannot create bitmap", e)
             return null
@@ -152,6 +152,6 @@ class RenderingHandler(looper: Looper, private val pdfView: PDFView) : Handler(l
     )
 
     companion object {
-        const val MSG_RENDER_PART_TASK = 1
+        const val MSG_RENDER_PART_TASK: Int = 1
     }
 }

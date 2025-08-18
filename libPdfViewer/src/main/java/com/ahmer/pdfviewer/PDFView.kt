@@ -336,13 +336,8 @@ class PDFView(context: Context?, set: AttributeSet?) : RelativeLayout(context, s
         val file: PdfFile = pdfFile ?: return
         if (file.pagesCount == 0) return
 
-        val (offset, centerOfScreen) = if (_isSwipeVertical) {
-            _currentYOffset to height / 2f
-        } else {
-            _currentXOffset to width / 2f
-        }
-
-        val page: Int = file.getPageAtOffset(offset = -(offset - centerOfScreen), zoom = _zoom)
+        val (offset, center) = if (_isSwipeVertical) _currentYOffset to height / 2f else _currentXOffset to width / 2f
+        val page: Int = file.getPageAtOffset(offset = -(offset - center), zoom = _zoom)
         when {
             page in 0 until file.pagesCount && page != _currentPage -> showPage(page = page)
             else -> loadPages()
@@ -425,7 +420,6 @@ class PDFView(context: Context?, set: AttributeSet?) : RelativeLayout(context, s
 
         val focusedPage: Int = findFocusPage(xOffset = _currentXOffset, yOffset = _currentYOffset)
         if (focusedPage in 0 until file.pagesCount && focusedPage != _currentPage) showPage(page = focusedPage)
-
     }
 
     fun onBitmapRendered(part: PagePart) {
@@ -806,11 +800,12 @@ class PDFView(context: Context?, set: AttributeSet?) : RelativeLayout(context, s
 
         _currentXOffset = newOffsetX
         _currentYOffset = newOffsetY
-        moveTo(_currentXOffset, _currentYOffset)
+        moveTo(offsetX = _currentXOffset, offsetY = _currentYOffset)
         loadPageByOffset()
     }
 
     override fun performClick(): Boolean {
+        Log.d(PdfConstants.TAG, "View clicked")
         return super.performClick()
     }
 
