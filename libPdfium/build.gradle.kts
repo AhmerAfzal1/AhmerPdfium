@@ -53,7 +53,7 @@ android {
 
     externalNativeBuild {
         cmake {
-            version = "4.0.3"
+            version = "4.1.0"
             path(path = "src/main/cpp/CMakeLists.txt")
         }
     }
@@ -114,7 +114,7 @@ mavenPublishing {
     coordinates(
         groupId = "io.github.ahmerafzal1",
         artifactId = "ahmer-pdfium",
-        version = "1.9.0"
+        version = "1.9.1"
     )
 
     pom {
