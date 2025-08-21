@@ -1,4 +1,5 @@
 [![License](https://img.shields.io/badge/License-Apache%202.0-blue.svg)](https://opensource.org/licenses/Apache-2.0)
+[![Maven Central](https://img.shields.io/maven-central/v/io.github.ahmerafzal1/ahmer-pdfium.svg?label=ahmer-pdfium)](https://central.sonatype.com/artifact/io.github.ahmerafzal1/ahmer-pdfium)
 
 # Pdfium
 

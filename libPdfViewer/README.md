@@ -1,15 +1,19 @@
 [![License](https://img.shields.io/badge/License-Apache%202.0-blue.svg)](https://opensource.org/licenses/Apache-2.0)
+[![Maven Central](https://img.shields.io/maven-central/v/io.github.ahmerafzal1/ahmer-pdfviewer.svg?label=ahmer-pdfviewer)](https://central.sonatype.com/artifact/io.github.ahmerafzal1/ahmer-pdfviewer)
+
 
 # PdfViewer
 
-Android view for displaying PDFs rendered with PdfiumAndroid from API 24
+Android view for displaying PDFs rendered with PdfiumAndroid from API 24.
+This library builds on Ahmer Pdfium (with 16 KB page size support) to provide a modern PDF viewing component.
 
 ## Include PDFView in your layout
 
 ```xml
-
-<com.ahmer.pdfviewer.PDFView android:id="@+id/pdfView" android:layout_width="match_parent"
-    android:layout_height="match_parent" />
+<com.ahmer.pdfviewer.PDFView
+        android:id="@+id/pdfView"
+        android:layout_height="match_parent"
+        android:layout_width="match_parent" />
 ```
 
 ## Load a PDF file
@@ -163,7 +167,7 @@ onRender(object : OnRenderListener {
 You can use a combination of the following settings to get scroll and fling behaviour similar to a ViewPager:
 
 ```kotlin
-pdfview.swipeHorizontal(true)
+pdfView.swipeHorizontal(true)
     .pageSnap(true)
     .autoSpacing(true)
     .pageFling(true)

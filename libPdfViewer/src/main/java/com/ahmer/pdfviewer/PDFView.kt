@@ -387,7 +387,7 @@ class PDFView(context: Context?, set: AttributeSet?) : RelativeLayout(context, s
                 else -> ScrollDir.NONE
             }
         } else {
-            val scaledPageHeight: Float = toCurrentScale(file.maxPageHeight)
+            val scaledPageHeight: Float = toCurrentScale(size = file.maxPageHeight)
             newOffsetY = when {
                 scaledPageHeight < height -> height / 2f - scaledPageHeight / 2
                 newOffsetY > 0 -> 0f
@@ -395,7 +395,7 @@ class PDFView(context: Context?, set: AttributeSet?) : RelativeLayout(context, s
                 else -> newOffsetY
             }
 
-            val contentWidth: Float = file.docLength(_zoom)
+            val contentWidth: Float = file.docLength(zoom = _zoom)
             newOffsetX = when {
                 contentWidth < width -> (width - contentWidth) / 2
                 newOffsetX > 0 -> 0f

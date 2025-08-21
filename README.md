@@ -1,9 +1,31 @@
 [![License](https://img.shields.io/badge/License-Apache%202.0-blue.svg)](https://opensource.org/licenses/Apache-2.0)
+[![Maven Central](https://img.shields.io/maven-central/v/io.github.ahmerafzal1/ahmer-pdfium.svg?label=ahmer-pdfium)](https://central.sonatype.com/artifact/io.github.ahmerafzal1/ahmer-pdfium)
+[![Maven Central](https://img.shields.io/maven-central/v/io.github.ahmerafzal1/ahmer-pdfviewer.svg?label=ahmer-pdfviewer)](https://central.sonatype.com/artifact/io.github.ahmerafzal1/ahmer-pdfviewer)
 
-# Pdfium
+# Ahmer Pdfium & AndroidPdfViewer
 
-Ahmer Pdfium library fork [barteksc/PdfiumAndroid](https://github.com/barteksc/PdfiumAndroid)
-and [barteksc/AndroidPdfViewer](https://github.com/DImuthuUpe/AndroidPdfViewer)
+Ahmer Pdfium library — a maintained fork of
+[barteksc/PdfiumAndroid](https://github.com/barteksc/PdfiumAndroid) and
+[barteksc/AndroidPdfViewer](https://github.com/DImuthuUpe/AndroidPdfViewer)
+
+---
+
+## Enhancements
+
+### Added
+
+- **Support for 16 KB page sizes**  
+  Ensures compatibility with modern Android devices that use larger memory pages.  
+  ([Android documentation](https://developer.android.com/guide/practices/page-sizes))
+
+### Fixed
+
+- **First page rendering issue**  
+  Resolved a bug where the first page rendered incompletely when its height was small.  
+  This caused incorrect offset calculations and partial rendering, particularly with *snap page* enabled or
+  after zooming back.
+
+---
 
 ## Installation
 
@@ -13,7 +35,7 @@ Add to _build.gradle_:
 implementation 'io.github.ahmerafzal1:ahmer-pdfium:1.9.1'
 ```
 
-## Simple example
+## Pdfium
 
 ```kotlin
 fun openPdf(context: Context, file: File, password: String? = null) {
@@ -66,7 +88,8 @@ fun printBookmarksTree(tree: List<PdfDocument.Bookmark>, sep: String) {
 
 # PdfViewer
 
-Android view for displaying PDFs rendered with PdfiumAndroid from API 24
+Android view for displaying PDFs rendered with PdfiumAndroid from API 24.
+This library builds on Ahmer Pdfium (with 16 KB page size support) to provide a modern PDF viewing component.
 
 ## Installation
 
@@ -79,9 +102,10 @@ implementation 'io.github.ahmerafzal1:ahmer-pdfviewer:2.0.1'
 ## Include PDFView in your layout
 
 ```xml
-
-<com.ahmer.pdfviewer.PDFView android:id="@+id/pdfView" android:layout_width="match_parent"
-    android:layout_height="match_parent" />
+<com.ahmer.pdfviewer.PDFView
+        android:id="@+id/pdfView"
+        android:layout_height="match_parent"
+        android:layout_width="match_parent" />
 ```
 
 ## Load a PDF file
