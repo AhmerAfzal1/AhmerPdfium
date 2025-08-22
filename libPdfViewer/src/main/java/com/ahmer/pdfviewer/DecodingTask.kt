@@ -1,13 +1,18 @@
 package com.ahmer.pdfviewer
 
-import android.os.Handler
-import android.os.Looper
+import android.util.Log
 import com.ahmer.pdfium.PdfDocument
 import com.ahmer.pdfium.PdfiumCore
 import com.ahmer.pdfium.util.Size
 import com.ahmer.pdfviewer.source.DocumentSource
-import java.util.concurrent.ExecutorService
-import java.util.concurrent.Executors
+import com.ahmer.pdfviewer.util.PdfConstants
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.Job
+import kotlinx.coroutines.SupervisorJob
+import kotlinx.coroutines.cancel
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 
 internal class DecodingTask(
     private val docSource: DocumentSource,
@@ -15,20 +20,50 @@ internal class DecodingTask(
     private val userPages: IntArray? = null,
     private val pdfView: PDFView
 ) {
-    private val executor: ExecutorService = Executors.newFixedThreadPool(4)
-    private val mainHandler: Handler = Handler(Looper.getMainLooper())
+    private val coroutineScope: CoroutineScope = CoroutineScope(context = Dispatchers.Main + SupervisorJob())
+    private var loadingJob: Job? = null
 
     fun execute() {
-        try {
-            val pdfiumCore: PdfiumCore = pdfView.pdfiumCore ?: return
+        loadingJob?.cancel()
 
-            val document: PdfDocument = docSource.createDocument(
-                context = pdfView.context,
-                pdfiumCore = pdfiumCore,
-                password = password
-            )
+        val pdfiumCore: PdfiumCore = pdfView.pdfiumCore ?: run {
+            Log.e(PdfConstants.TAG, "PdfiumCore is not initialized")
+            pdfView.loadError(error = IllegalStateException("PdfiumCore is not initialized"))
+            return
+        }
 
-            val pdfFile: PdfFile = PdfFile.create(
+        loadingJob = coroutineScope.launch(context = Dispatchers.IO) {
+            try {
+                val document: PdfDocument = createDocument(pdfiumCore = pdfiumCore)
+                val pdfFile: PdfFile = createPdfFile(document = document, pdfiumCore = pdfiumCore)
+
+                withContext(context = Dispatchers.Main) {
+                    pdfView.loadComplete(pdfFile = pdfFile)
+                }
+            } catch (t: Throwable) {
+                Log.e(PdfConstants.TAG, "Error decoding PDF", t)
+                withContext(context = Dispatchers.Main) {
+                    pdfView.loadError(error = t)
+                }
+            }
+        }
+    }
+
+    /**
+     * Create PDF document from source
+     */
+    private suspend fun createDocument(pdfiumCore: PdfiumCore): PdfDocument {
+        return withContext(context = Dispatchers.IO) {
+            docSource.createDocument(context = pdfView.context, pdfiumCore = pdfiumCore, password = password)
+        }
+    }
+
+    /**
+     * Create PDF file with appropriate settings
+     */
+    private suspend fun createPdfFile(document: PdfDocument, pdfiumCore: PdfiumCore): PdfFile {
+        return withContext(context = Dispatchers.Default) {
+            PdfFile.create(
                 pdfDocument = document,
                 pdfiumCore = pdfiumCore,
                 fitPolicy = pdfView.pageFitPolicy,
@@ -39,22 +74,15 @@ internal class DecodingTask(
                 userPages = userPages ?: intArrayOf(),
                 size = Size(width = pdfView.width, height = pdfView.height)
             )
-
-            executor.execute {
-                mainHandler.post {
-                    pdfView.loadComplete(pdfFile = pdfFile)
-                }
-            }
-        } catch (t: Throwable) {
-            pdfView.loadError(error = t)
         }
     }
 
     /**
-     * Call to cancel background work
+     * Clean up resources
      */
     fun cancel() {
-        executor.shutdown()
-        mainHandler.removeCallbacksAndMessages(null)
+        coroutineScope.cancel()
+        loadingJob?.cancel()
+        loadingJob = null
     }
 }
