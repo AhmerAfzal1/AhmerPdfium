@@ -27,18 +27,14 @@ object PdfDialogHelper {
             requestWindowFeature(Window.FEATURE_NO_TITLE)
             window?.setBackgroundDrawableResource(android.R.color.transparent)
             setContentView(R.layout.dialog_pdf_password)
-            window?.setLayout(
-                WindowManager.LayoutParams.MATCH_PARENT,
-                WindowManager.LayoutParams.WRAP_CONTENT
-            )
-
-            val inputPass = findViewById<EditText>(R.id.inputPassword)
-            val btnOpen = findViewById<Button>(R.id.btnOpen)
-            val btnCancel = findViewById<Button>(R.id.btnCancel)
+            window?.setLayout(WindowManager.LayoutParams.MATCH_PARENT, WindowManager.LayoutParams.WRAP_CONTENT)
+            val inputPass: EditText = findViewById(R.id.inputPassword)
+            val btnOpen: Button = findViewById(R.id.btnOpen)
+            val btnCancel: Button = findViewById(R.id.btnCancel)
 
             inputPass.requestFocus()
             inputPass.postDelayed({
-                showKeyboard(context, inputPass)
+                showKeyboard(context = context, view = inputPass)
             }, 100)
 
             btnOpen.isEnabled = false
@@ -48,20 +44,13 @@ object PdfDialogHelper {
             }
 
             btnCancel.setOnClickListener {
-                hideKeyboard(context, inputPass)
+                hideKeyboard(context = context, view = inputPass)
                 onDismiss()
                 dismiss()
             }
 
             inputPass.addTextChangedListener(object : TextWatcher {
-                override fun beforeTextChanged(
-                    s: CharSequence,
-                    start: Int,
-                    count: Int,
-                    after: Int
-                ) {
-                }
-
+                override fun beforeTextChanged(s: CharSequence, start: Int, count: Int, after: Int) {}
                 override fun onTextChanged(s: CharSequence, start: Int, before: Int, count: Int) {}
                 override fun afterTextChanged(s: Editable) {
                     btnOpen.isEnabled = s.isNotEmpty() && s.toString().isNotBlank()
@@ -79,18 +68,14 @@ object PdfDialogHelper {
             requestWindowFeature(Window.FEATURE_NO_TITLE)
             window?.setBackgroundDrawableResource(android.R.color.transparent)
             setContentView(R.layout.dialog_pdf_jumpto)
-            window?.setLayout(
-                WindowManager.LayoutParams.MATCH_PARENT,
-                WindowManager.LayoutParams.WRAP_CONTENT
-            )
-
-            val inputPage = findViewById<EditText>(R.id.inputPageNumber)
-            val btnGoTo = findViewById<Button>(R.id.btnGoTo)
-            val btnCancel = findViewById<Button>(R.id.btnCancel)
+            window?.setLayout(WindowManager.LayoutParams.MATCH_PARENT, WindowManager.LayoutParams.WRAP_CONTENT)
+            val inputPage: EditText = findViewById(R.id.inputPageNumber)
+            val btnGoTo: Button = findViewById(R.id.btnGoTo)
+            val btnCancel: Button = findViewById(R.id.btnCancel)
 
             inputPage.requestFocus()
             inputPage.postDelayed({
-                showKeyboard(context, inputPage)
+                showKeyboard(context = context, view = inputPage)
             }, 100)
 
             btnGoTo.isEnabled = false
@@ -104,19 +89,12 @@ object PdfDialogHelper {
             }
 
             btnCancel.setOnClickListener {
-                hideKeyboard(context, inputPage)
+                hideKeyboard(context = context, view = inputPage)
                 dismiss()
             }
 
             inputPage.addTextChangedListener(object : TextWatcher {
-                override fun beforeTextChanged(
-                    s: CharSequence,
-                    start: Int,
-                    count: Int,
-                    after: Int
-                ) {
-                }
-
+                override fun beforeTextChanged(s: CharSequence, start: Int, count: Int, after: Int) {}
                 override fun onTextChanged(s: CharSequence, start: Int, before: Int, count: Int) {}
                 override fun afterTextChanged(s: Editable) {
                     btnGoTo.isEnabled = s.isNotEmpty()
@@ -134,10 +112,7 @@ object PdfDialogHelper {
             requestWindowFeature(Window.FEATURE_NO_TITLE)
             window?.setBackgroundDrawableResource(android.R.color.transparent)
             setContentView(R.layout.dialog_pdf_info)
-            window?.setLayout(
-                WindowManager.LayoutParams.MATCH_PARENT,
-                WindowManager.LayoutParams.WRAP_CONTENT
-            )
+            window?.setLayout(WindowManager.LayoutParams.MATCH_PARENT, WindowManager.LayoutParams.WRAP_CONTENT)
 
             meta?.let {
                 findViewById<TextView>(R.id.dialogTvTitle).text = it.title
@@ -152,7 +127,7 @@ object PdfDialogHelper {
             }
 
             file?.let {
-                findViewById<TextView>(R.id.dialogTvFileSize).text = formatFileSize(it)
+                findViewById<TextView>(R.id.dialogTvFileSize).text = formatFileSize(file = it)
                 findViewById<TextView>(R.id.dialogTvFilePath).text = it.path
             }
 
@@ -171,14 +146,14 @@ object PdfDialogHelper {
     }
 
     private fun formatFileSize(file: File): String {
-        val units = listOf("B", "KB", "MB", "GB")
-        var size = file.length().toDouble()
+        val units: List<String> = listOf("B", "KB", "MB", "GB")
+        var size: Double = file.length().toDouble()
         var unitIndex = 0
 
         while (size >= 1024 && unitIndex < units.lastIndex) {
             size /= 1024
             unitIndex++
         }
-        return "%.2f %s".format(Locale.getDefault(), size, units[unitIndex])
+        return "%.2f %s".format(locale = Locale.getDefault(), size, units[unitIndex])
     }
 }

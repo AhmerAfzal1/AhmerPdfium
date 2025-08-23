@@ -15,27 +15,24 @@ import javax.inject.Inject
 class PdfActivityModel @Inject constructor(
     private val appDataStore: AppDataStore
 ) : ViewModel() {
-    private val _searchQuery = MutableStateFlow("")
-    val searchQuery: StateFlow<String> = _searchQuery.asStateFlow()
-
-    private val _uiState = MutableStateFlow(PdfUiState())
+    private val _uiState: MutableStateFlow<PdfUiState> = MutableStateFlow(value = PdfUiState())
     val pdfUiState: StateFlow<PdfUiState> = _uiState.asStateFlow()
 
     init {
         viewModelScope.launch {
             combine(
-                appDataStore.isAutoSpacing,
-                appDataStore.isNightMode,
-                appDataStore.isPageSnap,
-                appDataStore.getSpacing,
-                appDataStore.isViewHorizontal
-            ) { mAutoSpacing, mNight, mPageSnap, mSpacing, mViewHorizontal ->
+                flow = appDataStore.isAutoSpacing,
+                flow2 = appDataStore.isNightMode,
+                flow3 = appDataStore.isPageSnap,
+                flow4 = appDataStore.getSpacing,
+                flow5 = appDataStore.isViewHorizontal
+            ) { autoSpacing, nightMode, pageSnap, pageSpacing, viewHorizontal ->
                 PdfUiState(
-                    isAutoSpacing = mAutoSpacing,
-                    isNightMode = mNight,
-                    isPageSnap = mPageSnap,
-                    spacing = mSpacing,
-                    isViewHorizontal = mViewHorizontal
+                    isAutoSpacing = autoSpacing,
+                    isNightMode = nightMode,
+                    isPageSnap = pageSnap,
+                    spacing = pageSpacing,
+                    isViewHorizontal = viewHorizontal
                 )
             }.collect { newState ->
                 _uiState.value = newState
@@ -43,52 +40,48 @@ class PdfActivityModel @Inject constructor(
         }
     }
 
-    fun updateSearchQuery(query: String) {
-        _searchQuery.value = query
-    }
-
     fun updateAutoSpacing(isChecked: Boolean) {
         _uiState.value = _uiState.value.copy(isAutoSpacing = isChecked)
         viewModelScope.launch {
-            appDataStore.updateAutoSpacing(isChecked)
+            appDataStore.updateAutoSpacing(value = isChecked)
         }
     }
 
     fun updateNightMode(isChecked: Boolean) {
         _uiState.value = _uiState.value.copy(isNightMode = isChecked)
         viewModelScope.launch {
-            appDataStore.updateNightMode(isChecked)
+            appDataStore.updateNightMode(value = isChecked)
         }
     }
 
     fun updatePageSnap(isChecked: Boolean) {
         _uiState.value = _uiState.value.copy(isPageSnap = isChecked)
         viewModelScope.launch {
-            appDataStore.updatePageSnap(isChecked)
+            appDataStore.updatePageSnap(value = isChecked)
         }
     }
 
     fun updateSpacing(spacing: Int) {
         _uiState.value = _uiState.value.copy(spacing = spacing)
         viewModelScope.launch {
-            appDataStore.updateSpacing(spacing)
+            appDataStore.updateSpacing(value = spacing)
         }
     }
 
     fun updateViewHorizontal(isChecked: Boolean) {
         _uiState.value = _uiState.value.copy(isViewHorizontal = isChecked)
         viewModelScope.launch {
-            appDataStore.updateViewHorizontal(isChecked)
+            appDataStore.updateViewHorizontal(value = isChecked)
         }
     }
 
     fun loadLastPage(fileName: String): Flow<Int> {
-        return appDataStore.getLastPage(fileName)
+        return appDataStore.getLastPage(fileName = fileName)
     }
 
     fun saveLastPage(fileName: String, page: Int) {
         viewModelScope.launch {
-            appDataStore.saveLastPage(fileName, page)
+            appDataStore.saveLastPage(fileName = fileName, page = page)
         }
     }
 }

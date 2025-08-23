@@ -3,6 +3,7 @@ package com.ahmer.afzal.pdfviewer
 import android.graphics.Canvas
 import android.graphics.Color
 import android.graphics.Paint
+import android.graphics.RectF
 import android.os.Bundle
 import android.util.Log
 import android.view.Menu
@@ -25,6 +26,7 @@ import com.ahmer.afzal.pdfviewer.databinding.FragmentPdfBinding
 import com.ahmer.pdfium.PdfDocument
 import com.ahmer.pdfium.PdfPasswordException
 import com.ahmer.pdfviewer.PDFView
+import com.ahmer.pdfviewer.PdfFile
 import com.ahmer.pdfviewer.link.DefaultLinkHandler
 import com.ahmer.pdfviewer.listener.OnDrawListener
 import com.ahmer.pdfviewer.listener.OnErrorListener
@@ -62,7 +64,7 @@ class PdfFragment : Fragment(R.layout.fragment_pdf), MenuProvider, OnPageChangeL
         _binding = FragmentPdfBinding.bind(view)
 
         lifecycleScope.launch {
-            viewLifecycleOwner.repeatOnLifecycle(Lifecycle.State.STARTED) {
+            viewLifecycleOwner.repeatOnLifecycle(state = Lifecycle.State.STARTED) {
                 viewModel.pdfUiState.collect { state ->
                     updateMenuItems(state)
                 }
@@ -95,18 +97,15 @@ class PdfFragment : Fragment(R.layout.fragment_pdf), MenuProvider, OnPageChangeL
             )
 
             menu.findItem(R.id.menuPageSnap)?.title = getString(
-                if (state.isPageSnap) R.string.menu_pdf_disable_snap_page
-                else R.string.menu_pdf_enable_snap_page
+                if (state.isPageSnap) R.string.menu_pdf_disable_snap_page else R.string.menu_pdf_enable_snap_page
             )
 
             menu.findItem(R.id.menuSwitchView)?.apply {
                 setIcon(
-                    if (state.isViewHorizontal) R.drawable.ic_baseline_swipe_vert
-                    else R.drawable.ic_baseline_swipe_horiz
+                    if (state.isViewHorizontal) R.drawable.ic_baseline_swipe_vert else R.drawable.ic_baseline_swipe_horiz
                 )
                 title = getString(
-                    if (state.isViewHorizontal) R.string.menu_pdf_view_vertical
-                    else R.string.menu_pdf_view_horizontal
+                    if (state.isViewHorizontal) R.string.menu_pdf_view_vertical else R.string.menu_pdf_view_horizontal
                 )
             }
         }
@@ -130,8 +129,8 @@ class PdfFragment : Fragment(R.layout.fragment_pdf), MenuProvider, OnPageChangeL
         try {
             when (requireArguments().getInt(ARG_PDF_TYPE)) {
                 TYPE_NORMAL -> {
-                    password = "5632"
-                    pdfFileName = "grammar.pdf"
+                    password = "112233"
+                    pdfFileName = "proverbs.pdf"
                 }
 
                 TYPE_PROTECTED -> {
@@ -245,28 +244,23 @@ class PdfFragment : Fragment(R.layout.fragment_pdf), MenuProvider, OnPageChangeL
 
     private fun createOnDrawListener(): OnDrawListener {
         return object : OnDrawListener {
-            override fun onLayerDrawn(
-                canvas: Canvas?,
-                pageWidth: Float,
-                pageHeight: Float,
-                currentPage: Int
-            ) {
-                val pdfFile = pdfView.pdfFile ?: return
+            override fun onLayerDrawn(canvas: Canvas?, pageWidth: Float, pageHeight: Float, currentPage: Int) {
+                val pdfFile: PdfFile = pdfView.pdfFile ?: return
 
-                val textOverlayPaint = Paint().apply {
+                val textOverlayPaint: Paint = Paint().apply {
                     color = Color.argb(77, 0, 0, 255)
                     style = Paint.Style.FILL
                     isAntiAlias = true
                 }
 
-                val underlinePaint = Paint().apply {
+                val underlinePaint: Paint = Paint().apply {
                     color = Color.BLUE
                     style = Paint.Style.STROKE
                     strokeWidth = 2f
                     isAntiAlias = true
                 }
 
-                val links = pdfFile.getPageLinks(
+                val links: List<PdfDocument.Link> = pdfFile.getPageLinks(
                     pageIndex = currentPage,
                     size = pdfFile.getPageSize(pageIndex = currentPage),
                     posX = 0f,
@@ -274,7 +268,7 @@ class PdfFragment : Fragment(R.layout.fragment_pdf), MenuProvider, OnPageChangeL
                 )
 
                 links.forEach { link ->
-                    val devRect = pdfFile.mapRectToDevice(
+                    val devRect: RectF = pdfFile.mapRectToDevice(
                         pageIndex = currentPage,
                         startX = 0,
                         startY = 0,
@@ -285,7 +279,7 @@ class PdfFragment : Fragment(R.layout.fragment_pdf), MenuProvider, OnPageChangeL
 
                     canvas?.drawRect(devRect, textOverlayPaint)
 
-                    val underlineY = devRect.bottom - 2f
+                    val underlineY: Float = devRect.bottom - 2f
                     canvas?.drawLine(
                         devRect.left,
                         underlineY,
@@ -318,24 +312,24 @@ class PdfFragment : Fragment(R.layout.fragment_pdf), MenuProvider, OnPageChangeL
         menuState(isEnabled = false)
         when (menuItem.itemId) {
             R.id.menuNightMode -> {
-                val newNightMode = !viewModel.pdfUiState.value.isNightMode
-                viewModel.updateNightMode(newNightMode)
+                val newNightMode: Boolean = !viewModel.pdfUiState.value.isNightMode
+                viewModel.updateNightMode(isChecked = newNightMode)
                 displayFromAsset(fileName = pdfFileName)
                 return true
             }
 
             R.id.menuPageSnap -> {
-                val newPageSnap = !viewModel.pdfUiState.value.isPageSnap
-                viewModel.updatePageSnap(newPageSnap)
-                viewModel.updateAutoSpacing(newPageSnap)
-                viewModel.updateSpacing(if (newPageSnap) 5 else 10)
+                val newPageSnap: Boolean = !viewModel.pdfUiState.value.isPageSnap
+                viewModel.updatePageSnap(isChecked = newPageSnap)
+                viewModel.updateAutoSpacing(isChecked = newPageSnap)
+                viewModel.updateSpacing(spacing = if (newPageSnap) 5 else 10)
                 displayFromAsset(fileName = pdfFileName)
                 return true
             }
 
             R.id.menuSwitchView -> {
-                val newViewHorizontal = !viewModel.pdfUiState.value.isViewHorizontal
-                viewModel.updateViewHorizontal(newViewHorizontal)
+                val newViewHorizontal: Boolean = !viewModel.pdfUiState.value.isViewHorizontal
+                viewModel.updateViewHorizontal(isChecked = newViewHorizontal)
                 displayFromAsset(fileName = pdfFileName)
                 return true
             }
@@ -382,10 +376,7 @@ class PdfFragment : Fragment(R.layout.fragment_pdf), MenuProvider, OnPageChangeL
                 pdfView = pdfView,
                 meta = pdfView.documentMeta,
                 file = pdfFileName.let {
-                    PdfUtils.fileFromAsset(
-                        context = requireContext(),
-                        assetName = it
-                    )
+                    PdfUtils.fileFromAsset(context = requireContext(), assetName = it)
                 }
             ).show()
         }
@@ -394,15 +385,9 @@ class PdfFragment : Fragment(R.layout.fragment_pdf), MenuProvider, OnPageChangeL
     private fun logBookmarks(bookmarks: List<PdfDocument.Bookmark>, prefix: String = "") {
         lifecycleScope.launch(context = Dispatchers.Default) {
             bookmarks.forEach { bookmark ->
-                Log.v(
-                    Constants.TAG,
-                    "Bookmark $prefix ${bookmark.title}, Page: ${bookmark.pageIndex}"
-                )
+                Log.v(Constants.TAG, "Bookmark $prefix ${bookmark.title}, Page: ${bookmark.pageIndex}")
                 if (bookmark.hasChildren) {
-                    logBookmarks(
-                        bookmarks = bookmark.children,
-                        prefix = "$prefix-"
-                    )
+                    logBookmarks(bookmarks = bookmark.children, prefix = "$prefix-")
                 }
             }
         }
@@ -431,9 +416,9 @@ class PdfFragment : Fragment(R.layout.fragment_pdf), MenuProvider, OnPageChangeL
     }
 
     companion object {
-        private const val ARG_PDF_TYPE = "pdf_type"
-        const val TYPE_NORMAL = 1
-        const val TYPE_PROTECTED = 2
+        private const val ARG_PDF_TYPE: String = "pdf_type"
+        const val TYPE_NORMAL: Int = 1
+        const val TYPE_PROTECTED: Int = 2
 
         fun newInstance(pdfType: Int): PdfFragment {
             return PdfFragment().apply {

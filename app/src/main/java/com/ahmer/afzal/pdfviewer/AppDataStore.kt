@@ -16,16 +16,15 @@ import javax.inject.Singleton
 @Singleton
 class AppDataStore @Inject constructor(context: Context) {
     private val Context.dataStore: DataStore<Preferences> by preferencesDataStore(name = Constants.DATA_STORE_NAME)
-    private val dataStore = context.dataStore
-
-    private val autoSpacing = booleanPreferencesKey(name = "isAutoSpacing")
-    private val nightMode = booleanPreferencesKey(name = "isNightMode")
-    private val pageSnap = booleanPreferencesKey(name = "isPageSnap")
-    private val viewHorizontal = booleanPreferencesKey(name = "isViewHorizontal")
-    private val spacing = intPreferencesKey(name = "spacing")
+    private val dataStore: DataStore<Preferences> = context.dataStore
+    private val autoSpacing: Preferences.Key<Boolean> = booleanPreferencesKey(name = "isAutoSpacing")
+    private val nightMode: Preferences.Key<Boolean> = booleanPreferencesKey(name = "isNightMode")
+    private val pageSnap: Preferences.Key<Boolean> = booleanPreferencesKey(name = "isPageSnap")
+    private val viewHorizontal: Preferences.Key<Boolean> = booleanPreferencesKey(name = "isViewHorizontal")
+    private val spacing: Preferences.Key<Int> = intPreferencesKey(name = "spacing")
 
     suspend fun saveLastPage(fileName: String, page: Int) = dataStore.edit { preferences ->
-        val pageKey = intPreferencesKey("last_page_${fileName.hashCode()}")
+        val pageKey: Preferences.Key<Int> = intPreferencesKey(name = "last_page_${fileName.hashCode()}")
         preferences[pageKey] = page
     }
 
@@ -51,7 +50,7 @@ class AppDataStore @Inject constructor(context: Context) {
 
     fun getLastPage(fileName: String): Flow<Int> = dataStore.data
         .map { preferences ->
-            val pageKey = intPreferencesKey("last_page_${fileName.hashCode()}")
+            val pageKey: Preferences.Key<Int> = intPreferencesKey(name = "last_page_${fileName.hashCode()}")
             preferences[pageKey] ?: 0
         }
         .distinctUntilChanged()

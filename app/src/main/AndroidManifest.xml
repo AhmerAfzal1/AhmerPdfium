@@ -22,9 +22,6 @@
         android:supportsRtl="true"
         android:theme="@style/Theme.AhmerPdfium">
         <activity
-            android:name=".TestPdfium"
-            android:exported="true" />
-        <activity
             android:name=".MainActivity"
             android:exported="true">
             <intent-filter>
@@ -37,15 +34,10 @@
             android:name=".PdfActivity"
             android:exported="false"
             android:launchMode="singleTop"
-            android:theme="@style/Theme.AhmerPdfium">
-            <intent-filter>
-                <action android:name="android.intent.action.SEARCH" />
-            </intent-filter>
-
-            <meta-data
-                android:name="android.app.searchable"
-                android:resource="@xml/searchable" />
-        </activity>
+            android:theme="@style/Theme.AhmerPdfium" />
+        <activity
+            android:name=".TestPdfium"
+            android:exported="true" />
     </application>
 
 </manifest>

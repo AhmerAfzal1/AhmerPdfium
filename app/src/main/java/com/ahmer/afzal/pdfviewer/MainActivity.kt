@@ -34,7 +34,7 @@ class MainActivity : AppCompatActivity() {
         binding = ActivityMainBinding.inflate(layoutInflater)
         setContentView(binding.root)
         onBackPressedDispatcher.addCallback(
-            owner = this,
+            owner = this@MainActivity,
             onBackPressedCallback = object : OnBackPressedCallback(enabled = true) {
                 override fun handleOnBackPressed() {
                     if (binding.fragmentContainer.isVisible) {
@@ -71,18 +71,18 @@ class MainActivity : AppCompatActivity() {
 
             // Activity examples
             pdfNormalActivity.setOnClickListener {
-                launchPdfActivity(pdfFileName = Constants.PDF_FILE_MAIN)
+                launchPdfActivity(pdfType = Constants.PDF_FILE_MAIN)
             }
 
             pdfProtectedActivity.setOnClickListener {
-                launchPdfActivity(pdfFileName = Constants.PDF_FILE_PROTECTED)
+                launchPdfActivity(pdfType = Constants.PDF_FILE_PROTECTED)
             }
 
             // Other PDF examples
-            pdfFile1.setOnClickListener { launchPdfActivity(pdfFileName = Constants.PDF_FILE_1) }
-            pdfFile2.setOnClickListener { launchPdfActivity(pdfFileName = Constants.PDF_FILE_2) }
-            pdfFile3.setOnClickListener { launchPdfActivity(pdfFileName = Constants.PDF_FILE_3) }
-            pdfFile4.setOnClickListener { launchPdfActivity(pdfFileName = Constants.PDF_FILE_4) }
+            pdfFile1.setOnClickListener { launchPdfActivity(pdfType = Constants.PDF_FILE_1) }
+            pdfFile2.setOnClickListener { launchPdfActivity(pdfType = Constants.PDF_FILE_2) }
+            pdfFile3.setOnClickListener { launchPdfActivity(pdfType = Constants.PDF_FILE_3) }
+            pdfFile4.setOnClickListener { launchPdfActivity(pdfType = Constants.PDF_FILE_4) }
             pdfTest.setOnClickListener { launchTestPdfiumActivity() }
 
             pdfSdCard.setOnClickListener {
@@ -105,14 +105,14 @@ class MainActivity : AppCompatActivity() {
 
         supportFragmentManager.commit {
             setReorderingAllowed(true)
-            replace(R.id.fragment_container, PdfFragment.newInstance(pdfType))
+            replace(R.id.fragment_container, PdfFragment.newInstance(pdfType = pdfType))
             addToBackStack("pdf_fragment")
         }
     }
 
-    private fun launchPdfActivity(pdfFileName: String) {
-        val intent = Intent(this, PdfActivity::class.java).apply {
-            putExtra(Constants.PDF_FILE, pdfFileName)
+    private fun launchPdfActivity(pdfType: String) {
+        val intent: Intent = Intent(this@MainActivity, PdfActivity::class.java).apply {
+            putExtra(Constants.PDF_FILE, pdfType)
             addFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP or Intent.FLAG_ACTIVITY_SINGLE_TOP)
             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.P) {
                 addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
@@ -122,7 +122,7 @@ class MainActivity : AppCompatActivity() {
     }
 
     private fun launchTestPdfiumActivity() {
-        val intent = Intent(this, TestPdfium::class.java).apply {
+        val intent: Intent = Intent(this@MainActivity, TestPdfium::class.java).apply {
             putExtra(Constants.PDF_FILE, Constants.PDF_FILE_MAIN)
             addFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP or Intent.FLAG_ACTIVITY_SINGLE_TOP)
         }
@@ -133,9 +133,7 @@ class MainActivity : AppCompatActivity() {
         finish()
         if (Build.VERSION.SDK_INT >= 34) {
             overrideActivityTransition(
-                OVERRIDE_TRANSITION_OPEN,
-                R.anim.left_to_right,
-                R.anim.right_to_left
+                OVERRIDE_TRANSITION_OPEN, R.anim.left_to_right, R.anim.right_to_left
             )
         } else {
             @Suppress("DEPRECATION")

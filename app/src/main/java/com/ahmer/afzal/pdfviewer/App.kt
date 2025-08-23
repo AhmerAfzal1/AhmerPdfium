@@ -9,6 +9,6 @@ class App : MultiDexApplication() {
 
     override fun onCreate() {
         super.onCreate()
-        MultiDex.install(this)
+        MultiDex.install(this@App)
     }
 }

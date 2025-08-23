@@ -46,7 +46,7 @@ class PdfActivity : AppCompatActivity(), OnPageChangeListener, OnLoadCompleteLis
     private lateinit var binding: ActivityPdfBinding
     private lateinit var pdfView: PDFView
     private lateinit var progressBar: ProgressBar
-    //private lateinit var searchController: PdfSearchController
+    //private lateinit var searchManager: PdfSearchManager
 
     private val viewModel: PdfActivityModel by viewModels()
     private var currentPage: Int = 0
@@ -55,14 +55,14 @@ class PdfActivity : AppCompatActivity(), OnPageChangeListener, OnLoadCompleteLis
 
     private var isModified: Boolean = false
     private var shouldExitAfterSave: Boolean = false
-    private var currentPageCount = 0
+    private var currentPageCount: Int = 0
 
     private val createFile: ActivityResultLauncher<String> =
-        registerForActivityResult(ActivityResultContracts.CreateDocument("application/pdf")) { uri ->
-            uri?.let { savePdfToUri(it) } ?: run { shouldExitAfterSave = false }
+        registerForActivityResult(ActivityResultContracts.CreateDocument(mimeType = "application/pdf")) { uri ->
+            uri?.let { savePdfToUri(uri = it) } ?: run { shouldExitAfterSave = false }
         }
 
-    private val backCallback = object : OnBackPressedCallback(true) {
+    private val backCallback = object : OnBackPressedCallback(enabled = true) {
         override fun handleOnBackPressed() {
             if (isModified) showUnsavedChangesDialog() else finishWithTransition()
         }
@@ -77,7 +77,7 @@ class PdfActivity : AppCompatActivity(), OnPageChangeListener, OnLoadCompleteLis
         setupObservers()
         setupMenu()
         loadPdf()
-        onBackPressedDispatcher.addCallback(this, backCallback)
+        onBackPressedDispatcher.addCallback(owner = this@PdfActivity, onBackPressedCallback = backCallback)
     }
 
     private fun initViews() {
@@ -92,7 +92,7 @@ class PdfActivity : AppCompatActivity(), OnPageChangeListener, OnLoadCompleteLis
             backCallback.handleOnBackPressed()
         }
 
-        /*searchController = PdfSearchController(
+        /*searchManager = PdfSearchManager(
             pdfView = binding.pdfView,
             searchContainer = binding.searchControls.root,
             searchQuery = binding.searchControls.searchQuery,
@@ -105,17 +105,16 @@ class PdfActivity : AppCompatActivity(), OnPageChangeListener, OnLoadCompleteLis
         )*/
     }
 
-
     private fun setupObservers() {
         lifecycleScope.launch {
-            viewModel.pdfUiState.collectLatest { updateMenuItems(it) }
+            viewModel.pdfUiState.collectLatest { updateMenuItems(state = it) }
         }
     }
 
     private fun setupMenu() {
         binding.toolbar.setOnMenuItemClickListener { menuItem ->
-            setMenuEnabled(false)
-            val handled = when (menuItem.itemId) {
+            setMenuEnabled(enabled = false)
+            val handled: Boolean = when (menuItem.itemId) {
                 R.id.menuNightMode -> {
                     toggleNightMode()
                     true
@@ -152,61 +151,60 @@ class PdfActivity : AppCompatActivity(), OnPageChangeListener, OnLoadCompleteLis
                 }
 
                 R.id.menuSearch -> {
-                    //searchController.showSearch()
+                    //searchManager.showSearch()
                     true
                 }
 
                 else -> false
             }
-            setMenuEnabled(true)
+            setMenuEnabled(enabled = true)
             handled
         }
     }
 
-
     private fun toggleNightMode(): Boolean {
-        val newNightMode = !viewModel.pdfUiState.value.isNightMode
-        viewModel.updateNightMode(newNightMode)
+        val newNightMode: Boolean = !viewModel.pdfUiState.value.isNightMode
+        viewModel.updateNightMode(isChecked = newNightMode)
         reloadPdfViewer()
         return true
     }
 
     private fun togglePageSnap(): Boolean {
-        val newPageSnap = !viewModel.pdfUiState.value.isPageSnap
-        viewModel.updatePageSnap(newPageSnap)
-        viewModel.updateAutoSpacing(newPageSnap)
-        viewModel.updateSpacing(if (newPageSnap) 5 else 10)
+        val newPageSnap: Boolean = !viewModel.pdfUiState.value.isPageSnap
+        viewModel.updatePageSnap(isChecked = newPageSnap)
+        viewModel.updateAutoSpacing(isChecked = newPageSnap)
+        viewModel.updateSpacing(spacing = if (newPageSnap) 5 else 10)
         reloadPdfViewer()
         return true
     }
 
     private fun toggleViewOrientation(): Boolean {
-        val newViewHorizontal = !viewModel.pdfUiState.value.isViewHorizontal
-        viewModel.updateViewHorizontal(newViewHorizontal)
+        val newViewHorizontal: Boolean = !viewModel.pdfUiState.value.isViewHorizontal
+        viewModel.updateViewHorizontal(isChecked = newViewHorizontal)
         reloadPdfViewer()
         return true
     }
 
     private fun deleteCurrentPage() {
-        lifecycleScope.launch(Dispatchers.IO) {
+        lifecycleScope.launch(context = Dispatchers.IO) {
             if (currentPageCount <= 1) {
-                withContext(Dispatchers.Main) { showToast("Cannot delete last page") }
+                withContext(context = Dispatchers.Main) { showToast(msg = "Cannot delete last page") }
                 return@launch
             }
 
-            pdfView.pdfFile?.deletePage(currentPage)
+            pdfView.pdfFile?.deletePage(pageIndex = currentPage)
             isModified = true
 
-            val temp = File(cacheDir, "edited.pdf").apply { deleteOnExit() }
+            val temp: File = File(cacheDir, "edited.pdf").apply { deleteOnExit() }
             FileOutputStream(temp).use { out ->
-                pdfView.saveAsCopy(out, PDFView.FPDF_NO_INCREMENTAL)
+                pdfView.saveAsCopy(out = out, flags = PDFView.FPDF_NO_INCREMENTAL)
             }
 
-            withContext(Dispatchers.Main) {
+            withContext(context = Dispatchers.Main) {
                 currentPageCount = pdfView.pdfFile?.pagesCount ?: 0
                 if (currentPage >= currentPageCount) currentPage = currentPageCount - 1
                 pdfView.recycle()
-                displayFromFile(temp)
+                displayFromFile(file = temp)
             }
         }
     }
@@ -214,23 +212,19 @@ class PdfActivity : AppCompatActivity(), OnPageChangeListener, OnLoadCompleteLis
     private fun updateMenuItems(state: PdfUiState) {
         binding.toolbar.menu?.let { menu ->
             menu.findItem(R.id.menuNightMode)?.setIcon(
-                if (state.isNightMode) R.drawable.ic_baseline_light_mode
-                else R.drawable.ic_baseline_dark_mode
+                if (state.isNightMode) R.drawable.ic_baseline_light_mode else R.drawable.ic_baseline_dark_mode
             )
 
             menu.findItem(R.id.menuPageSnap)?.title = getString(
-                if (state.isPageSnap) R.string.menu_pdf_disable_snap_page
-                else R.string.menu_pdf_enable_snap_page
+                if (state.isPageSnap) R.string.menu_pdf_disable_snap_page else R.string.menu_pdf_enable_snap_page
             )
 
             menu.findItem(R.id.menuSwitchView)?.apply {
                 setIcon(
-                    if (state.isViewHorizontal) R.drawable.ic_baseline_swipe_vert
-                    else R.drawable.ic_baseline_swipe_horiz
+                    if (state.isViewHorizontal) R.drawable.ic_baseline_swipe_vert else R.drawable.ic_baseline_swipe_horiz
                 )
                 title = getString(
-                    if (state.isViewHorizontal) R.string.menu_pdf_view_vertical
-                    else R.string.menu_pdf_view_horizontal
+                    if (state.isViewHorizontal) R.string.menu_pdf_view_vertical else R.string.menu_pdf_view_horizontal
                 )
             }
         }
@@ -251,10 +245,10 @@ class PdfActivity : AppCompatActivity(), OnPageChangeListener, OnLoadCompleteLis
 
     private fun loadPdf() {
         when {
-            intent.data != null -> loadFromUri(intent.data!!)
+            intent.data != null -> loadFromUri(uri = intent.data!!)
             intent.hasExtra(Constants.PDF_FILE) -> loadFromAssets()
             else -> {
-                showToast("No PDF selected")
+                showToast(msg = "No PDF selected")
                 finish()
             }
         }
@@ -262,10 +256,10 @@ class PdfActivity : AppCompatActivity(), OnPageChangeListener, OnLoadCompleteLis
 
     private fun loadFromUri(uri: Uri) {
         try {
-            pdfFileName = PdfHelper.getFileNameFromUri(this, uri).toString()
+            pdfFileName = PdfHelper.getFileNameFromUri(context = this@PdfActivity, uri = uri).toString()
             lifecycleScope.launch {
-                currentPage = viewModel.loadLastPage(pdfFileName).first()
-                displayFromUri(uri)
+                currentPage = viewModel.loadLastPage(fileName = pdfFileName).first()
+                displayFromUri(uri = uri)
             }
         } catch (e: Exception) {
             showToast("Error loading PDF from URI: ${e.message ?: "Unknown error"}")
@@ -276,31 +270,32 @@ class PdfActivity : AppCompatActivity(), OnPageChangeListener, OnLoadCompleteLis
     private fun loadFromAssets() {
         try {
             pdfFileName = when (intent.getStringExtra(Constants.PDF_FILE)) {
-                Constants.PDF_FILE_MAIN, Constants.PDF_FILE_PROTECTED -> {
-                    password = "5632"
-                    "grammar.pdf"
+                Constants.PDF_FILE_MAIN -> {
+                    password = "112233"
+                    "proverbs.pdf"
                 }
 
+                Constants.PDF_FILE_PROTECTED -> "proverbs.pdf"
                 Constants.PDF_FILE_1 -> "example.pdf"
                 Constants.PDF_FILE_2 -> "example1.pdf"
                 Constants.PDF_FILE_3 -> "example3.pdf"
                 Constants.PDF_FILE_4 -> "statement.pdf"
                 else -> throw IllegalArgumentException("Unknown PDF file")
             }
-            displayFromAsset(pdfFileName)
+            displayFromAsset(fileName = pdfFileName)
         } catch (e: Exception) {
-            showToast("Error loading PDF from assets: ${e.message ?: "Unknown error"}")
+            showToast(msg = "Error loading PDF from assets: ${e.message ?: "Unknown error"}")
             finish()
         }
     }
 
     private fun displayFromAsset(fileName: String) {
         lifecycleScope.launch {
-            currentPage = viewModel.loadLastPage(fileName).first()
-            val pdfState = viewModel.pdfUiState.first()
+            currentPage = viewModel.loadLastPage(fileName = fileName).first()
+            val pdfState: PdfUiState = viewModel.pdfUiState.first()
 
-            pdfView.fromAsset(fileName)
-                .applyPdfViewConfig(pdfState)
+            pdfView.fromAsset(name = fileName)
+                .applyPdfViewConfig(state = pdfState)
                 .load()
 
             applyPdfViewQualitySettings()
@@ -309,11 +304,11 @@ class PdfActivity : AppCompatActivity(), OnPageChangeListener, OnLoadCompleteLis
 
     private fun displayFromFile(file: File) {
         lifecycleScope.launch {
-            currentPage = viewModel.loadLastPage(pdfFileName).first()
-            val pdfState = viewModel.pdfUiState.first()
+            currentPage = viewModel.loadLastPage(fileName = pdfFileName).first()
+            val pdfState: PdfUiState = viewModel.pdfUiState.first()
 
-            pdfView.fromFile(file)
-                .applyPdfViewConfig(pdfState)
+            pdfView.fromFile(file = file)
+                .applyPdfViewConfig(state = pdfState)
                 .load()
 
             applyPdfViewQualitySettings()
@@ -321,8 +316,8 @@ class PdfActivity : AppCompatActivity(), OnPageChangeListener, OnLoadCompleteLis
     }
 
     private fun displayFromUri(uri: Uri) {
-        pdfView.fromUri(uri)
-            .applyPdfViewConfig(viewModel.pdfUiState.value)
+        pdfView.fromUri(uri = uri)
+            .applyPdfViewConfig(state = viewModel.pdfUiState.value)
             .load()
         applyPdfViewQualitySettings()
     }
@@ -341,7 +336,7 @@ class PdfActivity : AppCompatActivity(), OnPageChangeListener, OnLoadCompleteLis
             swipeHorizontal(horizontal = state.isViewHorizontal)
             pageSnap(enable = state.isPageSnap)
             autoSpacing(enable = state.isAutoSpacing)
-            password(password)
+            password(password = password)
             spacing(spacing = state.spacing)
             enableSwipe(enable = true)
             pageFling(enable = false)
@@ -363,19 +358,19 @@ class PdfActivity : AppCompatActivity(), OnPageChangeListener, OnLoadCompleteLis
 
     private fun reloadPdfViewer() {
         pdfView.recycle()
-        if (intent.data != null) displayFromUri(intent.data!!) else displayFromAsset(pdfFileName)
+        if (intent.data != null) displayFromUri(uri = intent.data!!) else displayFromAsset(fileName = pdfFileName)
     }
 
     override fun onPageChanged(page: Int, totalPages: Int) {
         currentPage = page
         binding.toolbar.title = "Page ${page + 1} of $totalPages"
-        viewModel.saveLastPage(pdfFileName, page)
+        viewModel.saveLastPage(fileName = pdfFileName, page)
     }
 
     override fun loadComplete(totalPages: Int) {
         progressBar.visibility = View.GONE
-        setMenuEnabled(true)
-        logBookmarks(pdfView.bookmarks)
+        setMenuEnabled(enabled = true)
+        logBookmarks(bookmarks = pdfView.bookmarks)
         currentPageCount = totalPages
     }
 
@@ -463,17 +458,17 @@ class PdfActivity : AppCompatActivity(), OnPageChangeListener, OnLoadCompleteLis
 
     private fun savePdfCopy() {
         if (currentPageCount == 0) {
-            showToast("Cannot save empty PDF")
+            showToast(msg = "Cannot save empty PDF")
             return
         }
 
-        val defaultName = pdfFileName.removeSuffix(".pdf") + "_copy.pdf"
+        val defaultName: String = pdfFileName.removeSuffix(suffix = ".pdf") + "_copy.pdf"
         createFile.launch(defaultName)
     }
 
     private fun savePdfToUri(uri: Uri) {
-        lifecycleScope.launch(Dispatchers.IO) {
-            val success = try {
+        lifecycleScope.launch(context = Dispatchers.IO) {
+            val success: Boolean = try {
                 contentResolver.openOutputStream(uri)?.use { outStream ->
                     pdfView.saveAsCopy(out = outStream, flags = PDFView.FPDF_INCREMENTAL)
                     true
@@ -482,13 +477,13 @@ class PdfActivity : AppCompatActivity(), OnPageChangeListener, OnLoadCompleteLis
                 false
             }
 
-            withContext(Dispatchers.Main) {
+            withContext(context = Dispatchers.Main) {
                 if (success) {
-                    showToast("PDF saved successfully")
+                    showToast(msg = "PDF saved successfully")
                     isModified = false
                     if (shouldExitAfterSave) finish()
                 } else {
-                    showToast("Failed to save PDF")
+                    showToast(msg = "Failed to save PDF")
                 }
                 shouldExitAfterSave = false
             }
@@ -496,7 +491,7 @@ class PdfActivity : AppCompatActivity(), OnPageChangeListener, OnLoadCompleteLis
     }
 
     private fun showUnsavedChangesDialog() {
-        AlertDialog.Builder(this)
+        AlertDialog.Builder(this@PdfActivity)
             .setTitle("Unsaved Changes")
             .setMessage("Save changes before exiting?")
             .setPositiveButton("Save") { _, _ ->
@@ -516,8 +511,7 @@ class PdfActivity : AppCompatActivity(), OnPageChangeListener, OnLoadCompleteLis
         finish()
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.UPSIDE_DOWN_CAKE) {
             overrideActivityTransition(
-                OVERRIDE_TRANSITION_CLOSE,
-                R.anim.left_to_right, R.anim.right_to_left
+                OVERRIDE_TRANSITION_CLOSE, R.anim.left_to_right, R.anim.right_to_left
             )
         } else {
             @Suppress("DEPRECATION")
@@ -533,6 +527,6 @@ class PdfActivity : AppCompatActivity(), OnPageChangeListener, OnLoadCompleteLis
     override fun onDestroy() {
         super.onDestroy()
         pdfView.recycle()
-        //searchController.destroy()
+        //searchManager.destroy()
     }
 }
