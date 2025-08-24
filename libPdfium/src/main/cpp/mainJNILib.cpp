@@ -727,7 +727,6 @@ JNI_FUNC(void, PdfiumCore, nativeRenderPage)(JNI_ARGS, jlong pagePtr, jobject ob
     ANativeWindow_release(nativeWindow);
 }
 
-
 JNI_FUNC(jobject, PdfiumCore, nativeGetPageSizeByIndex)(JNI_ARGS, jlong docPtr, jint pageIndex, jint dpi) {
     auto *doc = reinterpret_cast<DocumentFile *>(docPtr);
     if (doc == nullptr) {
@@ -757,7 +756,6 @@ JNI_FUNC(jobject, PdfiumCore, nativeGetPageSizeByIndex)(JNI_ARGS, jlong docPtr, 
     }
     return env->NewObject(clazz, constructorID, widthInt, heightInt);
 }
-
 
 JNI_FUNC(jlongArray, PdfiumCore, nativeGetPageLinks)(JNI_ARGS, jlong pagePtr) {
     auto page = reinterpret_cast<FPDF_PAGE>(pagePtr);
@@ -920,6 +918,18 @@ JNI_PdfTextPage(jdoubleArray, PdfiumCore, nativeTextGetCharBox)(JNI_ARGS, jlong 
     return result;
 }
 
+JNI_PdfTextPage(jobject, PdfiumCore, nativeTextGetLooseCharBox)(JNI_ARGS, jlong textPagePtr, jint index) {
+    auto textPage = reinterpret_cast<FPDF_TEXTPAGE>(textPagePtr);
+    FS_RECTF fsRectF;
+    FPDF_BOOL result = FPDFText_GetLooseCharBox(textPage, (int) index, &fsRectF);
+    if (!result) {
+        return nullptr;
+    }
+    jclass clazz = env->FindClass("android/graphics/RectF");
+    jmethodID constructorID = env->GetMethodID(clazz, "<init>", "(FFFF)V");
+    return env->NewObject(clazz, constructorID, fsRectF.left, fsRectF.top, fsRectF.right, fsRectF.bottom);
+}
+
 JNI_PdfTextPage(jint, PdfiumCore, nativeTextGetCharIndexAtPos)(JNI_ARGS, jlong textPagePtr, jdouble x,
                                                                jdouble y, jdouble xTolerance,
                                                                jdouble yTolerance) {
@@ -986,7 +996,6 @@ JNI_PdfTextPage(jlong, PdfiumCore, nativeFindStart)(JNI_ARGS, jlong textPagePtr,
 
     return (jlong) handle;
 }
-
 
 JNI_PdfTextPage(jlong, PdfiumCore, nativeLoadWebLink)(JNI_ARGS, jlong textPagePtr) {
     auto textPage = reinterpret_cast<FPDF_TEXTPAGE>(textPagePtr);

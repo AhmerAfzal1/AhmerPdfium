@@ -146,7 +146,7 @@ class PdfTextPage(
     }
 
     /**
-     * Get the bounding box for character on the page
+     * Get the tight bounding box for character on the page
      *
      * @param index the index of the character to get
      * @return the bounding box
@@ -166,6 +166,25 @@ class PdfTextPage(
                 }
             } catch (e: Exception) {
                 Log.e(TAG, "Error getting character bounds: ${e.message}", e)
+                null
+            }
+        }
+    }
+
+    /**
+     * Get the loose bounding box for a character on the page
+     *
+     * @param index the index of the character to get the loose bounding box
+     * @return the loose bounding box, or null if an error occurs
+     * @throws IllegalStateException if the page or document is closed
+     */
+    fun getLooseCharBox(index: Int): RectF? {
+        require(value = index in 0 until charCount) { "Index $index out of bounds [0, $charCount)" }
+        synchronized(lock = PdfiumCore.lock) {
+            return try {
+                nativeTextGetLooseCharBox(textPagePtr = textPagePtr, index = index)
+            } catch (e: Exception) {
+                Log.e(TAG, "Error getting loose character bounds: ${e.message}", e)
                 null
             }
         }
@@ -505,6 +524,10 @@ class PdfTextPage(
         @JvmStatic
         @FastNative
         private external fun nativeTextGetCharBox(textPagePtr: Long, index: Int): DoubleArray
+
+        @JvmStatic
+        @FastNative
+        private external fun nativeTextGetLooseCharBox(textPagePtr: Long, index: Int): RectF
 
         @JvmStatic
         private external fun nativeTextGetCharIndexAtPos(

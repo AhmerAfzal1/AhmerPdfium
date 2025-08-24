@@ -355,7 +355,7 @@ class PdfiumCore(
         rotate: Int,
         coords: RectF,
     ): RectF {
-        val leftTop = mapPageCoordsToDevice(
+        val leftTop: Point = mapPageCoordsToDevice(
             pageIndex = pageIndex,
             startX = startX,
             startY = startY,
@@ -365,7 +365,7 @@ class PdfiumCore(
             pageX = coords.left.toDouble(),
             pageY = coords.top.toDouble(),
         )
-        val rightBottom = mapPageCoordsToDevice(
+        val rightBottom: Point = mapPageCoordsToDevice(
             pageIndex = pageIndex,
             startX = startX,
             startY = startY,
@@ -405,7 +405,7 @@ class PdfiumCore(
         rotate: Int,
         coords: Rect,
     ): RectF {
-        val leftTop = mapDeviceCoordsToPage(
+        val leftTop: PointF = mapDeviceCoordsToPage(
             pageIndex = pageIndex,
             startX = startX,
             startY = startY,
@@ -415,7 +415,7 @@ class PdfiumCore(
             deviceX = coords.left,
             deviceY = coords.top,
         )
-        val rightBottom = mapDeviceCoordsToPage(
+        val rightBottom: PointF = mapDeviceCoordsToPage(
             pageIndex = pageIndex,
             startX = startX,
             startY = startY,

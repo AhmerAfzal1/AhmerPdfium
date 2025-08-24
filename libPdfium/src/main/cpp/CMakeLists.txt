@@ -1,14 +1,13 @@
 # Minimum CMake version and project name
-cmake_minimum_required(VERSION 3.22.1)
+cmake_minimum_required(VERSION 4.1.0)
 project("AhmerPdfium")
 
-# Import PDFium shared library
+# Import Pdfium shared library
 add_library(pdfium SHARED IMPORTED)
 set_target_properties(pdfium PROPERTIES IMPORTED_LOCATION "${CMAKE_SOURCE_DIR}/libs/${ANDROID_ABI}/libpdfium.so")
 
-# Creates and names a library, sets it as either STATIC or SHARED,
-# and provides the relative paths to its source code.
-# You can define multiple libraries, and CMake builds them for you.
+# Creates and names a library, sets it as either STATIC or SHARED, and provides the relative
+# paths to its source code. You can define multiple libraries, and CMake builds them for you.
 # Gradle automatically packages shared libraries with your APK.
 add_library(pdfium_jni SHARED mainJNILib.cpp)
 
@@ -45,4 +44,4 @@ target_link_libraries(pdfium_jni
 )
 
 # Set output directory for built libraries
-set(CMAKE_LIBRARY_OUTPUT_DIRECTORY "${CMAKE_SOURCE_DIR}/libs/${ANDROID_ABI}")
+set(CMAKE_LIBRARY_OUTPUT_DIRECTORY "${CMAKE_SOURCE_DIR}/libs/${CMAKE_ANDROID_ARCH_ABI}")

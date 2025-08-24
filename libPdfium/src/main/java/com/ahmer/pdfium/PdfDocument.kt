@@ -71,13 +71,7 @@ class PdfDocument : Closeable {
      */
     fun openPages(start: Int, end: Int): LongArray {
         synchronized(lock = PdfiumCore.lock) {
-            val pagesPtr: LongArray = nativeLoadPages(docPtr = nativePtr, fromIndex = start, toIndex = end)
-            var pageIndex: Int = start
-            for (page in pagesPtr) {
-                if (pageIndex > end) break
-                pageIndex++
-            }
-            return pagesPtr
+            return nativeLoadPages(docPtr = nativePtr, fromIndex = start, toIndex = end)
         }
     }
 
