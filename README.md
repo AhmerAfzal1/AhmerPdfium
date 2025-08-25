@@ -35,6 +35,15 @@ Add to _build.gradle_:
 implementation 'io.github.ahmerafzal1:ahmer-pdfium:1.9.1'
 ```
 
+## ProGuard Configuration
+
+If you are using ProGuard to obfuscate and shrink your code, add the following rule to your
+`proguard-rules.pro` file
+
+```proguard
+-keep class com.ahmer.pdfium.** { *; }
+```
+
 ## Pdfium
 
 ```kotlin

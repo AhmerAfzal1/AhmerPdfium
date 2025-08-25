@@ -7,6 +7,15 @@ Ahmer Pdfium library fork [barteksc/PdfiumAndroid](https://github.com/barteksc/P
 with [16KB page size support](https://developer.android.com/guide/practices/page-sizes) for improved memory
 efficiency on Android.
 
+## ProGuard Configuration
+
+If you are using ProGuard to obfuscate and shrink your code, add the following rule to your
+`proguard-rules.pro` file
+
+```proguard
+-keep class com.ahmer.pdfium.** { *; }
+```
+
 ## Simple example
 
 ```kotlin
