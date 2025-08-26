@@ -10,7 +10,6 @@ import android.graphics.PointF
 import android.graphics.Rect
 import android.graphics.RectF
 import android.net.Uri
-import android.os.HandlerThread
 import android.util.AttributeSet
 import android.util.Log
 import android.widget.RelativeLayout
@@ -85,7 +84,6 @@ class PDFView(context: Context?, set: AttributeSet?) : RelativeLayout(context, s
     private var _pageFitPolicy: FitPolicy = FitPolicy.WIDTH
     private var _pagesLoader: PagesLoader? = null
     private var _paint: Paint? = null
-    private var _renderingHandlerThread: HandlerThread? = null
     private var _scrollDir: ScrollDir = ScrollDir.NONE
     private var _scrollHandle: ScrollHandle? = null
     private var _spacingPx: Int = 0
@@ -303,11 +301,7 @@ class PDFView(context: Context?, set: AttributeSet?) : RelativeLayout(context, s
         _state = State.LOADED
         this.pdfFile = pdfFile
 
-        _renderingHandlerThread?.takeIf { !it.isAlive }?.start()
-
-        _renderingHandlerThread?.looper?.let { looper ->
-            renderingHandler = RenderingHandler(looper = looper, pdfView = this@PDFView).apply { start() }
-        }
+        renderingHandler = RenderingHandler(pdfView = this@PDFView).apply { start() }
 
         _scrollHandle?.takeIf { !_isScrollHandleInit }?.also { handle ->
             handle.setupLayout(pdfView = this@PDFView)
@@ -346,7 +340,7 @@ class PDFView(context: Context?, set: AttributeSet?) : RelativeLayout(context, s
 
     fun loadPages() {
         if (pdfFile == null || renderingHandler == null) return
-        renderingHandler?.removeMessages(RenderingHandler.MSG_RENDER_PART_TASK)
+        renderingHandler?.removeTasks()
         cacheManager?.makeNewSet()
         _pagesLoader?.loadPages()
         invalidate()
@@ -468,10 +462,8 @@ class PDFView(context: Context?, set: AttributeSet?) : RelativeLayout(context, s
         _animationManager?.stopAll()
         _dragPinchManager?.disable()
 
-        renderingHandler?.let { handler ->
-            handler.stop()
-            handler.removeMessages(RenderingHandler.MSG_RENDER_PART_TASK)
-        }
+        renderingHandler?.stop()
+        renderingHandler?.removeTasks()
 
         _decodingTask?.cancel()
         cacheManager?.clearAll()
@@ -727,15 +719,10 @@ class PDFView(context: Context?, set: AttributeSet?) : RelativeLayout(context, s
 
     override fun onAttachedToWindow() {
         super.onAttachedToWindow()
-        if (_renderingHandlerThread == null) {
-            _renderingHandlerThread = HandlerThread("PDF renderer")
-        }
     }
 
     override fun onDetachedFromWindow() {
         recycle()
-        _renderingHandlerThread?.quitSafely()
-        _renderingHandlerThread = null
         super.onDetachedFromWindow()
     }
 
@@ -802,11 +789,6 @@ class PDFView(context: Context?, set: AttributeSet?) : RelativeLayout(context, s
         _currentYOffset = newOffsetY
         moveTo(offsetX = _currentXOffset, offsetY = _currentYOffset)
         loadPageByOffset()
-    }
-
-    override fun performClick(): Boolean {
-        Log.d(PdfConstants.TAG, "View clicked")
-        return super.performClick()
     }
 
     /**
