@@ -3,8 +3,6 @@ package com.ahmer.pdfviewer.scroll
 import android.annotation.SuppressLint
 import android.content.Context
 import android.graphics.Color
-import android.os.Handler
-import android.os.Looper
 import android.util.TypedValue
 import android.view.MotionEvent
 import android.widget.RelativeLayout
@@ -14,6 +12,13 @@ import androidx.core.view.isVisible
 import com.ahmer.pdfviewer.PDFView
 import com.ahmer.pdfviewer.R
 import com.ahmer.pdfviewer.util.PdfUtils
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.Job
+import kotlinx.coroutines.cancel
+import kotlinx.coroutines.delay
+import kotlinx.coroutines.launch
+import kotlin.time.Duration.Companion.seconds
 
 /**
  * Default scroll handle implementation for PDFView navigation.
@@ -25,11 +30,11 @@ class DefaultScrollHandle @JvmOverloads constructor(
     private val context: Context,
     private val inverted: Boolean = false,
 ) : RelativeLayout(context), ScrollHandle {
-    private val handler: Handler = Handler(Looper.getMainLooper())
-    private val hideScroller: Runnable = Runnable { hide() }
+    private val coroutineScope: CoroutineScope = CoroutineScope(context = Dispatchers.Main)
+    private val pageNumberText: TextView = TextView(context)
+    private var autoHideJob: Job? = null
     private var currentTouchPosition: Float = 0f
     private var handleCenterOffset: Float = 0f
-    private val pageNumberText: TextView = TextView(context)
     private var pdfView: PDFView? = null
 
     override fun setupLayout(pdfView: PDFView) {
@@ -60,11 +65,12 @@ class DefaultScrollHandle @JvmOverloads constructor(
     }
 
     override fun destroyLayout() {
-        pdfView?.removeView(this)
+        pdfView?.removeView(this@DefaultScrollHandle)
+        coroutineScope.cancel()
     }
 
     override fun setScroll(position: Float) {
-        if (!shown()) show() else handler.removeCallbacks(hideScroller)
+        if (!shown()) show() else autoHideJob?.cancel()
         pdfView?.let {
             val viewSize: Int = if (it.isSwipeVertical) it.height else it.width
             setPosition(viewSize * position)
@@ -92,7 +98,11 @@ class DefaultScrollHandle @JvmOverloads constructor(
     }
 
     override fun hideDelayed() {
-        handler.postDelayed(hideScroller, 1000L)
+        autoHideJob?.cancel()
+        autoHideJob = coroutineScope.launch {
+            delay(duration = 1.seconds)
+            hide()
+        }
     }
 
     override fun setPageNumber(pageNumber: Int) {
@@ -134,7 +144,7 @@ class DefaultScrollHandle @JvmOverloads constructor(
             when (event.action) {
                 MotionEvent.ACTION_DOWN, MotionEvent.ACTION_POINTER_DOWN -> {
                     view.stopFling()
-                    handler.removeCallbacks(hideScroller)
+                    autoHideJob?.cancel()
                     currentTouchPosition = if (view.isSwipeVertical) event.rawY - y else event.rawX - x
                     val position: Float = if (view.isSwipeVertical) {
                         event.rawY - currentTouchPosition + handleCenterOffset
