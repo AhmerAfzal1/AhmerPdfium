@@ -71,14 +71,14 @@ class TestPdfium : AppCompatActivity() {
 
     private fun printInfo(doc: PdfDocument) {
         val meta: PdfDocument.Meta = doc.metaData
-        Log.v(TAG, "Title = " + meta.title)
-        Log.v(TAG, "Author = " + meta.author)
-        Log.v(TAG, "Subject = " + meta.subject)
-        Log.v(TAG, "Keywords = " + meta.keywords)
-        Log.v(TAG, "Creator = " + meta.creator)
-        Log.v(TAG, "Producer = " + meta.producer)
-        Log.v(TAG, "CreationDate = " + meta.creationDate)
-        Log.v(TAG, "ModDate = " + meta.modDate)
+        Log.v(TAG, "Title = ${meta.title}")
+        Log.v(TAG, "Author = ${meta.author}")
+        Log.v(TAG, "Subject = ${meta.subject}")
+        Log.v(TAG, "Keywords = ${meta.keywords}")
+        Log.v(TAG, "Creator = ${meta.creator}")
+        Log.v(TAG, "Producer = ${meta.producer}")
+        Log.v(TAG, "CreationDate = ${meta.creationDate}")
+        Log.v(TAG, "ModDate = ${meta.modDate}")
         printBookmarksTree(tree = doc.bookmarks, sep = "-")
     }
 

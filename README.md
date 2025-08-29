@@ -2,11 +2,17 @@
 [![Maven Central](https://img.shields.io/maven-central/v/io.github.ahmerafzal1/ahmer-pdfium.svg?label=ahmer-pdfium)](https://central.sonatype.com/artifact/io.github.ahmerafzal1/ahmer-pdfium)
 [![Maven Central](https://img.shields.io/maven-central/v/io.github.ahmerafzal1/ahmer-pdfviewer.svg?label=ahmer-pdfviewer)](https://central.sonatype.com/artifact/io.github.ahmerafzal1/ahmer-pdfviewer)
 
+# Search Feature Implemented – Highlighting Help Needed
+
+#### I have opened a [PR](https://github.com/AhmerAfzal1/AhmerPdfium/pull/11). The search feature is fully working (match case, whole word, debounce, next/prev, counter). But **highlighting is not implemented yet**.
+
+#### I need help from the community to implement text highlighting.
+
 # Ahmer Pdfium & AndroidPdfViewer
 
 Ahmer Pdfium library — a maintained fork of
-[barteksc/PdfiumAndroid](https://github.com/barteksc/PdfiumAndroid) and
-[barteksc/AndroidPdfViewer](https://github.com/DImuthuUpe/AndroidPdfViewer)
+[barteksc/PdfiumAndroid](https://github.com/barteksc/PdfiumAndroid)
+and [barteksc/AndroidPdfViewer](https://github.com/DImuthuUpe/AndroidPdfViewer)
 
 ---
 
@@ -74,14 +80,14 @@ fun openPdf(context: Context, file: File, password: String? = null) {
 
 fun printInfo(doc: PdfDocument) {
     val meta: PdfDocument.Meta = doc.metaData
-    Log.v(TAG, "Title = " + meta.title)
-    Log.v(TAG, "Author = " + meta.author)
-    Log.v(TAG, "Subject = " + meta.subject)
-    Log.v(TAG, "Keywords = " + meta.keywords)
-    Log.v(TAG, "Creator = " + meta.creator)
-    Log.v(TAG, "Producer = " + meta.producer)
-    Log.v(TAG, "CreationDate = " + meta.creationDate)
-    Log.v(TAG, "ModDate = " + meta.modDate)
+    Log.v(TAG, "Title = ${meta.title}")
+    Log.v(TAG, "Author = ${meta.author}")
+    Log.v(TAG, "Subject = ${meta.subject}")
+    Log.v(TAG, "Keywords = ${meta.keywords}")
+    Log.v(TAG, "Creator = ${meta.creator}")
+    Log.v(TAG, "Producer = ${meta.producer}")
+    Log.v(TAG, "CreationDate = ${meta.creationDate}")
+    Log.v(TAG, "ModDate = ${meta.modDate}")
     printBookmarksTree(doc.bookmarks, "-")
 }
 
