@@ -104,7 +104,7 @@ DocumentFile::~DocumentFile() {
         pdfDocument = nullptr;
     }
     if (cDataCopy != nullptr) {
-        delete[] cDataCopy;
+        free(cDataCopy);
         cDataCopy = nullptr;
     }
     if (nativeSourceBridgeGlobalRef != nullptr) {
@@ -342,6 +342,7 @@ JNI_FUNC(jlong, PdfiumCore, nativeOpenMemDocument)(JNI_ARGS, jbyteArray data, js
         return -1;
     }
     docFile->pdfDocument = document;
+    docFile->cDataCopy = cDataCopy;
     return reinterpret_cast<jlong>(docFile.release());
 }
 
