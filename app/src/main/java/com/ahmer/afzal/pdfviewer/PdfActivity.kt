@@ -29,6 +29,7 @@ import com.ahmer.pdfviewer.listener.OnPageErrorListener
 import com.ahmer.pdfviewer.listener.OnRenderListener
 import com.ahmer.pdfviewer.listener.OnTapListener
 import com.ahmer.pdfviewer.scroll.DefaultScrollHandle
+import com.ahmer.pdfviewer.search.PdfSearchManager
 import com.ahmer.pdfviewer.util.FitPolicy
 import com.ahmer.pdfviewer.util.PdfUtils
 import dagger.hilt.android.AndroidEntryPoint
@@ -46,7 +47,7 @@ class PdfActivity : AppCompatActivity(), OnPageChangeListener, OnLoadCompleteLis
     private lateinit var binding: ActivityPdfBinding
     private lateinit var pdfView: PDFView
     private lateinit var progressBar: ProgressBar
-    //private lateinit var searchManager: PdfSearchManager
+    private lateinit var searchManager: PdfSearchManager
 
     private val viewModel: PdfActivityModel by viewModels()
     private var currentPage: Int = 0
@@ -92,7 +93,7 @@ class PdfActivity : AppCompatActivity(), OnPageChangeListener, OnLoadCompleteLis
             backCallback.handleOnBackPressed()
         }
 
-        /*searchManager = PdfSearchManager(
+        searchManager = PdfSearchManager(
             pdfView = binding.pdfView,
             searchContainer = binding.searchControls.root,
             searchQuery = binding.searchControls.searchQuery,
@@ -102,7 +103,7 @@ class PdfActivity : AppCompatActivity(), OnPageChangeListener, OnLoadCompleteLis
             searchNextBtn = binding.searchControls.searchNext,
             closeSearchBtn = binding.searchControls.closeSearch,
             searchCounter = binding.searchControls.searchCounter,
-        )*/
+        )
     }
 
     private fun setupObservers() {
@@ -151,7 +152,7 @@ class PdfActivity : AppCompatActivity(), OnPageChangeListener, OnLoadCompleteLis
                 }
 
                 R.id.menuSearch -> {
-                    //searchManager.showSearch()
+                    searchManager.showSearch()
                     true
                 }
 
@@ -527,6 +528,6 @@ class PdfActivity : AppCompatActivity(), OnPageChangeListener, OnLoadCompleteLis
     override fun onDestroy() {
         super.onDestroy()
         pdfView.recycle()
-        //searchManager.destroy()
+        searchManager.destroy()
     }
 }
