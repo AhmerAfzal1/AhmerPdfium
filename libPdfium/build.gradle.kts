@@ -15,12 +15,6 @@ android {
     buildToolsVersion = "36.0.0"
     ndkVersion = "29.0.13113456 rc1"
 
-    buildFeatures {
-        //noinspection DataBindingWithoutKapt
-        dataBinding = true
-        viewBinding = true
-    }
-
     defaultConfig {
         minSdk = 24
 

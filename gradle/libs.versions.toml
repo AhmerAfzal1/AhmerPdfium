@@ -6,10 +6,10 @@ constraintLayout = "2.2.1"
 coreKtx = "1.17.0"
 coroutines = "1.10.2"
 datastore = "1.1.7"
-dokka = "2.0.0"
+dokka = "2.1.0-Beta"
 hilt = "2.57.1"
-lifecycle = "2.9.2"
-material = "1.12.0"
+lifecycle = "2.9.3"
+material = "1.13.0"
 multidex = "2.0.1"
 navigation = "2.9.3"
 preference = "1.2.1"
@@ -37,8 +37,8 @@ hilt-android = { group = "com.google.dagger", name = "hilt-android", version.ref
 hilt-compiler = { group = "com.google.dagger", name = "hilt-compiler", version.ref = "hilt" }
 
 [plugins]
-android-application = { id = "com.android.application", version = "8.12.1" }
-android-library = { id = "com.android.library", version = "8.12.1" }
+android-application = { id = "com.android.application", version = "8.13.0" }
+android-library = { id = "com.android.library", version = "8.13.0" }
 dokka = { id = "org.jetbrains.dokka", version.ref = "dokka" }
 hilt-android = { id = "com.google.dagger.hilt.android", version.ref = "hilt" }
 kotlin-android = { id = "org.jetbrains.kotlin.android", version.ref = "kotlin" }
