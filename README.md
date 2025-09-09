@@ -38,7 +38,7 @@ and [barteksc/AndroidPdfViewer](https://github.com/DImuthuUpe/AndroidPdfViewer)
 Add to _build.gradle_:
 
 ```groovy
-implementation 'io.github.ahmerafzal1:ahmer-pdfium:1.9.1'
+implementation 'io.github.ahmerafzal1:ahmer-pdfium:1.9.2'
 ```
 
 ## ProGuard Configuration
