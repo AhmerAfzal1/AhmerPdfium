@@ -1,17 +1,17 @@
 [versions]
-kotlin = "2.2.10"
-ksp = "2.2.10-2.0.2"
+kotlin = "2.2.20"
+ksp = "2.2.20-2.0.4"
 appcompat = "1.7.1"
 constraintLayout = "2.2.1"
 coreKtx = "1.17.0"
 coroutines = "1.10.2"
 datastore = "1.1.7"
 dokka = "2.1.0-Beta"
-hilt = "2.57.1"
-lifecycle = "2.9.3"
+hilt = "2.57.2"
+lifecycle = "2.9.4"
 material = "1.13.0"
 multidex = "2.0.1"
-navigation = "2.9.3"
+navigation = "2.9.5"
 preference = "1.2.1"
 vanniktech-maven-publish = "0.34.0"
 
@@ -19,11 +19,7 @@ vanniktech-maven-publish = "0.34.0"
 androidx-appcompat = { group = "androidx.appcompat", name = "appcompat", version.ref = "appcompat" }
 androidx-constraintlayout = { group = "androidx.constraintlayout", name = "constraintlayout", version.ref = "constraintLayout" }
 androidx-core-ktx = { group = "androidx.core", name = "core-ktx", version.ref = "coreKtx" }
-androidx-datastore = { group = "androidx.datastore", name = "datastore", version.ref = "datastore" }
-androidx-datastore-core = { group = "androidx.datastore", name = "datastore-core", version.ref = "datastore" }
 androidx-datastore-preferences = { group = "androidx.datastore", name = "datastore-preferences", version.ref = "datastore" }
-androidx-lifecycle-common = { group = "androidx.lifecycle", name = "lifecycle-common-java8", version.ref = "lifecycle" }
-androidx-lifecycle-livedata = { group = "androidx.lifecycle", name = "lifecycle-livedata-ktx", version.ref = "lifecycle" }
 androidx-lifecycle-viewmodel = { group = "androidx.lifecycle", name = "lifecycle-viewmodel-ktx", version.ref = "lifecycle" }
 androidx-material = { group = "com.google.android.material", name = "material", version.ref = "material" }
 androidx-multidex = { group = "androidx.multidex", name = "multidex", version.ref = "multidex" }

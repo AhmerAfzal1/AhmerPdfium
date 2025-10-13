@@ -11,8 +11,8 @@ plugins {
 android {
     namespace = "com.ahmer.pdfviewer"
     compileSdk = 36
-    buildToolsVersion = "36.0.0"
-    ndkVersion = "29.0.13113456 rc1"
+    buildToolsVersion = "36.1.0"
+    ndkVersion = "29.0.14206865"
 
     defaultConfig {
         minSdk = 24
@@ -51,6 +51,9 @@ android {
 dependencies {
     implementation(project(":libPdfium"))
     implementation(libs.androidx.core.ktx)
+    implementation(libs.coroutines.android)
+    implementation(libs.coroutines.core)
+    implementation(libs.coroutines.play.services)
 }
 
 // =============== Publication Setup ===============

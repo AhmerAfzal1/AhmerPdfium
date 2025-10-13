@@ -12,8 +12,8 @@ plugins {
 android {
     namespace = "com.ahmer.pdfium"
     compileSdk = 36
-    buildToolsVersion = "36.0.0"
-    ndkVersion = "29.0.13113456 rc1"
+    buildToolsVersion = "36.1.0"
+    ndkVersion = "29.0.14206865"
 
     defaultConfig {
         minSdk = 24
@@ -47,7 +47,7 @@ android {
 
     externalNativeBuild {
         cmake {
-            version = "4.1.1"
+            version = "4.1.2"
             path(path = "src/main/cpp/CMakeLists.txt")
         }
     }

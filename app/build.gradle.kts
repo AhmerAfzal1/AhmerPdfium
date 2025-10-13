@@ -12,8 +12,8 @@ plugins {
 android {
     namespace = "com.ahmer.afzal.pdfviewer"
     compileSdk = 36
-    buildToolsVersion = "36.0.0"
-    ndkVersion = "29.0.13113456 rc1"
+    buildToolsVersion = "36.1.0"
+    ndkVersion = "29.0.14206865"
 
     buildFeatures {
         //noinspection DataBindingWithoutKapt
@@ -67,12 +67,7 @@ dependencies {
     implementation(project(":libPdfViewer"))
     implementation(libs.androidx.appcompat)
     implementation(libs.androidx.constraintlayout)
-    implementation(libs.androidx.core.ktx)
-    implementation(libs.androidx.datastore)
-    implementation(libs.androidx.datastore.core)
     implementation(libs.androidx.datastore.preferences)
-    implementation(libs.androidx.lifecycle.common)
-    implementation(libs.androidx.lifecycle.livedata)
     implementation(libs.androidx.lifecycle.viewmodel)
     implementation(libs.androidx.material)
     implementation(libs.androidx.multidex)
