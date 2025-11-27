@@ -839,84 +839,59 @@ JNI_FUNC(jint, PdfiumCore, nativeGetPageRotation)(JNI_ARGS, jlong pagePtr) {
     return (jint) FPDFPage_GetRotation(page);
 }
 
-JNI_FUNC(jfloatArray, PdfiumCore, nativeGetPageMediaBox)(JNI_ARGS, jlong pagePtr) {
+JNI_FUNC(jobject, PdfiumCore, nativeGetPageMediaBox)(JNI_ARGS, jlong pagePtr) {
     auto page = reinterpret_cast<FPDF_PAGE>(pagePtr);
     float left, bottom, right, top;
-    FPDF_BOOL success = FPDFPage_GetMediaBox(page, &left, &bottom, &right, &top);
-    if (!success) {
+    if (!FPDFPage_GetMediaBox(page, &left, &bottom, &right, &top)) {
         return nullptr;
     }
-    jfloatArray result = env->NewFloatArray(4);
-    if (result == nullptr) {
-        return nullptr;
-    }
-    jfloat values[] = {left, bottom, right, top};
-    env->SetFloatArrayRegion(result, 0, 4, values);
-    return result;
+    jclass clazz = env->FindClass("android/graphics/RectF");
+    jmethodID constructorID = env->GetMethodID(clazz, "<init>", "(FFFF)V");
+    return env->NewObject(clazz, constructorID, left, top, right, bottom);
 }
 
-JNI_FUNC(jfloatArray, PdfiumCore, nativeGetPageCropBox)(JNI_ARGS, jlong pagePtr) {
+JNI_FUNC(jobject, PdfiumCore, nativeGetPageCropBox)(JNI_ARGS, jlong pagePtr) {
     auto page = reinterpret_cast<FPDF_PAGE>(pagePtr);
     float left, bottom, right, top;
-    FPDF_BOOL success = FPDFPage_GetCropBox(page, &left, &bottom, &right, &top);
-    if (!success) {
+    if (!FPDFPage_GetCropBox(page, &left, &bottom, &right, &top)) {
         return nullptr;
     }
-    jfloatArray result = env->NewFloatArray(4);
-    if (result == nullptr) {
-        return nullptr;
-    }
-    jfloat values[] = {left, bottom, right, top};
-    env->SetFloatArrayRegion(result, 0, 4, values);
-    return result;
+    jclass clazz = env->FindClass("android/graphics/RectF");
+    jmethodID constructorID = env->GetMethodID(clazz, "<init>", "(FFFF)V");
+    return env->NewObject(clazz, constructorID, left, top, right, bottom);
 }
 
-JNI_FUNC(jfloatArray, PdfiumCore, nativeGetPageBleedBox)(JNI_ARGS, jlong pagePtr) {
+JNI_FUNC(jobject, PdfiumCore, nativeGetPageBleedBox)(JNI_ARGS, jlong pagePtr) {
     auto page = reinterpret_cast<FPDF_PAGE>(pagePtr);
     float left, bottom, right, top;
-    FPDF_BOOL success = FPDFPage_GetBleedBox(page, &left, &bottom, &right, &top);
-    if (!success) {
+    if (!FPDFPage_GetBleedBox(page, &left, &bottom, &right, &top)) {
         return nullptr;
     }
-    jfloatArray result = env->NewFloatArray(4);
-    if (result == nullptr) {
-        return nullptr;
-    }
-    jfloat values[] = {left, bottom, right, top};
-    env->SetFloatArrayRegion(result, 0, 4, values);
-    return result;
+    jclass clazz = env->FindClass("android/graphics/RectF");
+    jmethodID constructorID = env->GetMethodID(clazz, "<init>", "(FFFF)V");
+    return env->NewObject(clazz, constructorID, left, top, right, bottom);
 }
 
-JNI_FUNC(jfloatArray, PdfiumCore, nativeGetPageTrimBox)(JNI_ARGS, jlong pagePtr) {
+JNI_FUNC(jobject, PdfiumCore, nativeGetPageTrimBox)(JNI_ARGS, jlong pagePtr) {
     auto page = reinterpret_cast<FPDF_PAGE>(pagePtr);
     float left, bottom, right, top;
-    FPDF_BOOL success = FPDFPage_GetTrimBox(page, &left, &bottom, &right, &top);
-    if (!success) {
+    if (!FPDFPage_GetTrimBox(page, &left, &bottom, &right, &top)) {
         return nullptr;
     }
-    jfloatArray result = env->NewFloatArray(4);
-    if (result == nullptr) {
-        return nullptr;
-    }
-    jfloat values[] = {left, bottom, right, top};
-    env->SetFloatArrayRegion(result, 0, 4, values);
-    return result;
+    jclass clazz = env->FindClass("android/graphics/RectF");
+    jmethodID constructorID = env->GetMethodID(clazz, "<init>", "(FFFF)V");
+    return env->NewObject(clazz, constructorID, left, top, right, bottom);
 }
 
-JNI_FUNC(jfloatArray, PdfiumCore, nativeGetPageArtBox)(JNI_ARGS, jlong pagePtr) {
+JNI_FUNC(jobject, PdfiumCore, nativeGetPageArtBox)(JNI_ARGS, jlong pagePtr) {
     auto page = reinterpret_cast<FPDF_PAGE>(pagePtr);
     float left, bottom, right, top;
-    FPDF_BOOL success = FPDFPage_GetArtBox(page, &left, &bottom, &right, &top);
-    if (!success) {
+    if (!FPDFPage_GetArtBox(page, &left, &bottom, &right, &top)) {
         return nullptr;
     }
-    jfloatArray result = env->NewFloatArray(4);
-    if (result == nullptr) {
-        return nullptr;
-    }
-    jfloat values[] = {left, bottom, right, top};
-    env->SetFloatArrayRegion(result, 0, 4, values);
-    return result;
+    jclass clazz = env->FindClass("android/graphics/RectF");
+    jmethodID constructorID = env->GetMethodID(clazz, "<init>", "(FFFF)V");
+    return env->NewObject(clazz, constructorID, left, top, right, bottom);
 }
 
 JNI_FUNC(jlong, PdfiumCore, nativeGetLinkAtCoord)(JNI_ARGS, jlong pagePtr, jint width, jint height, jint posX,

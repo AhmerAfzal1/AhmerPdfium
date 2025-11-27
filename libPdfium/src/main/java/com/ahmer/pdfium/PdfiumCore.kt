@@ -146,67 +146,62 @@ class PdfiumCore(
     }
 
     /**
-     * Gets page MediaBox in PDF points (1/72 inch)
+     * Gets the MediaBox of a page in PDF points (1/72 inch)
      *
      * @param pageIndex Index of the page
-     * @return RectF with left, bottom, right, top coordinates, or null if not available
+     * @return RectF containing left, top, right, bottom coordinates, or null if not available
      */
     fun getPageMediaBox(pageIndex: Int): RectF? {
         synchronized(lock = lock) {
-            val arr = nativeGetPageMediaBox(pagePtr = pagePtr(index = pageIndex)) ?: return null
-            return RectF(arr[0], arr[1], arr[2], arr[3])
+            return nativeGetPageMediaBox(pagePtr = pagePtr(index = pageIndex))
         }
     }
 
     /**
-     * Gets page CropBox in PDF points (1/72 inch)
+     * Gets the CropBox of a page in PDF points (1/72 inch)
      *
      * @param pageIndex Index of the page
-     * @return RectF with left, bottom, right, top coordinates, or null if not available
+     * @return RectF containing left, top, right, bottom coordinates, or null if not available
      */
     fun getPageCropBox(pageIndex: Int): RectF? {
         synchronized(lock = lock) {
-            val arr = nativeGetPageCropBox(pagePtr = pagePtr(index = pageIndex)) ?: return null
-            return RectF(arr[0], arr[1], arr[2], arr[3])
+            return nativeGetPageCropBox(pagePtr = pagePtr(index = pageIndex))
         }
     }
 
     /**
-     * Gets page BleedBox in PDF points (1/72 inch)
+     * Gets the BleedBox of a page in PDF points (1/72 inch)
      *
      * @param pageIndex Index of the page
-     * @return RectF with left, bottom, right, top coordinates, or null if not available
+     * @return RectF containing left, top, right, bottom coordinates, or null if not available
      */
     fun getPageBleedBox(pageIndex: Int): RectF? {
         synchronized(lock = lock) {
-            val arr = nativeGetPageBleedBox(pagePtr = pagePtr(index = pageIndex)) ?: return null
-            return RectF(arr[0], arr[1], arr[2], arr[3])
+            return nativeGetPageBleedBox(pagePtr = pagePtr(index = pageIndex))
         }
     }
 
     /**
-     * Gets page TrimBox in PDF points (1/72 inch)
+     * Gets the TrimBox of a page in PDF points (1/72 inch)
      *
      * @param pageIndex Index of the page
-     * @return RectF with left, bottom, right, top coordinates, or null if not available
+     * @return RectF containing left, top, right, bottom coordinates, or null if not available
      */
     fun getPageTrimBox(pageIndex: Int): RectF? {
         synchronized(lock = lock) {
-            val arr = nativeGetPageTrimBox(pagePtr = pagePtr(index = pageIndex)) ?: return null
-            return RectF(arr[0], arr[1], arr[2], arr[3])
+            return nativeGetPageTrimBox(pagePtr = pagePtr(index = pageIndex))
         }
     }
 
     /**
-     * Gets page ArtBox in PDF points (1/72 inch)
+     * Gets the ArtBox of a page in PDF points (1/72 inch)
      *
      * @param pageIndex Index of the page
-     * @return RectF with left, bottom, right, top coordinates, or null if not available
+     * @return RectF containing left, top, right, bottom coordinates, or null if not available
      */
     fun getPageArtBox(pageIndex: Int): RectF? {
         synchronized(lock = lock) {
-            val arr = nativeGetPageArtBox(pagePtr = pagePtr(index = pageIndex)) ?: return null
-            return RectF(arr[0], arr[1], arr[2], arr[3])
+            return nativeGetPageArtBox(pagePtr = pagePtr(index = pageIndex))
         }
     }
 
@@ -559,19 +554,19 @@ class PdfiumCore(
         private external fun nativeGetPageRotation(pagePtr: Long): Int
 
         @JvmStatic
-        private external fun nativeGetPageMediaBox(pagePtr: Long): FloatArray?
+        private external fun nativeGetPageMediaBox(pagePtr: Long): RectF?
 
         @JvmStatic
-        private external fun nativeGetPageCropBox(pagePtr: Long): FloatArray?
+        private external fun nativeGetPageCropBox(pagePtr: Long): RectF?
 
         @JvmStatic
-        private external fun nativeGetPageBleedBox(pagePtr: Long): FloatArray?
+        private external fun nativeGetPageBleedBox(pagePtr: Long): RectF?
 
         @JvmStatic
-        private external fun nativeGetPageTrimBox(pagePtr: Long): FloatArray?
+        private external fun nativeGetPageTrimBox(pagePtr: Long): RectF?
 
         @JvmStatic
-        private external fun nativeGetPageArtBox(pagePtr: Long): FloatArray?
+        private external fun nativeGetPageArtBox(pagePtr: Long): RectF?
 
         @JvmStatic
         private external fun nativeGetPageSizeByIndex(docPtr: Long, pageIndex: Int, dpi: Int): Size
