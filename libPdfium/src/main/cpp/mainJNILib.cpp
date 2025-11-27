@@ -104,7 +104,7 @@ DocumentFile::~DocumentFile() {
         pdfDocument = nullptr;
     }
     if (cDataCopy != nullptr) {
-        free(cDataCopy);
+        delete[] cDataCopy;
         cDataCopy = nullptr;
     }
     if (nativeSourceBridgeGlobalRef != nullptr) {
