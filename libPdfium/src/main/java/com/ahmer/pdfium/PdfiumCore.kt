@@ -146,6 +146,71 @@ class PdfiumCore(
     }
 
     /**
+     * Gets page MediaBox in PDF points (1/72 inch)
+     *
+     * @param pageIndex Index of the page
+     * @return RectF with left, bottom, right, top coordinates, or null if not available
+     */
+    fun getPageMediaBox(pageIndex: Int): RectF? {
+        synchronized(lock = lock) {
+            val arr = nativeGetPageMediaBox(pagePtr = pagePtr(index = pageIndex)) ?: return null
+            return RectF(arr[0], arr[1], arr[2], arr[3])
+        }
+    }
+
+    /**
+     * Gets page CropBox in PDF points (1/72 inch)
+     *
+     * @param pageIndex Index of the page
+     * @return RectF with left, bottom, right, top coordinates, or null if not available
+     */
+    fun getPageCropBox(pageIndex: Int): RectF? {
+        synchronized(lock = lock) {
+            val arr = nativeGetPageCropBox(pagePtr = pagePtr(index = pageIndex)) ?: return null
+            return RectF(arr[0], arr[1], arr[2], arr[3])
+        }
+    }
+
+    /**
+     * Gets page BleedBox in PDF points (1/72 inch)
+     *
+     * @param pageIndex Index of the page
+     * @return RectF with left, bottom, right, top coordinates, or null if not available
+     */
+    fun getPageBleedBox(pageIndex: Int): RectF? {
+        synchronized(lock = lock) {
+            val arr = nativeGetPageBleedBox(pagePtr = pagePtr(index = pageIndex)) ?: return null
+            return RectF(arr[0], arr[1], arr[2], arr[3])
+        }
+    }
+
+    /**
+     * Gets page TrimBox in PDF points (1/72 inch)
+     *
+     * @param pageIndex Index of the page
+     * @return RectF with left, bottom, right, top coordinates, or null if not available
+     */
+    fun getPageTrimBox(pageIndex: Int): RectF? {
+        synchronized(lock = lock) {
+            val arr = nativeGetPageTrimBox(pagePtr = pagePtr(index = pageIndex)) ?: return null
+            return RectF(arr[0], arr[1], arr[2], arr[3])
+        }
+    }
+
+    /**
+     * Gets page ArtBox in PDF points (1/72 inch)
+     *
+     * @param pageIndex Index of the page
+     * @return RectF with left, bottom, right, top coordinates, or null if not available
+     */
+    fun getPageArtBox(pageIndex: Int): RectF? {
+        synchronized(lock = lock) {
+            val arr = nativeGetPageArtBox(pagePtr = pagePtr(index = pageIndex)) ?: return null
+            return RectF(arr[0], arr[1], arr[2], arr[3])
+        }
+    }
+
+    /**
      * Gets page size in pixels.
      *
      * @param pageIndex Index of the page.
@@ -492,6 +557,21 @@ class PdfiumCore(
         @JvmStatic
         @FastNative
         private external fun nativeGetPageRotation(pagePtr: Long): Int
+
+        @JvmStatic
+        private external fun nativeGetPageMediaBox(pagePtr: Long): FloatArray?
+
+        @JvmStatic
+        private external fun nativeGetPageCropBox(pagePtr: Long): FloatArray?
+
+        @JvmStatic
+        private external fun nativeGetPageBleedBox(pagePtr: Long): FloatArray?
+
+        @JvmStatic
+        private external fun nativeGetPageTrimBox(pagePtr: Long): FloatArray?
+
+        @JvmStatic
+        private external fun nativeGetPageArtBox(pagePtr: Long): FloatArray?
 
         @JvmStatic
         private external fun nativeGetPageSizeByIndex(docPtr: Long, pageIndex: Int, dpi: Int): Size
