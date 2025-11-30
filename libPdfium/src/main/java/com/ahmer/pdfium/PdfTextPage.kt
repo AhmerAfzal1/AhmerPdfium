@@ -383,6 +383,20 @@ class PdfTextPage(
     }
 
     /**
+     * Searches for text and returns all matches with their bounding rectangles.
+     * This is a convenience method that combines starting a search and finding all matches.
+     *
+     * @param query Text to search for
+     * @param flags Search configuration flags
+     * @return List of SearchMatch objects containing position and highlight rectangles, or empty list if no matches
+     */
+    fun searchWithHighlights(query: String, flags: Set<FindFlags> = emptySet()): List<SearchMatch> {
+        startTextSearch(query = query, flags = flags)?.use { findResult ->
+            return findResult.findAllMatches(textPage = this)
+        } ?: return emptyList()
+    }
+
+    /**
      * Retrieves the URL text for a given web link on this PDF page.
      *
      * @param linkIndex index of the web link to query.
