@@ -495,17 +495,10 @@ class PdfiumCore(
 
     override fun close() {
         Log.v(TAG, "Closing PdfDocument")
-        doc.pageCache.keys.forEach { index ->
-            doc.pageCache[index]?.let { page ->
-                if (page.count > 1) {
-                    page.count--
-                    return
-                }
-                doc.pageCache.remove(key = index)
-                doc.pageCache[index]?.let {
-                    nativeClosePage(pagePtr = it.pagePtr)
-                }
-            }
+        // Close all native page handles - when closing the document entirely,
+        // we must free all native resources regardless of reference count
+        for (entry in doc.pageCache.values) {
+            nativeClosePage(pagePtr = entry.pagePtr)
         }
         doc.close()
     }
